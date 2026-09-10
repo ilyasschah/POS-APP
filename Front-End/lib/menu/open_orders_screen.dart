@@ -459,8 +459,6 @@ Future<void> syncOpenOrdersToDrift(
       // A row with unpushed local work owns its own header. The server's copy
       // predates that work, so writing total/tableId back over it reverted the
       // cashier's just-saved edit (and the push then sent the reverted total).
-      // serviceStatus is the exception — it is the KDS "ready" signal and is
-      // only ever set server-side.
       final locallyOwned = existingByServerId.syncStatus != 'synced';
       // Don't let a server pull DOWNGRADE a locally-set "ready" (3). The KDS
       // marked it done over the LAN; the backend may not have caught up yet
@@ -469,8 +467,15 @@ Future<void> syncOpenOrdersToDrift(
       final keepReady =
           existingByServerId.serviceStatus == kServiceStatusReady &&
               serviceStatus < kServiceStatusReady;
-      final effectiveStatus =
-          keepReady ? kServiceStatusReady : serviceStatus;
+      // 🚨 serviceStatus obeys `locallyOwned` like the rest of the header. It
+      // used to be exempt ("only ever set server-side") — but the POS header's
+      // status button sets it HERE. Picking "In Kitchen" (2) left the row
+      // 'pending', the next poll wrote the server's stale 1 over it, and the
+      // push then sent that 1 up: the status always snapped back. The KDS's 3
+      // only survived because `keepReady` happened to cover it.
+      final effectiveStatus = locallyOwned || keepReady
+          ? existingByServerId.serviceStatus
+          : serviceStatus;
       final totalChanged =
           !locallyOwned && existingByServerId.total != total;
       final tableChanged =

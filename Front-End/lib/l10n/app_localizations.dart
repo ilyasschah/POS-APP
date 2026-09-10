@@ -4174,6 +4174,48 @@ abstract class AppLocalizations {
   /// **'Are you sure you want to delete \'{name}\'?'**
   String confirmDeleteQuoted(Object name);
 
+  /// No description provided for @deleteCustomerLoyaltyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Loyalty points will be lost'**
+  String get deleteCustomerLoyaltyTitle;
+
+  /// No description provided for @deleteCustomerLoyaltyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{This customer has a loyalty card with a balance of {points} pts.} other{This customer has {count} loyalty cards with a combined balance of {points} pts.}}'**
+  String deleteCustomerLoyaltyBody(int count, String points);
+
+  /// No description provided for @deleteCustomerLoyaltyConsequence.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleting the customer permanently deletes their loyalty card, its points and their customer data. This cannot be undone.'**
+  String get deleteCustomerLoyaltyConsequence;
+
+  /// No description provided for @deleteCustomerDisableHint.
+  ///
+  /// In en, this message translates to:
+  /// **'To keep the points, cancel and disable the customer instead.'**
+  String get deleteCustomerDisableHint;
+
+  /// No description provided for @deleteCustomerLoyaltyAcknowledge.
+  ///
+  /// In en, this message translates to:
+  /// **'I understand — delete this customer together with their loyalty points ({points} pts).'**
+  String deleteCustomerLoyaltyAcknowledge(String points);
+
+  /// No description provided for @deleteCustomerAndCard.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete customer & card'**
+  String get deleteCustomerAndCard;
+
+  /// No description provided for @loyaltyPointsValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{points} pts'**
+  String loyaltyPointsValue(String points);
+
   /// No description provided for @codeValueLabel.
   ///
   /// In en, this message translates to:
@@ -6879,6 +6921,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Is Enabled (Visible)'**
   String get isEnabledVisible;
+
+  /// No description provided for @productInformationSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Product information'**
+  String get productInformationSection;
+
+  /// No description provided for @productBehaviorSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Product behavior'**
+  String get productBehaviorSection;
+
+  /// No description provided for @productDescriptionPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional — a short note about this product'**
+  String get productDescriptionPlaceholder;
+
+  /// No description provided for @isServiceHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Not a physical item: stock is not checked when it is sold.'**
+  String get isServiceHint;
+
+  /// No description provided for @changePriceAllowedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The cashier can set or change the price at the till.'**
+  String get changePriceAllowedHint;
+
+  /// No description provided for @isEnabledHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Shown on the POS menu and available for sale.'**
+  String get isEnabledHint;
+
+  /// No description provided for @priceAndCostSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Price & cost'**
+  String get priceAndCostSection;
+
+  /// No description provided for @unitAndStockSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Unit & stock'**
+  String get unitAndStockSection;
+
+  /// No description provided for @noDocumentDiscounts.
+  ///
+  /// In en, this message translates to:
+  /// **'No promotions or order-level discounts on this document.'**
+  String get noDocumentDiscounts;
 
   /// No description provided for @productColorMarker.
   ///

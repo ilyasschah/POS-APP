@@ -130,36 +130,6 @@ C.  DECIDE   (blocked on you - I will not guess)
 D.  LATER   (known, parked, nothing breaks meanwhile)
 =======================================================
 
-This list is nearly empty now - three of its six entries
-were BUILT on 2026-09-03 and moved up to B6, B7 and B8.
-What is left is what genuinely cannot be closed from here.
-
-
-[--] Dead or inconsistent settings keys, fixed 2026-09-01:
-     Order.ShortcutKeysPaymentConfirmation now has a frontend
-     constant and actually does something - Enter/Numpad-Enter
-     confirms the sale on the checkout dialog when enabled
-     (payment_checkout_dialog.dart). App.IndustryMode: added
-     CompanyDefaultsSeeder.RemoveObsoletePropertiesAsync, run at
-     every startup like the other backfills - sweeps stale rows
-     for any company seeded before the removal (this DB already
-     had zero, but other environments may not). Seeder/client
-     agree on Order.NumberOfPaymentTypeRows now (both "1").
-     Products.Sorting now also sorts the Products management
-     table (products_screen.dart), not just the POS menu grid -
-     shared logic moved to product_sort.dart. NOTHING IS DEAD
-     HERE ANY MORE: Application.User.Email was the last one and
-     it went with the SMTP retirement on 2026-09-03 (B9), which
-     added all five email keys to the same obsolete-property
-     sweep. Application.DateFormat also stopped being a lie the
-     same day, and its client default (was 'dd-MM-yyyy') now
-     matches the server seed and what the screens actually drew
-     ('dd/MM/yyyy').
-
-
-
-
-
 =======================================================
 E.  PRODUCTION PHASE   (the ship checklist - NONE done)
 =======================================================

@@ -2125,6 +2125,41 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String get deleteCustomerLoyaltyTitle => 'ستُفقد نقاط الولاء';
+
+  @override
+  String deleteCustomerLoyaltyBody(int count, String points) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'لدى هذا العميل $count بطاقات ولاء برصيد إجمالي $points نقطة.',
+      one: 'لدى هذا العميل بطاقة ولاء برصيد $points نقطة.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get deleteCustomerLoyaltyConsequence =>
+      'حذف هذا العميل يحذف نهائيًا بطاقة الولاء ونقاطها وبيانات العميل. لا يمكن التراجع عن هذا الإجراء.';
+
+  @override
+  String get deleteCustomerDisableHint =>
+      'للاحتفاظ بالنقاط، ألغِ العملية وعطّل العميل بدلًا من ذلك.';
+
+  @override
+  String deleteCustomerLoyaltyAcknowledge(String points) {
+    return 'أفهم ذلك — احذف هذا العميل مع نقاط الولاء الخاصة به ($points نقطة).';
+  }
+
+  @override
+  String get deleteCustomerAndCard => 'حذف العميل والبطاقة';
+
+  @override
+  String loyaltyPointsValue(String points) {
+    return '$points نقطة';
+  }
+
+  @override
   String codeValueLabel(Object code) {
     return 'الرمز: $code';
   }
@@ -3594,6 +3629,37 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get isEnabledVisible => 'مُفعّل (ظاهر)';
+
+  @override
+  String get productInformationSection => 'معلومات المنتج';
+
+  @override
+  String get productBehaviorSection => 'سلوك المنتج';
+
+  @override
+  String get productDescriptionPlaceholder =>
+      'اختياري — ملاحظة قصيرة عن هذا المنتج';
+
+  @override
+  String get isServiceHint =>
+      'عنصر غير مادي: لا يتم التحقق من المخزون عند بيعه.';
+
+  @override
+  String get changePriceAllowedHint =>
+      'يمكن للكاشير تحديد السعر أو تغييره عند نقطة البيع.';
+
+  @override
+  String get isEnabledHint => 'يظهر في قائمة نقطة البيع ومتاح للبيع.';
+
+  @override
+  String get priceAndCostSection => 'السعر والتكلفة';
+
+  @override
+  String get unitAndStockSection => 'الوحدة والمخزون';
+
+  @override
+  String get noDocumentDiscounts =>
+      'لا توجد عروض أو خصومات على مستوى الطلب في هذا المستند.';
 
   @override
   String get productColorMarker => 'علامة لون المنتج';

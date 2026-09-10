@@ -1,3 +1,7 @@
+import 'dart:math' as math;
+
+import 'package:pos_app/core/ilyass_form.dart';
+import 'package:pos_app/core/responsive.dart';
 import 'package:flutter/material.dart';
 import 'package:pos_app/core/app_date_format.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
@@ -606,7 +610,6 @@ class _DocumentEditorDialogState extends ConsumerState<_DocumentEditorDialog> {
     // via [section]; the fields/handlers stay identical across all three.
     _HeaderForm headerForm(DocumentEditorSection section) => _HeaderForm(
           section: section,
-          isEditing: _headerSaved,
           selectedDocTypeName: _selectedDocTypeName,
           selectedCustomerId: _selectedCustomerId,
           selectedUserId: _selectedUserId,
@@ -621,8 +624,6 @@ class _DocumentEditorDialogState extends ConsumerState<_DocumentEditorDialog> {
           discount: _discount,
           discountType: _discountType,
           discountApplyRule: _discountApplyRule,
-          errorMessage: _errorMessage,
-          isLoading: _isLoading,
           onSelectDocType: () async {
             final result = await showDialog<DocumentType>(
               context: context,
@@ -675,25 +676,49 @@ class _DocumentEditorDialogState extends ConsumerState<_DocumentEditorDialog> {
           onDiscountTypeChanged: (v) => setState(() => _discountType = v),
           onDiscountApplyRuleChanged: (v) =>
               setState(() => _discountApplyRule = v),
-          onSave: _saveOrUpdateHeader,
         );
 
-    Widget headerTab(DocumentEditorSection section) => SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: headerForm(section),
-        );
+    Widget headerTab(DocumentEditorSection section) =>
+        IlyassTabBody(children: [headerForm(section)]);
 
-    // Shown on the items/discount/payments tabs until the header is saved.
-    Widget needsHeader() => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(32),
-            child: Text(
-              l.saveHeaderFirstHint(
-                _isEditing ? l.saveHeaderChanges : l.createAndAddItems,
+    // Shown on the items/discount/payments tabs until the header is saved. It
+    // used to be a bare sentence; it now says why, and offers the way back.
+    Widget needsHeader() => Builder(
+          builder: (tabContext) => Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(32),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 460),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.lock_outline,
+                      size: 44,
+                      color: theme.colorScheme.outline,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      l.saveHeaderFirstHint(
+                        _isEditing ? l.saveHeaderChanges : l.createAndAddItems,
+                      ),
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodyMedium
+                          ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                    ),
+                    const SizedBox(height: 16),
+                    OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size(0, 48),
+                      ),
+                      icon: const Icon(Icons.arrow_back, size: 18),
+                      label: Text(l.documentInfo),
+                      onPressed: () =>
+                          DefaultTabController.of(tabContext).animateTo(0),
+                    ),
+                  ],
+                ),
               ),
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium
-                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
             ),
           ),
         );
@@ -707,55 +732,112 @@ class _DocumentEditorDialogState extends ConsumerState<_DocumentEditorDialog> {
       Tab(text: l.paymentsTab),
     ];
 
+    /// The first three tabs are the header form; the footer's save button
+    /// belongs to them and to nothing after.
+    const headerTabCount = 3;
+
     final List<Widget> dialogTabViews = [
       headerTab(DocumentEditorSection.info),
       headerTab(DocumentEditorSection.parties),
       headerTab(DocumentEditorSection.financials),
       // Document Items
       headerReady
-          ? SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: _ItemsView(
-                documentId: _savedDocumentId ?? 0,
-                documentLocalId: _savedDocumentLocalId!,
-                companyId: companyId,
-                onItemsChanged: _syncDocumentTotal,
-                isPurchase: _selectedDocTypeName
-                        ?.toLowerCase()
-                        .contains('purchase') ==
-                    true,
-              ),
+          ? IlyassTabBody(
+              children: [
+                _ItemsView(
+                  documentId: _savedDocumentId ?? 0,
+                  documentLocalId: _savedDocumentLocalId!,
+                  companyId: companyId,
+                  onItemsChanged: _syncDocumentTotal,
+                  isPurchase: _selectedDocTypeName
+                          ?.toLowerCase()
+                          .contains('purchase') ==
+                      true,
+                ),
+              ],
             )
           : needsHeader(),
-      // Discount Breakdown
+      // Discount Breakdown — label → amount rows, capped so an amount never
+      // ends up a monitor's width away from the discount it belongs to.
       headerReady
-          ? SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child:
-                  _DiscountBreakdownCard(documentLocalId: _savedDocumentLocalId!),
+          ? IlyassTabBody(
+              children: [
+                Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 760),
+                    child: _DiscountBreakdownCard(
+                      documentLocalId: _savedDocumentLocalId!,
+                    ),
+                  ),
+                ),
+              ],
             )
           : needsHeader(),
       // Payments
       (headerReady && _savedDocumentId != null && _savedDocument != null)
-          ? Padding(
-              padding: const EdgeInsets.all(24),
-              child: _PaymentsView(
-                documentId: _savedDocumentId!,
-                documentLocalId: _savedDocumentLocalId,
-                companyId: companyId,
-                userId: _selectedUserId ?? 0,
-                documentTotal: _savedDocument!.total,
-                paidStatus: _paidStatus,
-                onPaidStatusChanged: _updatePaidStatus,
-                onPaidStatusRecomputed: (s) {
-                  if (!mounted) return;
-                  setState(() => _paidStatus = s);
-                  ref.invalidate(allDocumentsProvider);
-                },
-              ),
+          ? IlyassTabBody(
+              children: [
+                _PaymentsView(
+                  documentId: _savedDocumentId!,
+                  documentLocalId: _savedDocumentLocalId,
+                  companyId: companyId,
+                  userId: _selectedUserId ?? 0,
+                  documentTotal: _savedDocument!.total,
+                  paidStatus: _paidStatus,
+                  onPaidStatusChanged: _updatePaidStatus,
+                  onPaidStatusRecomputed: (s) {
+                    if (!mounted) return;
+                    setState(() => _paidStatus = s);
+                    ref.invalidate(allDocumentsProvider);
+                  },
+                ),
+              ],
             )
           : needsHeader(),
     ];
+
+    // The header's own action. It lives in the footer — always on screen,
+    // never scrolled away — but only while a header tab is the one open.
+    Widget saveHeaderButton() => _isLoading
+        ? const SizedBox(
+            width: 160,
+            height: 48,
+            child: Center(
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ),
+          )
+        : ElevatedButton.icon(
+            icon: Icon(
+              _headerSaved ? Icons.save : Icons.arrow_forward,
+              size: 18,
+            ),
+            label: Text(
+              _headerSaved ? l.saveHeaderChanges : l.createAndAddItems,
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: theme.colorScheme.primary,
+              foregroundColor: theme.colorScheme.onPrimary,
+              minimumSize: const Size(0, 48),
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              textStyle: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+            onPressed: _saveOrUpdateHeader,
+          );
+
+    // Sized to the screen it is on rather than 90% of it, which on a desktop
+    // monitor was a wall of empty field and on a 768-high till ran off the
+    // bottom once the title and footer were added. ~200dp is the dialog's own
+    // chrome (title, footer, inset) that the body has to leave room for.
+    final dialogWidth = context.dialogWidth(1200);
+    final bodyHeight = math.max(
+      360.0,
+      math.min(820.0, context.screenHeight - 200),
+    );
+    final danger = context.dangerColor;
 
     return DefaultTabController(
       length: dialogTabs.length,
@@ -765,33 +847,117 @@ class _DocumentEditorDialogState extends ConsumerState<_DocumentEditorDialog> {
           widget.initialTabIndex.clamp(0, dialogTabs.length - 1),
       child: AlertDialog(
         contentPadding: EdgeInsets.zero,
+        titlePadding: const EdgeInsets.fromLTRB(24, 20, 24, 4),
+        actionsPadding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+        title: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            // Which KIND of document this is, on every tab — the title alone
+            // is only a number.
+            if (_selectedDocTypeName != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: Text(
+                  _selectedDocTypeName!,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+          ],
+        ),
         content: Form(
           key: _formKey,
           child: SizedBox(
-            width: MediaQuery.of(context).size.width * 0.9,
-            height: MediaQuery.of(context).size.height * 0.9,
+            width: dialogWidth,
+            height: bodyHeight,
             child: Column(
               children: [
                 TabBar(
                   // Six tabs — scroll rather than cram them edge to edge.
                   isScrollable: true,
                   tabAlignment: TabAlignment.start,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
                   labelColor: theme.colorScheme.primary,
-                  unselectedLabelColor: theme.disabledColor,
+                  unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
                   indicatorColor: theme.colorScheme.primary,
+                  labelStyle: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                   tabs: dialogTabs,
                 ),
                 Expanded(child: TabBarView(children: dialogTabViews)),
+                if (_errorMessage != null)
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.fromLTRB(20, 8, 20, 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: danger.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: danger.withValues(alpha: 0.4)),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.error_outline, size: 18, color: danger),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _errorMessage!,
+                            style: TextStyle(
+                              color: danger,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                // The footer's top edge. The actions below sit outside the
+                // scrolling tab body, so this line is what makes them read as
+                // a fixed bar instead of buttons floating under the form.
+                const Divider(height: 1),
               ],
             ),
           ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(AppLocalizations.of(context).actionClose),
+          Builder(
+            builder: (actionsContext) {
+              final tabs = DefaultTabController.of(actionsContext);
+              return AnimatedBuilder(
+                animation: tabs,
+                builder: (_, __) => Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextButton(
+                      style: TextButton.styleFrom(
+                        minimumSize: const Size(96, 48),
+                      ),
+                      onPressed: () => Navigator.pop(context),
+                      child: Text(l.actionClose),
+                    ),
+                    if (tabs.index < headerTabCount) ...[
+                      const SizedBox(width: 12),
+                      saveHeaderButton(),
+                    ],
+                  ],
+                ),
+              );
+            },
           ),
         ],
       ),
@@ -919,7 +1085,6 @@ enum DocumentEditorSection { all, info, parties, financials }
 // --- HEADER FORM ---
 class _HeaderForm extends ConsumerWidget {
   final DocumentEditorSection section;
-  final bool isEditing;
   final String? selectedDocTypeName;
   final int? selectedCustomerId;
   final int? selectedUserId;
@@ -934,8 +1099,6 @@ class _HeaderForm extends ConsumerWidget {
   final double discount;
   final int discountType;
   final bool discountApplyRule;
-  final String? errorMessage;
-  final bool isLoading;
   final VoidCallback onSelectDocType;
   final ValueChanged<int?> onCustomerChanged;
   final ValueChanged<int?> onUserChanged;
@@ -946,11 +1109,11 @@ class _HeaderForm extends ConsumerWidget {
   final ValueChanged<double> onDiscountChanged;
   final ValueChanged<int> onDiscountTypeChanged;
   final ValueChanged<bool> onDiscountApplyRuleChanged;
-  final VoidCallback onSave;
 
+  // The save button and the error banner moved to the dialog's footer, which
+  // is on screen whichever header tab is open — so they are no longer here.
   const _HeaderForm({
     this.section = DocumentEditorSection.all,
-    required this.isEditing,
     required this.selectedDocTypeName,
     required this.selectedCustomerId,
     required this.selectedUserId,
@@ -965,8 +1128,6 @@ class _HeaderForm extends ConsumerWidget {
     required this.discount,
     required this.discountType,
     required this.discountApplyRule,
-    required this.errorMessage,
-    required this.isLoading,
     required this.onSelectDocType,
     required this.onCustomerChanged,
     required this.onUserChanged,
@@ -977,7 +1138,6 @@ class _HeaderForm extends ConsumerWidget {
     required this.onDiscountChanged,
     required this.onDiscountTypeChanged,
     required this.onDiscountApplyRuleChanged,
-    required this.onSave,
   });
 
   /// 🚨 Was `03-Sep-2026`, built from a localized month table and ignoring
@@ -985,39 +1145,8 @@ class _HeaderForm extends ConsumerWidget {
   /// an instant, so it takes no timezone conversion — see `AppDateFormat.day`.
   String _fmt(AppDateFormat dates, DateTime dt) => dates.day(dt);
 
-  Widget _buildCard(String title, IconData icon, List<Widget> children) {
-    return Card(
-      elevation: 1,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(icon, size: 24),
-                const SizedBox(width: 12),
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            ...children,
-          ],
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
     final l = AppLocalizations.of(context);
     String fmt(DateTime dt) => _fmt(ref.watch(appDateFormatProvider), dt);
     final asyncCustomers = ref.watch(selectableCustomersProvider);
@@ -1034,314 +1163,302 @@ class _HeaderForm extends ConsumerWidget {
     final showFinancials = section == DocumentEditorSection.all ||
         section == DocumentEditorSection.financials;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // ── CARD 1: Document Info ──
-        if (showInfo)
-        _buildCard(l.documentInfo, Icons.description_outlined, [
-          Row(
-            children: [
-              Expanded(
-                flex: 2,
-                child: OutlinedButton.icon(
-                  icon: const Icon(Icons.list_alt),
-                  label: Text(
-                    selectedDocTypeName ?? l.selectDocumentType,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  onPressed: onSelectDocType,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                flex: 1,
-                child: TextFormField(
-                  controller: numberCtrl,
-                  decoration: InputDecoration(
-                    labelText: AppLocalizations.of(context).numberLabel,
-                    prefixIcon: const Icon(Icons.tag),
-                    border: const OutlineInputBorder(),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(child: _datePicker(l.dateLabel, date, onDatePick, fmt)),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _datePicker(l.dueDate, dueDate, onDueDatePick, fmt),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _datePicker(l.stockDate, stockDate, onStockDatePick, fmt),
-              ),
-            ],
-          ),
-        ]),
-        if (showInfo) const SizedBox(height: 16),
+    InputDecoration deco(String label, {IconData? icon}) =>
+        ilyassFieldDecoration(
+          context,
+          label: label,
+          prefixIcon: icon == null ? null : Icon(icon),
+        );
 
-        // ── CARD 2: Parties & Logistics ──
-        if (showParties)
-        _buildCard(l.partiesLogistics, Icons.local_shipping_outlined, [
-          // Customer / Supplier
-          asyncCustomers.when(
-            loading: () => const LinearProgressIndicator(),
-            error: (e, _) => Text(AppLocalizations.of(context).errorWithMessage(e.toString())),
-            data: (customers) {
-              final filtered = isSupplier
-                  ? customers.where((c) => c.isSupplier).toList()
-                  : customers.where((c) => c.isCustomer).toList();
-              final isValid =
-                  selectedCustomerId == null ||
-                  filtered.any((c) => c.id == selectedCustomerId);
-              return DropdownButtonFormField<int>(
-                initialValue: isValid ? selectedCustomerId : null,
-                decoration: InputDecoration(
-                  labelText: isSupplier ? l.supplierRequired : l.customerRequired,
-                  prefixIcon: const Icon(Icons.business),
-                  border: const OutlineInputBorder(),
-                ),
-                items: filtered
-                    .map(
-                      (c) => DropdownMenuItem(value: c.id, child: Text(c.name)),
-                    )
-                    .toList(),
-                onChanged: onCustomerChanged,
-              );
-            },
-          ),
-          const SizedBox(height: 16),
-          Row(
+    Widget failed(Object e) => Text(l.errorWithMessage(e.toString()));
+
+    final sections = <Widget>[
+      // ── Document Info ──
+      if (showInfo)
+        IlyassFormSection(
+          icon: Icons.description_outlined,
+          title: l.documentInfo,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // User
-              Expanded(
-                child: asyncUsers.when(
-                  loading: () => const LinearProgressIndicator(),
-                  error: (e, _) => Text(AppLocalizations.of(context).errorWithMessage(e.toString())),
-                  data: (users) {
-                    final isValidUser =
-                        selectedUserId == null ||
-                        users.any((u) => u.id == selectedUserId);
-                    return DropdownButtonFormField<int>(
-                      initialValue: isValidUser ? selectedUserId : null,
-                      decoration: InputDecoration(
-                        labelText: AppLocalizations.of(context).userRequired,
-                        prefixIcon: const Icon(Icons.person),
-                        border: const OutlineInputBorder(),
-                      ),
-                      items: users
-                          .map(
-                            (u) => DropdownMenuItem(
-                              value: u.id,
-                              child: Text(u.displayName),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: onUserChanged,
-                    );
-                  },
-                ),
+              // The type is picked in its own dialog but shown as a FIELD — as
+              // a stray button it read as an action, not as the document's
+              // most important property. The number shares its row.
+              IlyassFieldRow(
+                flexes: const [3, 2],
+                children: [
+                  _tapField(
+                    context,
+                    label: l.documentType,
+                    value: selectedDocTypeName,
+                    icon: Icons.list_alt,
+                    suffixIcon: Icons.arrow_drop_down,
+                    onTap: onSelectDocType,
+                  ),
+                  TextFormField(
+                    controller: numberCtrl,
+                    decoration: deco(l.numberLabel, icon: Icons.tag),
+                  ),
+                ],
               ),
-              const SizedBox(width: 12),
-              // Warehouse
-              Expanded(
-                child: asyncWarehouses.when(
-                  loading: () => const LinearProgressIndicator(),
-                  error: (e, _) => Text(AppLocalizations.of(context).errorWithMessage(e.toString())),
-                  data: (warehouses) {
-                    final isValidWH =
-                        selectedWarehouseId == null ||
-                        warehouses.any((w) => w.id == selectedWarehouseId);
-                    return DropdownButtonFormField<int>(
-                      initialValue: isValidWH ? selectedWarehouseId : null,
-                      decoration: InputDecoration(
-                        labelText: AppLocalizations.of(context).warehouseRequired,
-                        prefixIcon: const Icon(Icons.warehouse_outlined),
-                        border: const OutlineInputBorder(),
-                      ),
-                      items: warehouses
-                          .map(
-                            (w) => DropdownMenuItem(
-                              value: w.id,
-                              child: Text(w.name),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: onWarehouseChanged,
-                    );
-                  },
-                ),
+              const SizedBox(height: 16),
+              IlyassFieldRow(
+                minFieldWidth: 160,
+                children: [
+                  _tapField(
+                    context,
+                    label: l.dateLabel,
+                    value: fmt(date),
+                    suffixIcon: Icons.calendar_today,
+                    onTap: onDatePick,
+                  ),
+                  _tapField(
+                    context,
+                    label: l.dueDate,
+                    value: fmt(dueDate),
+                    suffixIcon: Icons.calendar_today,
+                    onTap: onDueDatePick,
+                  ),
+                  _tapField(
+                    context,
+                    label: l.stockDate,
+                    value: fmt(stockDate),
+                    suffixIcon: Icons.calendar_today,
+                    onTap: onStockDatePick,
+                  ),
+                ],
               ),
             ],
           ),
-        ]),
-        if (showParties) const SizedBox(height: 16),
-
-        // ── CARD 3: Financials & Notes ──
-        if (showFinancials)
-        _buildCard(l.financialsNotes, Icons.request_quote_outlined, [
-          TextFormField(
-            controller: refDocCtrl,
-            decoration: InputDecoration(
-              labelText: AppLocalizations.of(context).referenceDocument,
-              prefixIcon: const Icon(Icons.link),
-              border: const OutlineInputBorder(),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                flex: 2,
-                child: TextFormField(
-                  initialValue: discount.toString(),
-                  decoration: InputDecoration(
-                    labelText: AppLocalizations.of(context).posDiscount,
-                    prefixIcon: const Icon(Icons.percent),
-                    border: const OutlineInputBorder(),
-                  ),
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  onChanged: (v) => onDiscountChanged(double.tryParse(v) ?? 0),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: DropdownButtonFormField<int>(
-                  initialValue: discountType,
-                  decoration: InputDecoration(
-                    labelText: AppLocalizations.of(context).typeLabel,
-                    border: const OutlineInputBorder(),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-                  ),
-                  items: [
-                    const DropdownMenuItem(value: 0, child: Text("%")),
-                    DropdownMenuItem(value: 1, child: Text(AppLocalizations.of(context).fixed)),
-                  ],
-                  onChanged: (v) => onDiscountTypeChanged(v ?? 0),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Row(
-                  children: [
-                    Checkbox(
-                      value: discountApplyRule,
-                      onChanged: (v) => onDiscountApplyRuleChanged(v ?? true),
-                    ),
-                    Expanded(
-                      child: Text(
-                        l.applyAfterTax,
-                        style: const TextStyle(fontSize: 13),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: TextFormField(
-                  controller: internalNoteCtrl,
-                  maxLines: 2,
-                  decoration: InputDecoration(
-                    labelText: AppLocalizations.of(context).internalNote,
-                    border: const OutlineInputBorder(),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: TextFormField(
-                  controller: noteCtrl,
-                  maxLines: 2,
-                  decoration: InputDecoration(
-                    labelText: AppLocalizations.of(context).noteLabel,
-                    border: const OutlineInputBorder(),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ]),
-        if (showFinancials) const SizedBox(height: 16),
-
-        if (errorMessage != null) ...[
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.errorContainer,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: theme.colorScheme.error),
-            ),
-            child: Text(
-              errorMessage!,
-              style: TextStyle(color: theme.colorScheme.onErrorContainer),
-            ),
-          ),
-          const SizedBox(height: 16),
-        ],
-
-        Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            if (isLoading)
-              const CircularProgressIndicator()
-            else
-              ElevatedButton.icon(
-                icon: Icon(isEditing ? Icons.save : Icons.arrow_forward),
-                label: Text(
-                  isEditing ? l.saveHeaderChanges : l.createAndAddItems,
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: theme.colorScheme.primary,
-                  foregroundColor: theme.colorScheme.onPrimary,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 14,
-                  ),
-                ),
-                onPressed: onSave,
-              ),
-          ],
         ),
+
+      // ── Parties & Logistics ──
+      if (showParties)
+        IlyassFormSection(
+          icon: Icons.local_shipping_outlined,
+          title: l.partiesLogistics,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Customer / Supplier — the party the document is FOR, so it
+              // gets the whole row.
+              asyncCustomers.when(
+                loading: () => const LinearProgressIndicator(),
+                error: (e, _) => failed(e),
+                data: (customers) {
+                  final filtered = isSupplier
+                      ? customers.where((c) => c.isSupplier).toList()
+                      : customers.where((c) => c.isCustomer).toList();
+                  final isValid =
+                      selectedCustomerId == null ||
+                      filtered.any((c) => c.id == selectedCustomerId);
+                  return DropdownButtonFormField<int>(
+                    initialValue: isValid ? selectedCustomerId : null,
+                    isExpanded: true,
+                    decoration: deco(
+                      isSupplier ? l.supplierRequired : l.customerRequired,
+                      icon: Icons.business,
+                    ),
+                    items: filtered
+                        .map(
+                          (c) => DropdownMenuItem(
+                            value: c.id,
+                            child: Text(c.name, overflow: TextOverflow.ellipsis),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: onCustomerChanged,
+                  );
+                },
+              ),
+              const SizedBox(height: 16),
+              IlyassFieldRow(
+                children: [
+                  // User
+                  asyncUsers.when(
+                    loading: () => const LinearProgressIndicator(),
+                    error: (e, _) => failed(e),
+                    data: (users) {
+                      final isValidUser =
+                          selectedUserId == null ||
+                          users.any((u) => u.id == selectedUserId);
+                      return DropdownButtonFormField<int>(
+                        initialValue: isValidUser ? selectedUserId : null,
+                        isExpanded: true,
+                        decoration: deco(l.userRequired, icon: Icons.person),
+                        items: users
+                            .map(
+                              (u) => DropdownMenuItem(
+                                value: u.id,
+                                child: Text(
+                                  u.displayName,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: onUserChanged,
+                      );
+                    },
+                  ),
+                  // Warehouse
+                  asyncWarehouses.when(
+                    loading: () => const LinearProgressIndicator(),
+                    error: (e, _) => failed(e),
+                    data: (warehouses) {
+                      final isValidWH =
+                          selectedWarehouseId == null ||
+                          warehouses.any((w) => w.id == selectedWarehouseId);
+                      return DropdownButtonFormField<int>(
+                        initialValue: isValidWH ? selectedWarehouseId : null,
+                        isExpanded: true,
+                        decoration: deco(
+                          l.warehouseRequired,
+                          icon: Icons.warehouse_outlined,
+                        ),
+                        items: warehouses
+                            .map(
+                              (w) => DropdownMenuItem(
+                                value: w.id,
+                                child: Text(
+                                  w.name,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: onWarehouseChanged,
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+
+      // ── Financials & Notes ──
+      if (showFinancials)
+        IlyassFormSection(
+          icon: Icons.request_quote_outlined,
+          title: l.financialsNotes,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              TextFormField(
+                controller: refDocCtrl,
+                decoration: deco(l.referenceDocument, icon: Icons.link),
+              ),
+              const SizedBox(height: 16),
+              IlyassFieldRow(
+                flexes: const [3, 2],
+                children: [
+                  // The amount and whether it is a % or a fixed sum read as
+                  // one value, so they share the wider column.
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        flex: 3,
+                        child: TextFormField(
+                          initialValue: discount.toString(),
+                          decoration: deco(l.posDiscount, icon: Icons.percent),
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          onChanged: (v) =>
+                              onDiscountChanged(double.tryParse(v) ?? 0),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        flex: 2,
+                        child: DropdownButtonFormField<int>(
+                          initialValue: discountType,
+                          isExpanded: true,
+                          decoration: deco(l.typeLabel),
+                          items: [
+                            const DropdownMenuItem(value: 0, child: Text("%")),
+                            DropdownMenuItem(value: 1, child: Text(l.fixed)),
+                          ],
+                          onChanged: (v) => onDiscountTypeChanged(v ?? 0),
+                        ),
+                      ),
+                    ],
+                  ),
+                  // Was a bare checkbox trailing the row; now the same option
+                  // card as every other on/off setting in the editors.
+                  IlyassOptionSwitch(
+                    title: l.applyAfterTax,
+                    value: discountApplyRule,
+                    onChanged: onDiscountApplyRuleChanged,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              IlyassFieldRow(
+                children: [
+                  TextFormField(
+                    controller: internalNoteCtrl,
+                    minLines: 2,
+                    maxLines: 4,
+                    decoration: deco(l.internalNote),
+                  ),
+                  TextFormField(
+                    controller: noteCtrl,
+                    minLines: 2,
+                    maxLines: 4,
+                    decoration: deco(l.noteLabel),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (var i = 0; i < sections.length; i++) ...[
+          if (i > 0) const SizedBox(height: 16),
+          sections[i],
+        ],
       ],
     );
   }
 
-  Widget _datePicker(
-    String label,
-    DateTime value,
-    VoidCallback onTap,
-    String Function(DateTime) fmt,
-  ) {
+  /// A read-only field that opens a picker — the document type, the dates.
+  /// Drawn exactly like a text field, so the form reads as one grid.
+  Widget _tapField(
+    BuildContext context, {
+    required String label,
+    required String? value,
+    required VoidCallback onTap,
+    IconData? icon,
+    IconData? suffixIcon,
+  }) {
     return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
       child: InputDecorator(
-        decoration: InputDecoration(
-          labelText: label,
-          border: const OutlineInputBorder(),
-          suffixIcon: const Icon(Icons.calendar_today, size: 16),
+        isEmpty: value == null,
+        decoration: ilyassFieldDecoration(
+          context,
+          label: label,
+          prefixIcon: icon == null ? null : Icon(icon),
+          suffixIcon: suffixIcon == null ? null : Icon(suffixIcon, size: 18),
         ),
-        child: Text(fmt(value)),
+        child: Text(
+          value ?? '',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
       ),
     );
   }
 }
 
-// --- ITEMS VIEW ---
 // --- ITEMS VIEW ---
 class _ItemsView extends ConsumerWidget {
   final int documentId;
@@ -1361,6 +1478,7 @@ class _ItemsView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     final l = AppLocalizations.of(context);
     final sym = ref.watch(currencySymbolProvider);
     final itemsArgs = LocalItemsArgs(
@@ -1386,462 +1504,345 @@ class _ItemsView extends ConsumerWidget {
     );
 
     final asyncItems = ref.watch(localDocumentItemsProvider(itemsArgs));
+    final count = asyncItems.value?.length ?? 0;
 
-    return Card(
-      elevation: 1,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ── Section Header ──
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
+    return IlyassFormSection(
+      icon: Icons.inventory_2_outlined,
+      title: l.documentItems,
+      trailing: count == 0 ? null : IlyassCountBadge(count),
+      actions: [
+        FilledButton.icon(
+          style: FilledButton.styleFrom(minimumSize: const Size(0, 48)),
+          icon: const Icon(Icons.add, size: 18),
+          label: Text(l.addProduct),
+          onPressed: () async {
+            await showDialog(
+              context: context,
+              builder: (_) => _AddItemDialog(
+                documentLocalId: documentLocalId,
+                companyId: companyId,
+                isPurchase: isPurchase,
+              ),
+            );
+          },
+        ),
+      ],
+      child: asyncItems.when(
+        loading: () => const Center(
+          child: Padding(
+            padding: EdgeInsets.symmetric(vertical: 32),
+            child: CircularProgressIndicator(),
+          ),
+        ),
+        error: (e, _) => Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 32),
+            child: Text(
+              l.errorWithMessage('$e'),
+              style: TextStyle(color: cs.error),
+            ),
+          ),
+        ),
+        data: (items) {
+          if (items.isEmpty) {
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 32),
+              child: Column(
+                children: [
+                  Icon(Icons.shopping_cart_outlined, size: 48, color: cs.outline),
+                  const SizedBox(height: 12),
+                  Text(
+                    l.noItemsAddedYet,
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: cs.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    l.clickAddProductToStart,
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: cs.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          // Sum the ex-tax subtotals, not the raw `total` — that column means
+          // ex-tax on checkout documents but tax-inclusive on manual ones,
+          // which made this "Base Total" origin-dependent.
+          final total = items.fold<double>(
+              0, (s, i) => s + i.priceBeforeTaxAfterDiscount);
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _ItemsTable(items: items, sym: sym, companyId: companyId),
+              const SizedBox(height: 14),
+              // The figure the table adds up to, set apart as the section's
+              // conclusion rather than one more row under it.
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                decoration: BoxDecoration(
+                  color: context.successColor.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Icon(Icons.inventory_2_outlined, size: 24),
+                    Flexible(
+                      flex: 3,
+                      child: Text(
+                        l.itemsBaseTotal,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: cs.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
                     const SizedBox(width: 12),
                     Text(
-                      l.documentItems,
-                      style: const TextStyle(
-                        fontSize: 16,
+                      "${total.toStringAsFixed(2)} $sym",
+                      style: TextStyle(
+                        fontSize: 18,
                         fontWeight: FontWeight.bold,
+                        color: context.successColor,
                       ),
                     ),
                   ],
                 ),
-                ElevatedButton.icon(
-                  icon: const Icon(Icons.add, size: 16),
-                  label: Text(AppLocalizations.of(context).addProduct),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: theme.colorScheme.secondary,
-                    foregroundColor: theme.colorScheme.onSecondary,
-                  ),
-                  onPressed: () async {
-                    await showDialog(
-                      context: context,
-                      builder: (_) => _AddItemDialog(
-                        documentLocalId: documentLocalId,
-                        companyId: companyId,
-                        isPurchase: isPurchase,
-                      ),
-                    );
-                  },
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Divider(thickness: 1, color: theme.dividerColor),
-            const SizedBox(height: 16),
-
-            // ── Content ──
-            asyncItems.when(
-              loading: () => const Center(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(vertical: 32),
-                  child: CircularProgressIndicator(),
-                ),
               ),
-              error: (e, _) => Center(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 32),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// The document's lines. Eight columns: below [_minWidth] they stop being
+/// readable, so the table scrolls sideways instead of squeezing — tables are
+/// the one thing that scrolls rather than wraps (Ilyass Style §3).
+class _ItemsTable extends ConsumerWidget {
+  const _ItemsTable({
+    required this.items,
+    required this.sym,
+    required this.companyId,
+  });
+
+  final List<DocumentItem> items;
+  final String sym;
+  final int companyId;
+
+  static const double _minWidth = 760;
+
+  /// Two 36×36 icon buttons and the gap between them — fixed, never flexed.
+  static const double _actionsWidth = 88;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final l = AppLocalizations.of(context);
+
+    final headerStyle = theme.textTheme.labelMedium?.copyWith(
+      fontWeight: FontWeight.w700,
+      color: cs.onSurfaceVariant,
+    );
+    // Money and counts end-aligned: a column of totals is read by its last
+    // digits.
+    Widget head(String text, {int flex = 1, bool numeric = true}) => Expanded(
+          flex: flex,
+          child: Text(
+            text,
+            textAlign: numeric ? TextAlign.end : TextAlign.start,
+            overflow: TextOverflow.ellipsis,
+            style: headerStyle,
+          ),
+        );
+    Widget figure(String text, {TextStyle? style}) => Expanded(
+          child: Text(text, textAlign: TextAlign.end, style: style),
+        );
+
+    Widget row(DocumentItem item) => ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 48),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: Row(
+              children: [
+                Expanded(
+                  flex: 3,
                   child: Text(
-                    l.errorWithMessage('$e'),
-                    style: TextStyle(color: theme.colorScheme.error),
+                    item.productName ?? '-',
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-              ),
-              data: (items) {
-                if (items.isEmpty) {
-                  return Center(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 48),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.shopping_cart_outlined,
-                            size: 64,
-                            color: theme.disabledColor,
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            l.noItemsAddedYet,
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                              color: theme.disabledColor,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            l.clickAddProductToStart,
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: theme.disabledColor,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }
-
-                // Sum the ex-tax subtotals, not the raw `total` — that column
-                // means ex-tax on checkout documents but tax-inclusive on
-                // manual ones, which made this "Base Total" origin-dependent.
-                final total = items.fold<double>(
-                    0, (s, i) => s + i.priceBeforeTaxAfterDiscount);
-
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // --- RESPONSIVE FLEX GRID HEADER ---
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.surfaceContainerHighest
-                            .withValues(alpha: 0.5),
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(8),
-                          topRight: Radius.circular(8),
+                figure(
+                  item.quantity.toStringAsFixed(
+                    item.quantity % 1 == 0 ? 0 : 2,
+                  ),
+                ),
+                // Ex-tax, so Price → Subtotal → +Tax → Total reads as one sum.
+                // `price` (unit_price) is ex-tax on checkout rows but
+                // tax-inclusive on manual ones.
+                figure(item.priceBeforeTax.toStringAsFixed(2)),
+                figure(
+                  item.discount <= 0
+                      ? '—'
+                      : item.discountType == 0
+                          ? '${item.discount.toStringAsFixed(item.discount % 1 == 0 ? 0 : 2)}%'
+                          : '${item.discount.toStringAsFixed(2)} $sym',
+                ),
+                figure(
+                  item.taxRate > 0
+                      ? '${item.taxRate.toStringAsFixed(item.taxRate % 1 == 0 ? 0 : 1)}%'
+                      : '—',
+                ),
+                figure(item.priceBeforeTaxAfterDiscount.toStringAsFixed(2)),
+                figure(
+                  item.totalWithTax.toStringAsFixed(2),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: context.successColor,
+                  ),
+                ),
+                SizedBox(
+                  width: _actionsWidth,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      IconButton(
+                        tooltip: l.editItemAction,
+                        visualDensity: VisualDensity.compact,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints.tightFor(
+                          width: 36,
+                          height: 36,
                         ),
+                        icon: Icon(Icons.edit_outlined, size: 20, color: cs.primary),
+                        onPressed: () async {
+                          await showDialog(
+                            context: context,
+                            builder: (_) => _EditItemDialog(
+                              item: item,
+                              companyId: companyId,
+                            ),
+                          );
+                        },
                       ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            flex: 3,
-                            child: Text(
-                              l.productLabel,
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: theme.textTheme.bodyMedium?.color,
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            flex: 1,
-                            child: Text(
-                              l.qtyShort,
-                              textAlign: TextAlign.right,
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: theme.textTheme.bodyMedium?.color,
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            flex: 1,
-                            child: Text(
-                              l.priceLabel,
-                              textAlign: TextAlign.right,
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: theme.textTheme.bodyMedium?.color,
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            flex: 1,
-                            child: Text(
-                              l.itemDiscShort,
-                              textAlign: TextAlign.right,
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: theme.textTheme.bodyMedium?.color,
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            flex: 1,
-                            child: Text(
-                              l.fieldTax,
-                              textAlign: TextAlign.right,
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: theme.textTheme.bodyMedium?.color,
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            flex: 1,
-                            child: Text(
-                              l.subtotal,
-                              textAlign: TextAlign.right,
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: theme.textTheme.bodyMedium?.color,
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            flex: 1,
-                            child: Text(
-                              l.totalLabel,
-                              textAlign: TextAlign.right,
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: theme.textTheme.bodyMedium?.color,
-                              ),
-                            ),
-                          ),
-                          SizedBox(
-                            width: 80,
-                            child: Text(
-                              l.actionsLabel,
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: theme.textTheme.bodyMedium?.color,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    // --- RESPONSIVE FLEX GRID ITEMS ---
-                    Container(
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: theme.dividerColor.withValues(alpha: 0.3),
+                      const SizedBox(width: 4),
+                      IconButton(
+                        tooltip: l.deleteItemAction,
+                        visualDensity: VisualDensity.compact,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints.tightFor(
+                          width: 36,
+                          height: 36,
                         ),
-                        borderRadius: const BorderRadius.only(
-                          bottomLeft: Radius.circular(8),
-                          bottomRight: Radius.circular(8),
-                        ),
-                      ),
-                      child: ListView.separated(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: items.length,
-                        separatorBuilder: (_, __) => Divider(
-                          height: 1,
-                          color: theme.dividerColor.withValues(alpha: 0.3),
-                        ),
-                        itemBuilder: (context, index) {
-                          final item = items[index];
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 8,
-                            ),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  flex: 3,
-                                  child: Text(
-                                    item.productName ?? '-',
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
+                        icon: Icon(Icons.delete_outline, size: 20, color: cs.error),
+                        onPressed: () async {
+                          final confirm = await showDialog<bool>(
+                            context: context,
+                            builder: (ctx) => AlertDialog(
+                              title: Text(l.deleteItem),
+                              content: Text(
+                                l.deleteItemConfirm(item.productName ?? ''),
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.of(ctx).pop(false),
+                                  child: Text(l.actionCancel),
                                 ),
-                                Expanded(
-                                  flex: 1,
-                                  child: Text(
-                                    item.quantity.toStringAsFixed(
-                                      item.quantity % 1 == 0 ? 0 : 2,
-                                    ),
-                                    textAlign: TextAlign.right,
+                                ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: cs.error,
                                   ),
-                                ),
-                                Expanded(
-                                  flex: 1,
+                                  onPressed: () => Navigator.of(ctx).pop(true),
                                   child: Text(
-                                    // Ex-tax, so Price → Subtotal → +Tax →
-                                    // Total reads as one sum. `price`
-                                    // (unit_price) is ex-tax on checkout rows
-                                    // but tax-inclusive on manual ones.
-                                    item.priceBeforeTax.toStringAsFixed(2),
-                                    textAlign: TextAlign.right,
-                                  ),
-                                ),
-                                Expanded(
-                                  flex: 1,
-                                  child: Text(
-                                    item.discount <= 0
-                                        ? '—'
-                                        : item.discountType == 0
-                                            ? '${item.discount.toStringAsFixed(item.discount % 1 == 0 ? 0 : 2)}%'
-                                            : '${item.discount.toStringAsFixed(2)} $sym',
-                                    textAlign: TextAlign.right,
-                                  ),
-                                ),
-                                Expanded(
-                                  flex: 1,
-                                  child: Text(
-                                    item.taxRate > 0
-                                        ? '${item.taxRate.toStringAsFixed(item.taxRate % 1 == 0 ? 0 : 1)}%'
-                                        : '—',
-                                    textAlign: TextAlign.right,
-                                  ),
-                                ),
-                                Expanded(
-                                  flex: 1,
-                                  child: Text(
-                                    item.priceBeforeTaxAfterDiscount
-                                        .toStringAsFixed(2),
-                                    textAlign: TextAlign.right,
-                                  ),
-                                ),
-                                Expanded(
-                                  flex: 1,
-                                  child: Text(
-                                    item.totalWithTax.toStringAsFixed(2),
-                                    textAlign: TextAlign.right,
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: context.successColor,
-                                    ),
-                                  ),
-                                ),
-                                SizedBox(
-                                  width: 80,
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Tooltip(
-                                        message: AppLocalizations.of(context).editItemAction,
-                                        child: InkWell(
-                                          onTap: () async {
-                                            await showDialog(
-                                              context: context,
-                                              builder: (_) => _EditItemDialog(
-                                                item: item,
-                                                companyId: companyId,
-                                              ),
-                                            );
-                                          },
-                                          child: Padding(
-                                            padding: const EdgeInsets.all(4.0),
-                                            child: Icon(
-                                              Icons.edit,
-                                              color: theme.colorScheme.primary,
-                                              size: 18,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Tooltip(
-                                        message: AppLocalizations.of(context).deleteItemAction,
-                                        child: InkWell(
-                                          onTap: () async {
-                                            final confirm = await showDialog<bool>(
-                                              context: context,
-                                              builder: (ctx) => AlertDialog(
-                                                title: Text(l.deleteItem),
-                                                content: Text(
-                                                  l.deleteItemConfirm(
-                                                    item.productName ?? '',
-                                                  ),
-                                                ),
-                                                actions: [
-                                                  TextButton(
-                                                    onPressed: () =>
-                                                        Navigator.of(
-                                                          ctx,
-                                                        ).pop(false),
-                                                    child: Text(AppLocalizations.of(context).actionCancel),
-                                                  ),
-                                                  ElevatedButton(
-                                                    style:
-                                                        ElevatedButton.styleFrom(
-                                                          backgroundColor: theme
-                                                              .colorScheme
-                                                              .error,
-                                                        ),
-                                                    onPressed: () =>
-                                                        Navigator.of(
-                                                          ctx,
-                                                        ).pop(true),
-                                                    child: Text(
-                                                      l.actionDelete,
-                                                      style: TextStyle(
-                                                        color: theme
-                                                            .colorScheme
-                                                            .onError,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            );
-                                            if (confirm == true &&
-                                                item.localId != null) {
-                                              // Offline-first: remove locally
-                                              // (the stream refreshes the list);
-                                              // the sync queue DELETEs the server
-                                              // row if it had one.
-                                              await ref
-                                                  .read(appDatabaseProvider)
-                                                  .deleteDocumentItemLocal(
-                                                      item.localId!);
-                                              ref
-                                                  .read(syncStateProvider
-                                                      .notifier)
-                                                  .sync()
-                                                  .catchError((_) {});
-                                            }
-                                          },
-                                          child: Padding(
-                                            padding: const EdgeInsets.all(4.0),
-                                            child: Icon(
-                                              Icons.delete,
-                                              color: theme.colorScheme.error,
-                                              size: 18,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
+                                    l.actionDelete,
+                                    style: TextStyle(color: cs.onError),
                                   ),
                                 ),
                               ],
                             ),
                           );
+                          if (confirm == true && item.localId != null) {
+                            // Offline-first: remove locally (the stream
+                            // refreshes the list); the sync queue DELETEs the
+                            // server row if it had one.
+                            await ref
+                                .read(appDatabaseProvider)
+                                .deleteDocumentItemLocal(item.localId!);
+                            ref
+                                .read(syncStateProvider.notifier)
+                                .sync()
+                                .catchError((_) {});
+                          }
                         },
                       ),
-                    ),
-
-                    const SizedBox(height: 16),
-                    Divider(
-                      thickness: 1,
-                      color: theme.dividerColor.withValues(alpha: 0.3),
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Text(
-                          l.itemsBaseTotal,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: theme.textTheme.bodyMedium?.color,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          "${total.toStringAsFixed(2)} $sym",
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: context.successColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                );
-              },
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        );
+
+    final table = Container(
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        border: Border.all(color: cs.outlineVariant),
+        borderRadius: BorderRadius.circular(10),
       ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            color: cs.surfaceContainerHighest,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: [
+                head(l.productLabel, flex: 3, numeric: false),
+                head(l.qtyShort),
+                head(l.priceLabel),
+                head(l.itemDiscShort),
+                head(l.fieldTax),
+                head(l.subtotal),
+                head(l.totalLabel),
+                SizedBox(
+                  width: _actionsWidth,
+                  child: Text(
+                    l.actionsLabel,
+                    textAlign: TextAlign.center,
+                    overflow: TextOverflow.ellipsis,
+                    style: headerStyle,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          for (var i = 0; i < items.length; i++) ...[
+            if (i > 0) Divider(height: 1, color: cs.outlineVariant),
+            row(items[i]),
+          ],
+        ],
+      ),
+    );
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth >= _minWidth) return table;
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: SizedBox(width: _minWidth, child: table),
+        );
+      },
     );
   }
 }
@@ -2658,10 +2659,12 @@ class _PaidStatusChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
+    // The theme's status palette rather than raw Colors.* — those did not
+    // adapt to the dark theme.
     final (label, icon, color) = switch (paidStatus) {
-      1 => (l.paid, Icons.check_circle, Colors.green),
-      2 => (l.partial, Icons.timelapse, Colors.orange),
-      _ => (l.unpaid, Icons.cancel, Colors.red),
+      1 => (l.paid, Icons.check_circle, context.successColor),
+      2 => (l.partial, Icons.timelapse, context.warningColor),
+      _ => (l.unpaid, Icons.cancel, context.dangerColor),
     };
 
     final nextStatus = paidStatus == 1 ? 0 : 1;
@@ -2734,6 +2737,8 @@ class _PaymentsView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final l = AppLocalizations.of(context);
 
     // documentLocalId is resolved by the editor right after the header saves.
     // Until then there is nothing to attach payments to.
@@ -2749,148 +2754,148 @@ class _PaymentsView extends ConsumerWidget {
         companyId: companyId,
       ),
     ));
+    final count = asyncPayments.value?.length ?? 0;
 
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              AppLocalizations.of(context).appliedPayments,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _PaidStatusChip(
-                  paidStatus: paidStatus,
-                  onChanged: (nextStatus) async {
-                    // Rule 3: guard against toggling to Unpaid when the
-                    // document is already fully balanced — doing so clears all
-                    // applied payment records.
-                    final totalPaid = asyncPayments.value?.fold<double>(
-                            0, (s, p) => s + p.amount.abs()) ??
-                        0;
-                    if (nextStatus == 0 && totalPaid >= documentTotal) {
-                      final confirmed = await showDialog<bool>(
-                        context: context,
-                        builder: (ctx) => AlertDialog(
-                          title: Text(AppLocalizations.of(context).markAsUnpaid),
-                          content: Text(
-                            AppLocalizations.of(context)
-                                .deleteAllPaymentsWarning,
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(ctx, false),
-                              child: Text(AppLocalizations.of(context).actionCancel),
-                            ),
-                            FilledButton(
-                              style: FilledButton.styleFrom(
-                                  backgroundColor: ctx.dangerColor),
-                              onPressed: () => Navigator.pop(ctx, true),
-                              child: Text(AppLocalizations.of(context).yesDeletePayments),
-                            ),
-                          ],
-                        ),
-                      );
-                      if (confirmed != true) return;
-                    }
-                    onPaidStatusChanged(nextStatus);
-                  },
+    return IlyassFormSection(
+      icon: Icons.payments_outlined,
+      title: l.appliedPayments,
+      trailing: count == 0 ? null : IlyassCountBadge(count),
+      actions: [
+        _PaidStatusChip(
+          paidStatus: paidStatus,
+          onChanged: (nextStatus) async {
+            // Rule 3: guard against toggling to Unpaid when the document is
+            // already fully balanced — doing so clears all applied payment
+            // records.
+            final totalPaid = asyncPayments.value?.fold<double>(
+                    0, (s, p) => s + p.amount.abs()) ??
+                0;
+            if (nextStatus == 0 && totalPaid >= documentTotal) {
+              final confirmed = await showDialog<bool>(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: Text(l.markAsUnpaid),
+                  content: Text(l.deleteAllPaymentsWarning),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx, false),
+                      child: Text(l.actionCancel),
+                    ),
+                    FilledButton(
+                      style: FilledButton.styleFrom(
+                          backgroundColor: ctx.dangerColor),
+                      onPressed: () => Navigator.pop(ctx, true),
+                      child: Text(l.yesDeletePayments),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 12),
-                ElevatedButton.icon(
-                  icon: const Icon(Icons.payment, size: 16),
-                  label: Text(AppLocalizations.of(context).addPayment),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: theme.colorScheme.secondary,
-                    foregroundColor: theme.colorScheme.onSecondary,
-                  ),
-                  onPressed: () async {
-                    await showDialog(
-                      context: context,
-                      builder: (_) => _AddPaymentDialog(
-                        documentServerId: documentId > 0 ? documentId : null,
-                        documentLocalId: localId,
-                        companyId: companyId,
-                        userId: userId,
-                      ),
-                    );
-                    // Reflect the new payment in the paid status (Unpaid →
-                    // Partial → Paid) locally + in the documents list.
-                    final s = await ref
-                        .read(appDatabaseProvider)
-                        .recomputePaidStatus(localId);
-                    onPaidStatusRecomputed(s);
-                  },
-                ),
-              ],
-            ),
-          ],
+              );
+              if (confirmed != true) return;
+            }
+            onPaidStatusChanged(nextStatus);
+          },
         ),
-        const SizedBox(height: 16),
-        asyncPayments.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => Text(
-            AppLocalizations.of(context).errorWithMessage('$e'),
-            style: TextStyle(color: theme.colorScheme.error),
+        FilledButton.icon(
+          style: FilledButton.styleFrom(minimumSize: const Size(0, 48)),
+          icon: const Icon(Icons.payment, size: 18),
+          label: Text(l.addPayment),
+          onPressed: () async {
+            await showDialog(
+              context: context,
+              builder: (_) => _AddPaymentDialog(
+                documentServerId: documentId > 0 ? documentId : null,
+                documentLocalId: localId,
+                companyId: companyId,
+                userId: userId,
+              ),
+            );
+            // Reflect the new payment in the paid status (Unpaid → Partial →
+            // Paid) locally + in the documents list.
+            final s =
+                await ref.read(appDatabaseProvider).recomputePaidStatus(localId);
+            onPaidStatusRecomputed(s);
+          },
+        ),
+      ],
+      child: asyncPayments.when(
+        loading: () => const Center(
+          child: Padding(
+            padding: EdgeInsets.symmetric(vertical: 24),
+            child: CircularProgressIndicator(),
           ),
-          data: (payments) {
-            final totalPaid = payments.fold<double>(0, (s, p) => s + p.amount);
-            final remaining = documentTotal - totalPaid.abs();
+        ),
+        error: (e, _) => Text(
+          l.errorWithMessage('$e'),
+          style: TextStyle(color: cs.error),
+        ),
+        data: (payments) {
+          final totalPaid = payments.fold<double>(0, (s, p) => s + p.amount);
+          final remaining = documentTotal - totalPaid.abs();
 
-            return Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Payment summary. Three across while they fit, stacked below
+              // that — the old fixed Row of three overflowed a 7" tablet.
+              IlyassTileGrid(
+                minTileWidth: 170,
+                maxPerRow: 3,
                 children: [
-                  // Payment Summary Cards
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  _SummaryCard(l.documentTotal, documentTotal, cs.primary),
+                  _SummaryCard(l.totalPaid, totalPaid, context.successColor),
+                  _SummaryCard(
+                    l.remainingBalance,
+                    remaining,
+                    remaining > 0 ? context.warningColor : theme.disabledColor,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              if (payments.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 24),
+                  child: Column(
                     children: [
-                      _SummaryCard(
-                        AppLocalizations.of(context).documentTotal,
-                        documentTotal,
-                        theme.colorScheme.primary,
-                      ),
-                      _SummaryCard(
-                        AppLocalizations.of(context).totalPaid,
-                        totalPaid,
-                        context.successColor,
-                      ),
-                      _SummaryCard(
-                        AppLocalizations.of(context).remainingBalance,
-                        remaining,
-                        remaining > 0
-                            ? context.warningColor
-                            : theme.disabledColor,
+                      Icon(Icons.receipt_long_outlined,
+                          size: 44, color: cs.outline),
+                      const SizedBox(height: 8),
+                      Text(
+                        l.noPaymentsAddedYet,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: cs.onSurfaceVariant),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 24),
-
-                  if (payments.isEmpty)
-                    Center(
-                      child: Text(
-                        AppLocalizations.of(context).noPaymentsAddedYet,
-                        style: const TextStyle(color: Colors.grey),
-                      ),
-                    )
-                  else
-                    Expanded(
-                      child: SingleChildScrollView(
+                )
+              else
+                // A table scrolls sideways rather than overflowing a narrow
+                // screen — its columns never shrink below their content.
+                LayoutBuilder(
+                  builder: (context, constraints) => Container(
+                    clipBehavior: Clip.antiAlias,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: cs.outlineVariant),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          // The border's own 2px, so the row fills it exactly.
+                          minWidth: constraints.maxWidth - 2,
+                        ),
                         child: DataTable(
                           headingRowColor: WidgetStateProperty.all(
-                            theme.colorScheme.surfaceContainerHighest
-                                .withValues(alpha: 0.3),
+                            cs.surfaceContainerHighest,
                           ),
                           columns: [
-                            DataColumn(label: Text(AppLocalizations.of(context).idLabel)),
-                            DataColumn(label: Text(AppLocalizations.of(context).statusLabel)),
-                            DataColumn(label: Text(AppLocalizations.of(context).paymentType)),
-                            DataColumn(label: Text(AppLocalizations.of(context).dateLabel)),
-                            DataColumn(label: Text(AppLocalizations.of(context).amount), numeric: true),
-                            DataColumn(label: Text(AppLocalizations.of(context).actions)),
+                            DataColumn(label: Text(l.idLabel)),
+                            DataColumn(label: Text(l.statusLabel)),
+                            DataColumn(label: Text(l.paymentType)),
+                            DataColumn(label: Text(l.dateLabel)),
+                            DataColumn(label: Text(l.amount), numeric: true),
+                            DataColumn(label: Text(l.actions)),
                           ],
                           rows: payments.map((payment) {
                             final isLocked = payment.zReportId != null;
@@ -2911,17 +2916,13 @@ class _PaymentsView extends ConsumerWidget {
                                     color: isLocked
                                         ? theme.disabledColor
                                         : isPending
-                                            ? theme.colorScheme.tertiary
+                                            ? cs.tertiary
                                             : context.successColor,
                                     size: 20,
                                   ),
                                 ),
                                 DataCell(
-                                  Text(
-                                    payment.paymentTypeName ??
-                                        AppLocalizations.of(context)
-                                            .unknownLabel,
-                                  ),
+                                  Text(payment.paymentTypeName ?? l.unknownLabel),
                                 ),
                                 DataCell(
                                   Text(
@@ -2945,11 +2946,11 @@ class _PaymentsView extends ConsumerWidget {
                                     children: [
                                       IconButton(
                                         icon: Icon(
-                                          Icons.edit,
+                                          Icons.edit_outlined,
                                           color: isLocked
                                               ? theme.disabledColor
-                                              : theme.colorScheme.secondary,
-                                          size: 18,
+                                              : cs.secondary,
+                                          size: 20,
                                         ),
                                         onPressed: isLocked
                                             ? null
@@ -2970,26 +2971,24 @@ class _PaymentsView extends ConsumerWidget {
                                               },
                                       ),
                                       IconButton(
+                                        tooltip: l.deletePayment,
                                         icon: Icon(
-                                          Icons.delete,
+                                          Icons.delete_outline,
                                           color: isLocked
                                               ? theme.disabledColor
-                                              : theme.colorScheme.error,
-                                          size: 18,
+                                              : cs.error,
+                                          size: 20,
                                         ),
                                         onPressed: isLocked
                                             ? null
                                             : () async {
-                                                final confirm = await showDialog<bool>(
+                                                final confirm =
+                                                    await showDialog<bool>(
                                                   context: context,
                                                   builder: (ctx) => AlertDialog(
-                                                    title: Text(
-                                                      AppLocalizations.of(context)
-                                                          .deletePayment,
-                                                    ),
+                                                    title: Text(l.deletePayment),
                                                     content: Text(
-                                                      AppLocalizations.of(context)
-                                                          .deletePaymentConfirm,
+                                                      l.deletePaymentConfirm,
                                                     ),
                                                     actions: [
                                                       TextButton(
@@ -2997,30 +2996,23 @@ class _PaymentsView extends ConsumerWidget {
                                                             Navigator.of(
                                                               ctx,
                                                             ).pop(false),
-                                                        child: Text(
-                                                          AppLocalizations.of(
-                                                            context,
-                                                          ).actionCancel,
-                                                        ),
+                                                        child:
+                                                            Text(l.actionCancel),
                                                       ),
                                                       ElevatedButton(
-                                                        style: ElevatedButton.styleFrom(
-                                                          backgroundColor: theme
-                                                              .colorScheme
-                                                              .error,
-                                                          foregroundColor: theme
-                                                              .colorScheme
-                                                              .onError,
+                                                        style: ElevatedButton
+                                                            .styleFrom(
+                                                          backgroundColor:
+                                                              cs.error,
+                                                          foregroundColor:
+                                                              cs.onError,
                                                         ),
                                                         onPressed: () =>
                                                             Navigator.of(
                                                               ctx,
                                                             ).pop(true),
-                                                        child: Text(
-                                                          AppLocalizations.of(
-                                                            context,
-                                                          ).actionDelete,
-                                                        ),
+                                                        child:
+                                                            Text(l.actionDelete),
                                                       ),
                                                     ],
                                                   ),
@@ -3079,16 +3071,17 @@ class _PaymentsView extends ConsumerWidget {
                         ),
                       ),
                     ),
-                ],
-              ),
-            );
-          },
-        ),
-      ],
+                  ),
+                ),
+            ],
+          );
+        },
+      ),
     );
   }
 }
 
+/// One figure of the payment summary: a quiet caption over a tinted amount.
 class _SummaryCard extends ConsumerWidget {
   final String title;
   final double amount;
@@ -3098,27 +3091,37 @@ class _SummaryCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
     final sym = ref.watch(currencySymbolProvider);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withValues(alpha: 0.5)),
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withValues(alpha: 0.35)),
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             title,
-            style: TextStyle(color: color, fontWeight: FontWeight.bold),
+            style: theme.textTheme.labelMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            "${amount.toStringAsFixed(2)} $sym",
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: color,
+          const SizedBox(height: 6),
+          // Shrinks a long total instead of wrapping it mid-number.
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: AlignmentDirectional.centerStart,
+            child: Text(
+              "${amount.toStringAsFixed(2)} $sym",
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
             ),
           ),
         ],
@@ -3525,7 +3528,7 @@ final documentDiscountLinesProvider = StreamProvider.autoDispose
 /// Read-only card listing every discount applied to a document, with its source,
 /// configured value, and resolved amount. The amounts are the figures stored at
 /// sale time (already resolved under whatever discount-apply rule was in force),
-/// so this never re-derives totals. Renders nothing when there are no discounts.
+/// so this never re-derives totals. Shows an empty state when there are none.
 class _DiscountBreakdownCard extends ConsumerWidget {
   final String documentLocalId;
   const _DiscountBreakdownCard({required this.documentLocalId});
@@ -3533,93 +3536,106 @@ class _DiscountBreakdownCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final loc = AppLocalizations.of(context);
     final sym = ref.watch(currencySymbolProvider);
     final asyncLines = ref.watch(documentDiscountLinesProvider(documentLocalId));
 
-    return asyncLines.maybeWhen(
-      orElse: () => const SizedBox.shrink(),
-      data: (all) {
-        // Show every discount EXCEPT the per-item manual discount: that one
-        // lives in document_items.discount/discountType and is already rendered
-        // in the items table's "Item Disc." column, so repeating it here would
-        // double-list it. Promotions and the order-level discounts (customer /
-        // cart / loyalty) are NOT in the items table, so they belong here. Key
-        // off the source — not `itemLocalId`, which is null on pulled-back rows.
-        final lines =
-            all.where((l) => l.source != DiscountSource.manualItem).toList();
-        if (lines.isEmpty) return const SizedBox.shrink();
-        final total = lines.fold<double>(0, (s, l) => s + l.amount);
+    return IlyassFormSection(
+      icon: Icons.sell_outlined,
+      title: loc.discountBreakdown,
+      child: asyncLines.when(
+        loading: () => const LinearProgressIndicator(),
+        error: (e, _) => Text(
+          loc.errorWithMessage('$e'),
+          style: TextStyle(color: cs.error),
+        ),
+        data: (all) {
+          // Show every discount EXCEPT the per-item manual discount: that one
+          // lives in document_items.discount/discountType and is already
+          // rendered in the items table's "Item Disc." column, so repeating it
+          // here would double-list it. Promotions and the order-level discounts
+          // (customer / cart / loyalty) are NOT in the items table, so they
+          // belong here. Key off the source — not `itemLocalId`, which is null
+          // on pulled-back rows.
+          final lines =
+              all.where((l) => l.source != DiscountSource.manualItem).toList();
 
-        return Padding(
-          padding: const EdgeInsets.only(top: 24),
-          child: Card(
-            elevation: 1,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
+          // The tab used to render NOTHING here — a blank page that read as a
+          // broken screen rather than as "this document has no discounts".
+          if (lines.isEmpty) {
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 24),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.sell_outlined, size: 24),
-                      const SizedBox(width: 12),
-                      Text(AppLocalizations.of(context).discountBreakdown,
-                          style: const TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  ...lines.map((l) {
-                    final hint = discountLineHint(l, sym);
-                    return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 5),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Text(discountLineLabel(l),
-                                  style: theme.textTheme.bodyMedium),
-                            ),
-                            if (hint != null) ...[
-                              Text(
-                                hint,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                    color: theme.colorScheme.onSurfaceVariant),
-                              ),
-                              const SizedBox(width: 14),
-                            ],
-                            Text(
-                              '-${l.amount.toStringAsFixed(2)} $sym',
-                              style: theme.textTheme.bodyMedium
-                                  ?.copyWith(fontWeight: FontWeight.w600),
-                            ),
-                          ],
-                        ),
-                      );
-                  }),
-                  const Divider(height: 20),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(AppLocalizations.of(context).totalDiscounts,
-                            style: theme.textTheme.titleSmall),
-                      ),
-                      Text(
-                        '-${total.toStringAsFixed(2)} $sym',
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: theme.colorScheme.primary,
-                        ),
-                      ),
-                    ],
+                  Icon(Icons.sell_outlined, size: 40, color: cs.outline),
+                  const SizedBox(height: 8),
+                  Text(
+                    loc.noDocumentDiscounts,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: cs.onSurfaceVariant),
                   ),
                 ],
               ),
-            ),
-          ),
-        );
-      },
+            );
+          }
+          final total = lines.fold<double>(0, (s, l) => s + l.amount);
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ...lines.map((l) {
+                final hint = discountLineHint(l, sym);
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          discountLineLabel(l),
+                          style: theme.textTheme.bodyMedium,
+                        ),
+                      ),
+                      if (hint != null) ...[
+                        Text(
+                          hint,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: cs.onSurfaceVariant,
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                      ],
+                      Text(
+                        '-${l.amount.toStringAsFixed(2)} $sym',
+                        style: theme.textTheme.bodyMedium
+                            ?.copyWith(fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+              const Divider(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      loc.totalDiscounts,
+                      style: theme.textTheme.titleSmall,
+                    ),
+                  ),
+                  Text(
+                    '-${total.toStringAsFixed(2)} $sym',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: cs.primary,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 }

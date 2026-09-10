@@ -171,29 +171,22 @@ class _CustomerList extends ConsumerWidget {
                 icon: Icon(Icons.delete, color: cs.error),
                 tooltip: AppLocalizations.of(context).actionDelete,
                 onPressed: () async {
+                  // Read the customer's loyalty cards first: the server
+                  // cascades them (and their points) with the customer, so the
+                  // dialog must say so before the delete, not after.
+                  final db = ref.read(appDatabaseProvider);
+                  final cards = await (db.select(db.loyaltyCardsTable)
+                        ..where((t) => t.customerId.equals(c.id))
+                        ..where((t) => t.companyId.equals(companyId))
+                        ..where(
+                          (t) => t.syncStatus.isNotIn(['pending_delete']),
+                        ))
+                      .get();
+                  if (!context.mounted) return;
                   final confirm = await showDialog<bool>(
                     context: context,
-                    builder: (ctx) => AlertDialog(
-                      title: Text(AppLocalizations.of(context).actionDelete),
-                      content: Text(
-                        AppLocalizations.of(context)
-                            .confirmDeleteQuoted(c.name),
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.of(ctx).pop(false),
-                          child: Text(AppLocalizations.of(context).actionCancel),
-                        ),
-                        FilledButton(
-                          style: FilledButton.styleFrom(
-                            backgroundColor: cs.error,
-                            foregroundColor: cs.onError,
-                          ),
-                          onPressed: () => Navigator.of(ctx).pop(true),
-                          child: Text(AppLocalizations.of(context).actionDelete),
-                        ),
-                      ],
-                    ),
+                    builder: (_) =>
+                        _DeleteCustomerDialog(customer: c, cards: cards),
                   );
                   if (confirm == true && context.mounted) {
                     await _delete(context, ref, c, companyId);
@@ -227,8 +220,13 @@ class _CustomerList extends ConsumerWidget {
         '/Customer/DeleteCustomercommand',
         queryParameters: {'id': c.id, 'companyId': companyId},
       );
-      // Hard-delete the row and any cached discounts.
+      // Hard-delete the row, its cached discounts and its loyalty cards. The
+      // server cascades the cards (and their points) with the customer, and the
+      // loyalty pull never prunes — without this they would linger as orphans.
       await (db.delete(db.customerDiscountsTable)
+            ..where((t) => t.customerId.equals(c.id)))
+          .go();
+      await (db.delete(db.loyaltyCardsTable)
             ..where((t) => t.customerId.equals(c.id)))
           .go();
       await (db.delete(db.customersTable)..where((t) => t.id.equals(c.id)))
@@ -249,14 +247,185 @@ class _CustomerList extends ConsumerWidget {
           syncStatus: Value('synced'),
         ));
         if (!context.mounted) return;
+        // A refusal is a structured 400 — { success, message } — e.g. a
+        // customer still used by documents. Show its message, not the raw map.
+        final data = e.response?.data;
+        final message = data is Map ? data['message']?.toString() : null;
         showAppSnackbar(
           context, ref,
-          e.response?.data?.toString() ??
-              AppLocalizations.of(context).deleteFailed,
+          message ?? AppLocalizations.of(context).deleteFailed,
           isError: true,
         );
       }
     }
+  }
+}
+
+// --- DELETE CONFIRMATION ---
+/// Confirms a customer delete. When the customer holds loyalty cards it spells
+/// out what goes with them — every card and its points, which the server
+/// cascades — and keeps Delete disabled until the user ticks that they
+/// understand. A customer without cards gets the plain one-line confirmation.
+class _DeleteCustomerDialog extends StatefulWidget {
+  final Customer customer;
+  final List<LoyaltyCardsTableData> cards;
+
+  const _DeleteCustomerDialog({required this.customer, required this.cards});
+
+  @override
+  State<_DeleteCustomerDialog> createState() => _DeleteCustomerDialogState();
+}
+
+class _DeleteCustomerDialogState extends State<_DeleteCustomerDialog> {
+  bool _acknowledged = false;
+
+  // Same format as the Loyalty Cards screen: whole numbers without decimals.
+  static String _formatPoints(double points) =>
+      points.toStringAsFixed(points % 1 == 0 ? 0 : 2);
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final cs = Theme.of(context).colorScheme;
+    final text = Theme.of(context).textTheme;
+    final cards = widget.cards;
+    final hasCards = cards.isNotEmpty;
+    final totalPoints = _formatPoints(
+      cards.fold<double>(0, (sum, card) => sum + card.points),
+    );
+    final onWarning = cs.onErrorContainer;
+
+    return AlertDialog(
+      icon: hasCards
+          ? Icon(Icons.warning_amber_rounded, color: cs.error, size: 36)
+          : null,
+      title: Text(l.actionDelete),
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 460),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(l.confirmDeleteQuoted(widget.customer.name)),
+              if (hasCards) ...[
+                const SizedBox(height: 16),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: cs.errorContainer,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.card_giftcard, color: onWarning, size: 20),
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: Text(
+                              l.deleteCustomerLoyaltyTitle,
+                              style: text.titleSmall?.copyWith(
+                                color: onWarning,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        l.deleteCustomerLoyaltyBody(cards.length, totalPoints),
+                        style: text.bodyMedium?.copyWith(color: onWarning),
+                      ),
+                      const SizedBox(height: 8),
+                      // One row per card: number left, balance right. Loose
+                      // Flexibles + spaceBetween, never Expanded + Flexible.
+                      for (final card in cards)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Flexible(
+                                flex: 3,
+                                child: Text(
+                                  (card.cardNumber?.isNotEmpty ?? false)
+                                      ? card.cardNumber!
+                                      : l.noCardNumber,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: text.bodyMedium
+                                      ?.copyWith(color: onWarning),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Flexible(
+                                flex: 2,
+                                child: Text(
+                                  l.loyaltyPointsValue(
+                                    _formatPoints(card.points),
+                                  ),
+                                  textAlign: TextAlign.end,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: text.bodyMedium?.copyWith(
+                                    color: onWarning,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      const SizedBox(height: 8),
+                      Text(
+                        l.deleteCustomerLoyaltyConsequence,
+                        style: text.bodyMedium?.copyWith(color: onWarning),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        l.deleteCustomerDisableHint,
+                        style: text.bodySmall?.copyWith(
+                          color: onWarning,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                CheckboxListTile(
+                  value: _acknowledged,
+                  onChanged: (v) => setState(() => _acknowledged = v ?? false),
+                  controlAffinity: ListTileControlAffinity.leading,
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(l.deleteCustomerLoyaltyAcknowledge(totalPoints)),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(false),
+          child: Text(l.actionCancel),
+        ),
+        FilledButton(
+          style: FilledButton.styleFrom(
+            backgroundColor: cs.error,
+            foregroundColor: cs.onError,
+          ),
+          // Held until the loss is acknowledged — a loyalty balance is money
+          // the customer earned, so one mis-tap must not wipe it.
+          onPressed: hasCards && !_acknowledged
+              ? null
+              : () => Navigator.of(context).pop(true),
+          child: Text(hasCards ? l.deleteCustomerAndCard : l.actionDelete),
+        ),
+      ],
+    );
   }
 }
 

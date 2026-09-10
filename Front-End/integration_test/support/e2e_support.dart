@@ -400,6 +400,29 @@ Future<void> fillField(
   await tester.pump(const Duration(milliseconds: 250));
 }
 
+/// Types [value] into the field carrying [key].
+///
+/// For a field with no floating label to find it by — the product editor's
+/// description is named by its section header instead. A key is an
+/// untranslated handle, so it also survives the locale settling mid-run.
+Future<void> fillKeyedField(
+  WidgetTester tester,
+  Key key,
+  String value,
+) async {
+  final field = find.byKey(key);
+  if (field.evaluate().isEmpty) {
+    throw TestFailure(
+      'No field with key $key\n  On screen now: ${visibleTexts(tester)}',
+    );
+  }
+
+  await tester.ensureVisible(field.first);
+  await tester.pump(const Duration(milliseconds: 150));
+  await tester.enterText(field.first, value);
+  await tester.pump(const Duration(milliseconds: 250));
+}
+
 /// Any `DropdownButtonFormField`, whatever its type argument.
 ///
 /// 🚨 `find.byType` compares the EXACT runtime type, so

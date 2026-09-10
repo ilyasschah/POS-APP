@@ -132,6 +132,22 @@ namespace Api.Services
                 throw new KeyNotFoundException($"Customer with ID {id} not found.");
             }
 
+            // Sales history keeps its customer: documents, POS orders and stock records
+            // reference it through NO ACTION keys, so SQL would reject the delete with a
+            // raw FK violation (a 500). Refuse it here as a business rule instead.
+            var (documents, orders, stockRecords) = await _customerRepository.CountBlockingReferencesAsync(id);
+            var usages = new List<string>();
+            if (documents > 0) usages.Add($"{documents} document(s)");
+            if (orders > 0) usages.Add($"{orders} order(s)");
+            if (stockRecords > 0) usages.Add($"{stockRecords} stock record(s)");
+            if (usages.Count > 0)
+            {
+                throw new InvalidOperationException(
+                    $"'{customer.Name}' cannot be deleted because it is used by {string.Join(", ", usages)}. " +
+                    "Disable the customer instead to keep this history.");
+            }
+
+            // The customer's loyalty cards (with their points) and discounts cascade.
             await _customerRepository.DeleteAsync(customer);
             return true;
         }

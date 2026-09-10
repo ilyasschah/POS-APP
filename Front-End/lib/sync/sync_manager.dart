@@ -3838,6 +3838,11 @@ class SyncManager {
             await (db.delete(
               db.customerDiscountsTable,
             )..where((t) => t.customerId.equals(c.id))).go();
+            // The server cascaded the customer's loyalty cards; pullLoyaltyCards
+            // never prunes, so drop them here or they linger as orphans.
+            await (db.delete(
+              db.loyaltyCardsTable,
+            )..where((t) => t.customerId.equals(c.id))).go();
             await (db.delete(
               db.customersTable,
             )..where((t) => t.id.equals(c.id))).go();

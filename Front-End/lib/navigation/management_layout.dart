@@ -21,6 +21,25 @@ import 'package:pos_app/tax/tax_rates_screen.dart';
 import 'package:pos_app/void_reason/void_reason_screen.dart';
 import 'package:pos_app/loyalty/loyalty_cards_screen.dart';
 
+/// One management sidebar destination. [_ManagementLayoutState._entries] is the
+/// single source of truth: its order IS the sidebar order, and each entry
+/// carries its own security key, icon, label and screen — so reordering the
+/// menu is moving one entry, and a key can never drift out of step with the
+/// screen it guards.
+class _ManagementEntry {
+  final String securityKey;
+  final IconData icon;
+  final String Function(AppLocalizations l) label;
+  final Widget Function(VoidCallback? onMenuPressed) screen;
+
+  const _ManagementEntry({
+    required this.securityKey,
+    required this.icon,
+    required this.label,
+    required this.screen,
+  });
+}
+
 class ManagementLayout extends ConsumerStatefulWidget {
   const ManagementLayout({super.key});
 
@@ -36,29 +55,114 @@ class _ManagementLayoutState extends ConsumerState<ManagementLayout> {
   bool _landed = false;
   final _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  /// Security key gating each tab, indexed to match the `screens` list below.
-  /// Keep this in sync with that list — a missing/renamed key fails secure
-  /// (cashier denied) because SecurityGuard treats unknown keys as admin-only.
-  static const _tabKeys = <String>[
-    'Management.Dashboard', // 0  Dashboard
-    'Management.Documents', // 1  Documents
-    'Management.Products', // 2  Products
-    'Management.ProductGroups', // 3  Product Groups
-    'Management.Stock', // 4  Stock
-    'Management.Reporting', // 5  Reporting
-    'Management.Customers', // 6  Customers & suppliers
-    'Management.Promotions', // 7  Promotions
-    'Management.Security', // 8  Users
-    // 9 is the same key on purpose: Users and Security rules were one tabbed
+  /// Sidebar order, grouped by job: overview → catalogue (products and what
+  /// hangs off them) → customers and what hangs off them → staff & access →
+  /// configuration, with the company profile last. An index is only a position
+  /// in this list — nothing outside this file stores one — so entries may be
+  /// reordered freely.
+  ///
+  /// A missing/renamed security key fails secure (cashier denied) because
+  /// SecurityGuard treats unknown keys as admin-only.
+  static final _entries = <_ManagementEntry>[
+    _ManagementEntry(
+      securityKey: 'Management.Dashboard',
+      icon: Icons.dashboard,
+      label: (l) => l.dashboard,
+      screen: (m) => DashboardScreen(onMenuPressed: m),
+    ),
+    _ManagementEntry(
+      securityKey: 'Management.Documents',
+      icon: Icons.description,
+      label: (l) => l.documents,
+      screen: (m) => DocumentsScreen(onMenuPressed: m),
+    ),
+    _ManagementEntry(
+      securityKey: 'Management.Products',
+      icon: Icons.local_offer,
+      label: (l) => l.products,
+      screen: (m) => ProductsScreen(onMenuPressed: m),
+    ),
+    _ManagementEntry(
+      securityKey: 'Management.ModifierGroups',
+      icon: Icons.tune,
+      label: (l) => l.modifierGroups,
+      screen: (m) => ModifierGroupsScreen(onMenuPressed: m),
+    ),
+    _ManagementEntry(
+      securityKey: 'Management.ProductGroups',
+      icon: Icons.folder,
+      label: (l) => l.productGroups,
+      screen: (m) => ProductGroupsScreen(onMenuPressed: m),
+    ),
+    _ManagementEntry(
+      securityKey: 'Management.Stock',
+      icon: Icons.inventory_2,
+      label: (l) => l.stock,
+      screen: (m) => StockScreen(onMenuPressed: m),
+    ),
+    _ManagementEntry(
+      securityKey: 'Management.Reporting',
+      icon: Icons.bar_chart,
+      label: (l) => l.reporting,
+      screen: (m) => ReportsScreen(onMenuPressed: m),
+    ),
+    _ManagementEntry(
+      securityKey: 'Management.Customers',
+      icon: Icons.people,
+      label: (l) => l.customersSuppliersLower,
+      screen: (m) => CustomersScreen(onMenuPressed: m),
+    ),
+    _ManagementEntry(
+      securityKey: 'Management.LoyaltyCards',
+      icon: Icons.card_giftcard,
+      label: (l) => l.loyaltyCards,
+      screen: (m) => LoyaltyCardsScreen(onMenuPressed: m),
+    ),
+    _ManagementEntry(
+      securityKey: 'Management.Promotions',
+      icon: Icons.favorite,
+      label: (l) => l.promotions,
+      screen: (m) => PromotionsListScreen(onMenuPressed: m),
+    ),
+    _ManagementEntry(
+      securityKey: 'Management.Security',
+      icon: Icons.manage_accounts,
+      label: (l) => l.users,
+      screen: (m) => UsersScreen(onMenuPressed: m),
+    ),
+    // Same key as Users on purpose: Users and Security rules were one tabbed
     // screen and are now two. Splitting the SCREEN is not splitting the
     // permission — anyone who may manage staff may set what they can do.
-    'Management.Security', // 9  Security rules
-    'Management.PaymentTypes', // 10 Payment types
-    'Management.TaxRates', // 11 Tax rates
-    'Management.Company', // 12 My company
-    'Management.VoidReasons', // 13 Void reasons
-    'Management.LoyaltyCards', // 14 Loyalty Cards
-    'Management.ModifierGroups', // 15 Modifier groups
+    _ManagementEntry(
+      securityKey: 'Management.Security',
+      icon: Icons.vpn_key,
+      label: (l) => l.securityRules,
+      screen: (m) => SecurityRulesScreen(onMenuPressed: m),
+    ),
+    _ManagementEntry(
+      securityKey: 'Management.PaymentTypes',
+      icon: Icons.credit_card,
+      label: (l) => l.paymentTypesLower,
+      screen: (m) => PaymentTypesScreen(onMenuPressed: m),
+    ),
+    _ManagementEntry(
+      securityKey: 'Management.TaxRates',
+      icon: Icons.percent,
+      label: (l) => l.taxRatesLower,
+      screen: (m) => TaxRatesScreen(onMenuPressed: m),
+    ),
+    _ManagementEntry(
+      securityKey: 'Management.VoidReasons',
+      icon: Icons.block,
+      label: (l) => l.voidReasonsLower,
+      screen: (m) => VoidReasonsScreen(onMenuPressed: m),
+    ),
+    _ManagementEntry(
+      securityKey: 'Management.Company',
+      icon: Icons.business,
+      label: (l) => l.myCompanyLower,
+      screen: (m) => MyCompanyScreen(onMenuPressed: m),
+    ),
   ];
 
   @override
@@ -68,6 +172,7 @@ class _ManagementLayoutState extends ConsumerState<ManagementLayout> {
     // a slide-in drawer. Mini mode only applies to the always-present rail.
     final isMini = isDesktop && !_isSidebarExpanded;
     final cs = Theme.of(context).colorScheme;
+    final l = AppLocalizations.of(context);
 
     // Synchronous RBAC enforcer for this user. Rebuilds when the user, the
     // configured key levels, or settings change.
@@ -78,14 +183,16 @@ class _ManagementLayoutState extends ConsumerState<ManagementLayout> {
     // build until the keys have loaded (canAccess is fail-secure while empty),
     // then hands control to manual navigation.
     if (!_landed) {
-      final firstAllowed = _tabKeys.indexWhere(guard.canAccess);
+      final firstAllowed =
+          _entries.indexWhere((e) => guard.canAccess(e.securityKey));
       if (firstAllowed != -1) {
         _landed = true;
         _selectedIndex = firstAllowed;
       }
     }
 
-    final canViewSelected = guard.canAccess(_tabKeys[_selectedIndex]);
+    final canViewSelected =
+        guard.canAccess(_entries[_selectedIndex].securityKey);
 
     // On desktop the rail is always present, so the per-screen app-bar menu
     // button is hidden (null); on touch it opens the slide-in drawer.
@@ -93,28 +200,13 @@ class _ManagementLayoutState extends ConsumerState<ManagementLayout> {
     final VoidCallback? screenMenu = isDesktop ? null : onMenuPressed;
 
     final List<Widget> screens = [
-      DashboardScreen(onMenuPressed: screenMenu),
-      DocumentsScreen(onMenuPressed: screenMenu),
-      ProductsScreen(onMenuPressed: screenMenu),
-      ProductGroupsScreen(onMenuPressed: screenMenu),
-      StockScreen(onMenuPressed: screenMenu),
-      ReportsScreen(onMenuPressed: screenMenu),
-      CustomersScreen(onMenuPressed: screenMenu),
-      PromotionsListScreen(onMenuPressed: screenMenu),
-      UsersScreen(onMenuPressed: screenMenu),
-      SecurityRulesScreen(onMenuPressed: screenMenu),
-      PaymentTypesScreen(onMenuPressed: screenMenu),
-      TaxRatesScreen(onMenuPressed: screenMenu),
-      MyCompanyScreen(onMenuPressed: screenMenu),
-      VoidReasonsScreen(onMenuPressed: screenMenu),
-      LoyaltyCardsScreen(onMenuPressed: screenMenu),
-      ModifierGroupsScreen(onMenuPressed: screenMenu),
+      for (final entry in _entries) entry.screen(screenMenu),
     ];
 
     void handleNavTap(int index) {
       // Enforce the per-tab security key: a denied tap shows the standard
       // "Access Denied" toast and leaves the current selection untouched.
-      guard.guard(context, _tabKeys[index], () {
+      guard.guard(context, _entries[index].securityKey, () {
         setState(() => _selectedIndex = index);
         // Desktop sidebar stays put on tab select — only manual toggles hide it.
         if (!isDesktop && Scaffold.of(context).hasDrawer) {
@@ -139,7 +231,7 @@ class _ManagementLayoutState extends ConsumerState<ManagementLayout> {
                     child: Center(
                       child: IconButton(
                         icon: Icon(Icons.menu, color: context.navMuted),
-                        tooltip: AppLocalizations.of(context).expandSidebar,
+                        tooltip: l.expandSidebar,
                         onPressed: () =>
                             setState(() => _isSidebarExpanded = true),
                       ),
@@ -152,7 +244,7 @@ class _ManagementLayoutState extends ConsumerState<ManagementLayout> {
                       children: [
                         Expanded(
                           child: Text(
-                            AppLocalizations.of(context).managementPortal,
+                            l.managementPortal,
                             style: TextStyle(
                               color: context.navText,
                               fontSize: 18,
@@ -166,9 +258,7 @@ class _ManagementLayoutState extends ConsumerState<ManagementLayout> {
                               Icons.menu_open,
                               color: context.navMuted,
                             ),
-                            tooltip: AppLocalizations.of(
-                              context,
-                            ).collapseSidebar,
+                            tooltip: l.collapseSidebar,
                             onPressed: () =>
                                 setState(() => _isSidebarExpanded = false),
                           ),
@@ -181,120 +271,14 @@ class _ManagementLayoutState extends ConsumerState<ManagementLayout> {
               child: SingleChildScrollView(
                 child: Column(
                   children: [
-                    NavItem(
-                      isMini: isMini,
-                      icon: Icons.dashboard,
-                      label: AppLocalizations.of(context).dashboard,
-                      isActive: _selectedIndex == 0,
-                      onTap: () => handleNavTap(0),
-                    ),
-                    NavItem(
-                      isMini: isMini,
-                      icon: Icons.description,
-                      label: AppLocalizations.of(context).documents,
-                      isActive: _selectedIndex == 1,
-                      onTap: () => handleNavTap(1),
-                    ),
-                    NavItem(
-                      isMini: isMini,
-                      icon: Icons.local_offer,
-                      label: AppLocalizations.of(context).products,
-                      isActive: _selectedIndex == 2,
-                      onTap: () => handleNavTap(2),
-                    ),
-                    NavItem(
-                      isMini: isMini,
-                      icon: Icons.folder,
-                      label: AppLocalizations.of(context).productGroups,
-                      isActive: _selectedIndex == 3,
-                      onTap: () => handleNavTap(3),
-                    ),
-                    NavItem(
-                      isMini: isMini,
-                      icon: Icons.inventory_2,
-                      label: AppLocalizations.of(context).stock,
-                      isActive: _selectedIndex == 4,
-                      onTap: () => handleNavTap(4),
-                    ),
-                    NavItem(
-                      isMini: isMini,
-                      icon: Icons.bar_chart,
-                      label: AppLocalizations.of(context).reporting,
-                      isActive: _selectedIndex == 5,
-                      onTap: () => handleNavTap(5),
-                    ),
-                    NavItem(
-                      isMini: isMini,
-                      icon: Icons.people,
-                      label: AppLocalizations.of(
-                        context,
-                      ).customersSuppliersLower,
-                      isActive: _selectedIndex == 6,
-                      onTap: () => handleNavTap(6),
-                    ),
-                    NavItem(
-                      isMini: isMini,
-                      icon: Icons.favorite,
-                      label: AppLocalizations.of(context).promotions,
-                      isActive: _selectedIndex == 7,
-                      onTap: () => handleNavTap(7),
-                    ),
-                    NavItem(
-                      isMini: isMini,
-                      icon: Icons.manage_accounts,
-                      label: AppLocalizations.of(context).users,
-                      isActive: _selectedIndex == 8,
-                      onTap: () => handleNavTap(8),
-                    ),
-                    NavItem(
-                      isMini: isMini,
-                      icon: Icons.vpn_key,
-                      label: AppLocalizations.of(context).securityRules,
-                      isActive: _selectedIndex == 9,
-                      onTap: () => handleNavTap(9),
-                    ),
-                    NavItem(
-                      isMini: isMini,
-                      icon: Icons.credit_card,
-                      label: AppLocalizations.of(context).paymentTypesLower,
-                      isActive: _selectedIndex == 10,
-                      onTap: () => handleNavTap(10),
-                    ),
-                    NavItem(
-                      isMini: isMini,
-                      icon: Icons.percent,
-                      label: AppLocalizations.of(context).taxRatesLower,
-                      isActive: _selectedIndex == 11,
-                      onTap: () => handleNavTap(11),
-                    ),
-                    NavItem(
-                      isMini: isMini,
-                      icon: Icons.business,
-                      label: AppLocalizations.of(context).myCompanyLower,
-                      isActive: _selectedIndex == 12,
-                      onTap: () => handleNavTap(12),
-                    ),
-                    NavItem(
-                      isMini: isMini,
-                      icon: Icons.block,
-                      label: AppLocalizations.of(context).voidReasonsLower,
-                      isActive: _selectedIndex == 13,
-                      onTap: () => handleNavTap(13),
-                    ),
-                    NavItem(
-                      isMini: isMini,
-                      icon: Icons.card_giftcard,
-                      label: AppLocalizations.of(context).loyaltyCards,
-                      isActive: _selectedIndex == 14,
-                      onTap: () => handleNavTap(14),
-                    ),
-                    NavItem(
-                      isMini: isMini,
-                      icon: Icons.tune,
-                      label: AppLocalizations.of(context).modifierGroups,
-                      isActive: _selectedIndex == 15,
-                      onTap: () => handleNavTap(15),
-                    ),
+                    for (var i = 0; i < _entries.length; i++)
+                      NavItem(
+                        isMini: isMini,
+                        icon: _entries[i].icon,
+                        label: _entries[i].label(l),
+                        isActive: _selectedIndex == i,
+                        onTap: () => handleNavTap(i),
+                      ),
                     const SizedBox(height: 16),
                   ],
                 ),
@@ -307,7 +291,7 @@ class _ManagementLayoutState extends ConsumerState<ManagementLayout> {
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 0, 12, 16),
               child: Tooltip(
-                message: AppLocalizations.of(context).exitManagement,
+                message: l.exitManagement,
                 child: SizedBox(
                   width: double.infinity,
                   child: Material(
@@ -338,7 +322,7 @@ class _ManagementLayoutState extends ConsumerState<ManagementLayout> {
                               const SizedBox(width: 10),
                               Flexible(
                                 child: Text(
-                                  AppLocalizations.of(context).exitManagement,
+                                  l.exitManagement,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(

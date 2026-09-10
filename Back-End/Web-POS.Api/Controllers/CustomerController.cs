@@ -76,9 +76,20 @@ namespace Api.Controllers
         {
             if (companyId == 0) return BadRequest("Company ID is required");
             if (id == 0) return BadRequest("Customer ID is required");
-            var command = new DeleteCustomerCommand(id, companyId);
-            await mediator.Send(command, ct);
-            return Ok(new { Id = id, Message = "Customer deleted" });
+            try
+            {
+                var command = new DeleteCustomerCommand(id, companyId);
+                await mediator.Send(command, ct);
+                return Ok(new { Id = id, Message = "Customer deleted" });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { success = false, message = ex.Message });
+            }
         }
     }
 }

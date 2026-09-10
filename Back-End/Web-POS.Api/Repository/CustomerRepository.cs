@@ -52,6 +52,16 @@ namespace Api.Repository
             await _db.SaveChangesAsync();
             return true;
         }
+        // Rows that point at the customer through a NO ACTION foreign key — SQL Server
+        // refuses the DELETE while any exist. LoyaltyCard and CustomerDiscount are not
+        // counted: they cascade and go with the customer.
+        public async Task<(int Documents, int Orders, int StockRecords)> CountBlockingReferencesAsync(int customerId)
+        {
+            var documents = await _db.Documents.CountAsync(d => d.CustomerId == customerId);
+            var orders = await _db.PosOrders.CountAsync(o => o.CustomerId == customerId);
+            var stockRecords = await _db.StockControls.CountAsync(s => s.CustomerId == customerId);
+            return (documents, orders, stockRecords);
+        }
         public async Task<bool> DeleteAsync(Customer customer)
         {
             _db.Customers.Remove(customer);

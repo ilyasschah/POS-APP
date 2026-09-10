@@ -17,6 +17,8 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:pos_app/product/products_screen.dart'
+    show kProductDescriptionFieldKey;
 
 import '../config/test_config.dart';
 import '../support/e2e_support.dart';
@@ -94,8 +96,10 @@ Future<String> createProduct(
   if (ageRestriction != null) {
     await fillField(tester, ctx.l.ageRestriction, ageRestriction);
   }
-  await fillField(
-      tester, ctx.l.description, 'Created by an E2E helper on $kRunTag');
+  // No floating label on the description — its section header names it — so
+  // it is found by key, never by the translated word.
+  await fillKeyedField(tester, kProductDescriptionFieldKey,
+      'Created by an E2E helper on $kRunTag');
 
   // 🚨 Service BEFORE weight. A service has no stock to weigh, so the UI
   // disables "sell by weight" while "is service" is on — setting weight first

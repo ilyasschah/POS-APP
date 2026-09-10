@@ -3,6 +3,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
 import 'package:drift/drift.dart' show Value;
 import 'package:path/path.dart' as imgpath;
 import 'package:path_provider/path_provider.dart';
@@ -29,6 +30,7 @@ import 'package:pos_app/product/product_sort.dart';
 import 'package:pos_app/tax/tax_model.dart';
 import 'package:pos_app/tax/tax_provider.dart';
 import 'package:pos_app/core/responsive.dart';
+import 'package:pos_app/core/ilyass_form.dart';
 import 'package:pos_app/core/ilyass_column_order.dart';
 import 'package:pos_app/core/ilyass_list_scaffold.dart';
 import 'package:pos_app/core/ilyass_table.dart';
@@ -63,6 +65,11 @@ String _parseApiError(BuildContext context, dynamic e) {
   }
   return AppLocalizations.of(context).serverErrorCheckInputs;
 }
+
+/// The product editor's description field. It has no floating label — the
+/// DESCRIPTION section header above it names it — so the E2E helpers find it
+/// by this key, an untranslated handle, rather than by a label.
+const kProductDescriptionFieldKey = ValueKey('product-description');
 
 // --- MAIN SCREEN ---
 class ProductsScreen extends ConsumerStatefulWidget {
@@ -876,6 +883,18 @@ class _ProductListContent extends ConsumerWidget {
   }
 }
 
+/// The product editor on its own, for widget tests — the dialog class is
+/// private, and reaching it through [ProductsScreen] drags in the whole
+/// catalogue stack just to check a layout.
+@visibleForTesting
+Widget productEditorDialogForTest({
+  Product? existingProduct,
+  bool isPostCreation = false,
+}) => _ProductEditorDialog(
+  existingProduct: existingProduct,
+  isPostCreation: isPostCreation,
+);
+
 // --- ADD/EDIT TABBED DIALOG ---
 class _ProductEditorDialog extends ConsumerStatefulWidget {
   final Product? existingProduct;
@@ -1568,56 +1587,105 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
       dialogTabViews.add(_buildAppearanceTab());
     }
 
+    // Sized to the screen it is on rather than a fixed 950×650, which ran off
+    // a 7" tablet sideways and off a 768-high till downwards. The designed
+    // size stays the cap on anything larger. ~220dp is the dialog's own chrome
+    // (title, footer, inset) that the body has to leave room for.
+    final dialogWidth = context.dialogWidth(960);
+    final bodyHeight = math.max(
+      360.0,
+      math.min(650.0, context.screenHeight - 220),
+    );
+    final danger = context.dangerColor;
+
     return DefaultTabController(
       length: dialogTabs.length,
       child: AlertDialog(
         contentPadding: EdgeInsets.zero,
+        titlePadding: const EdgeInsets.fromLTRB(24, 20, 24, 4),
+        actionsPadding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(
+          title,
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         content: Form(
           key: _formKey,
           child: SizedBox(
-            width: 950,
-            height: 650,
+            width: dialogWidth,
+            height: bodyHeight,
             child: Column(
               children: [
+                // Left-aligned, directly under the title, so the tabs read as
+                // part of the header rather than a bar across the middle.
                 TabBar(
+                  isScrollable: true,
+                  tabAlignment: TabAlignment.start,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
                   labelColor: theme.colorScheme.primary,
-                  unselectedLabelColor: theme.disabledColor,
+                  unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
                   indicatorColor: theme.colorScheme.primary,
+                  labelStyle: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                   tabs: dialogTabs,
                 ),
                 Expanded(child: TabBarView(children: dialogTabViews)),
                 if (_errorMessage != null)
-                  Padding(
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.fromLTRB(20, 8, 20, 8),
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 8,
+                      horizontal: 12,
+                      vertical: 10,
                     ),
-                    child: Text(
-                      _errorMessage!,
-                      style: TextStyle(
-                        color: context.dangerColor,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    decoration: BoxDecoration(
+                      color: danger.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: danger.withValues(alpha: 0.4)),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.error_outline, size: 18, color: danger),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _errorMessage!,
+                            style: TextStyle(
+                              color: danger,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
+                // The footer's top edge. The actions below sit outside the
+                // scrolling tab body, so this line is what makes them read as a
+                // fixed bar instead of buttons floating under the form.
+                const Divider(height: 1),
               ],
             ),
           ),
         ),
         actions: [
           TextButton(
+            style: TextButton.styleFrom(minimumSize: const Size(96, 48)),
             onPressed: () => Navigator.pop(context),
             child: Text(AppLocalizations.of(context).actionCancel),
           ),
           if (_isLoading)
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
+            const SizedBox(
+              width: 140,
+              height: 48,
+              child: Center(
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
               ),
             )
           else
@@ -1625,10 +1693,9 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: theme.colorScheme.primary,
                 foregroundColor: theme.colorScheme.onPrimary,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 32,
-                  vertical: 12,
-                ),
+                minimumSize: const Size(140, 48),
+                padding: const EdgeInsets.symmetric(horizontal: 32),
+                textStyle: const TextStyle(fontWeight: FontWeight.w600),
               ),
               onPressed: _submit,
               child: Text(buttonText),
@@ -1640,224 +1707,159 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
 
   // --- SUB-WIDGETS TO KEEP THE BUILD TREE CLEAN ---
 
+  /// The house field style (lib/core/ilyass_form.dart), shared with the
+  /// document editor.
+  InputDecoration _fieldDecoration({
+    String? label,
+    String? hint,
+    String? prefix,
+    String? suffix,
+  }) => ilyassFieldDecoration(
+    context,
+    label: label,
+    hint: hint,
+    prefix: prefix,
+    suffix: suffix,
+  );
+
+  /// The frame every editor tab shares — see [IlyassTabBody].
+  Widget _tabBody(List<Widget> sections) => IlyassTabBody(children: sections);
+
+  /// Three stacked sections — PRODUCT INFORMATION, DESCRIPTION, PRODUCT
+  /// BEHAVIOR — in that order of importance. It used to be a 3:2 split with
+  /// the switches floating in a box on the right, which left the lower half of
+  /// the tab empty and gave no field any more weight than another.
   Widget _buildGeneralTab() {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final allGroupsAsync = ref.watch(allProductGroupsProvider);
     // No currency here any more — every money field moved to the Pricing tab.
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            flex: 3,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _nameCtrl,
-                        decoration: InputDecoration(
-                          labelText: AppLocalizations.of(
-                            context,
-                          ).productNameRequired,
-                          filled: true,
-                          fillColor: theme.colorScheme.surface,
-                          border: const OutlineInputBorder(),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: allGroupsAsync.when(
-                        loading: () => const LinearProgressIndicator(),
-                        error: (_, __) => Text(
-                          AppLocalizations.of(context).errorLoadingGroups,
-                        ),
-                        data: (groups) => DropdownButtonFormField<int?>(
-                          initialValue: _selectedGroupId,
-                          decoration: InputDecoration(
-                            labelText: AppLocalizations.of(
-                              context,
-                            ).categoryGroup,
-                            filled: true,
-                            fillColor: theme.colorScheme.surface,
-                            border: const OutlineInputBorder(),
-                          ),
-                          items: [
-                            DropdownMenuItem(
-                              value: null,
-                              child: Text(
-                                AppLocalizations.of(context).noneUncategorized,
-                              ),
-                            ),
-                            ...groups.map(
-                              (g) => DropdownMenuItem(
-                                value: g.id,
-                                child: Text(g.name),
-                              ),
-                            ),
-                          ],
-                          onChanged: (v) =>
-                              setState(() => _selectedGroupId = v),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _codeCtrl,
-                        decoration: InputDecoration(
-                          labelText: AppLocalizations.of(
-                            context,
-                          ).productCodeSku,
-                          filled: true,
-                          fillColor: theme.colorScheme.surface,
-                          border: const OutlineInputBorder(),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _pluCtrl,
-                        decoration: InputDecoration(
-                          labelText: AppLocalizations.of(context).plu,
-                          filled: true,
-                          fillColor: theme.colorScheme.surface,
-                          border: const OutlineInputBorder(),
-                        ),
-                        keyboardType: TextInputType.number,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                // Measurement unit, price, cost and markup now live on the
-                // Pricing tab; age restriction and rank stayed behind because
-                // they are compliance/menu-ordering fields, not pricing ones.
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _ageRestrictionCtrl,
-                        decoration: InputDecoration(
-                          labelText: AppLocalizations.of(
-                            context,
-                          ).ageRestriction,
-                          filled: true,
-                          fillColor: theme.colorScheme.surface,
-                          border: const OutlineInputBorder(),
-                          hintText: AppLocalizations.of(
-                            context,
-                          ).ageRestrictionHint,
-                        ),
-                        keyboardType: TextInputType.number,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _rankCtrl,
-                        decoration: InputDecoration(
-                          labelText: AppLocalizations.of(
-                            context,
-                          ).rankDisplayOrder,
-                          filled: true,
-                          fillColor: theme.colorScheme.surface,
-                          border: const OutlineInputBorder(),
-                        ),
-                        keyboardType: TextInputType.number,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _descriptionCtrl,
-                  maxLines: 3,
-                  decoration: InputDecoration(
-                    labelText: AppLocalizations.of(context).description,
-                    filled: true,
-                    fillColor: theme.colorScheme.surface,
-                    border: const OutlineInputBorder(),
-                    alignLabelWithHint: true,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 32),
-          Expanded(
-            flex: 2,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  decoration: BoxDecoration(
-                    border: Border.all(color: theme.dividerColor),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Column(
-                    children: [
-                      // "Price is tax inclusive" moved to the Pricing tab — it
-                      // qualifies the price, so it belongs next to it.
-                      SwitchListTile(
-                        title: Text(
-                          AppLocalizations.of(context).isServiceNotPhysical,
-                        ),
-                        value: _isService,
-                        onChanged: (v) => setState(() => _isService = v),
-                        visualDensity: VisualDensity.compact,
-                      ),
-                      SwitchListTile(
-                        title: Text(
-                          AppLocalizations.of(context).changePriceAllowed,
-                        ),
-                        value: _isPriceChangeAllowed,
-                        onChanged: (v) =>
-                            setState(() => _isPriceChangeAllowed = v),
-                        visualDensity: VisualDensity.compact,
-                      ),
-                      // Sell by weight. A service has no stock to weigh, so the
-                      // switch is disabled there rather than silently ignored
-                      // at the till.
-                      SwitchListTile(
-                        title: Text(AppLocalizations.of(context).sellByWeight),
-                        subtitle: Text(
-                          AppLocalizations.of(context).sellByWeightHint,
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                        value: _isToWeigh && !_isService,
-                        onChanged: _isService
-                            ? null
-                            : (v) => setState(() => _isToWeigh = v),
-                        isThreeLine: true,
-                        visualDensity: VisualDensity.compact,
-                      ),
-                      SwitchListTile(
-                        title: Text(
-                          AppLocalizations.of(context).isEnabledVisible,
-                        ),
-                        value: _isEnabled,
-                        onChanged: (v) => setState(() => _isEnabled = v),
-                        visualDensity: VisualDensity.compact,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+
+    // The name is THE field of this form, so it is set a weight above the rest.
+    final nameField = TextFormField(
+      controller: _nameCtrl,
+      style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+      decoration: _fieldDecoration(label: l10n.productNameRequired),
+    );
+    final groupField = allGroupsAsync.when(
+      loading: () => const LinearProgressIndicator(),
+      error: (_, __) => Text(l10n.errorLoadingGroups),
+      data: (groups) => DropdownButtonFormField<int?>(
+        initialValue: _selectedGroupId,
+        isExpanded: true,
+        decoration: _fieldDecoration(label: l10n.categoryGroup),
+        items: [
+          DropdownMenuItem(value: null, child: Text(l10n.noneUncategorized)),
+          ...groups.map(
+            (g) => DropdownMenuItem(
+              value: g.id,
+              child: Text(g.name, overflow: TextOverflow.ellipsis),
             ),
           ),
         ],
+        onChanged: (v) => setState(() => _selectedGroupId = v),
       ),
     );
+    final codeField = TextFormField(
+      controller: _codeCtrl,
+      decoration: _fieldDecoration(label: l10n.productCodeSku),
+    );
+    final pluField = TextFormField(
+      controller: _pluCtrl,
+      decoration: _fieldDecoration(label: l10n.plu),
+      keyboardType: TextInputType.number,
+    );
+    final ageField = TextFormField(
+      controller: _ageRestrictionCtrl,
+      decoration: _fieldDecoration(
+        label: l10n.ageRestriction,
+        hint: l10n.ageRestrictionHint,
+      ),
+      keyboardType: TextInputType.number,
+    );
+    final rankField = TextFormField(
+      controller: _rankCtrl,
+      decoration: _fieldDecoration(label: l10n.rankDisplayOrder),
+      keyboardType: TextInputType.number,
+    );
+    // Named by its section header, so a placeholder instead of a second label.
+    // Two lines to start, growing to four — a short note should not claim the
+    // space of an essay.
+    final descriptionField = TextFormField(
+      key: kProductDescriptionFieldKey,
+      controller: _descriptionCtrl,
+      minLines: 2,
+      maxLines: 4,
+      decoration: _fieldDecoration(hint: l10n.productDescriptionPlaceholder),
+    );
+
+    // "Price is tax inclusive" moved to the Pricing tab — it qualifies the
+    // price, so it belongs next to it. Service comes before weight because it
+    // decides whether weight is available at all.
+    final behaviors = <Widget>[
+      IlyassOptionSwitch(
+        title: l10n.isServiceNotPhysical,
+        subtitle: l10n.isServiceHint,
+        value: _isService,
+        onChanged: (v) => setState(() => _isService = v),
+      ),
+      // A service has no stock to weigh, so the switch is disabled there
+      // rather than silently ignored at the till.
+      IlyassOptionSwitch(
+        title: l10n.sellByWeight,
+        subtitle: l10n.sellByWeightHint,
+        value: _isToWeigh && !_isService,
+        onChanged: _isService ? null : (v) => setState(() => _isToWeigh = v),
+      ),
+      IlyassOptionSwitch(
+        title: l10n.changePriceAllowed,
+        subtitle: l10n.changePriceAllowedHint,
+        value: _isPriceChangeAllowed,
+        onChanged: (v) => setState(() => _isPriceChangeAllowed = v),
+      ),
+      IlyassOptionSwitch(
+        title: l10n.isEnabledVisible,
+        subtitle: l10n.isEnabledHint,
+        value: _isEnabled,
+        onChanged: (v) => setState(() => _isEnabled = v),
+      ),
+    ];
+
+    // 3:2 on every row, so the columns line up down the whole section and the
+    // name gets the wider one.
+    const split = [3, 2];
+    return _tabBody([
+      IlyassFormSection(
+        icon: Icons.inventory_2_outlined,
+        title: l10n.productInformationSection,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            IlyassFieldRow(flexes: split, children: [nameField, groupField]),
+            const SizedBox(height: 16),
+            IlyassFieldRow(flexes: split, children: [codeField, pluField]),
+            const SizedBox(height: 16),
+            // Measurement unit, price, cost and markup live on the Pricing
+            // tab; age restriction and rank stayed here because they are
+            // compliance/menu-ordering fields.
+            IlyassFieldRow(flexes: split, children: [ageField, rankField]),
+          ],
+        ),
+      ),
+      IlyassFormSection(
+        icon: Icons.notes_outlined,
+        title: l10n.description,
+        child: descriptionField,
+      ),
+      IlyassFormSection(
+        // Not Icons.tune: the E2E helpers find Quick Settings by that icon,
+        // and a second one on screen would confuse them.
+        icon: Icons.toggle_on_outlined,
+        title: l10n.productBehaviorSection,
+        // Two per row at most, so a switch never drifts far from its label.
+        child: IlyassTileGrid(children: behaviors),
+      ),
+    ]);
   }
 
   /// Everything that decides what the product COSTS: unit, cost, selling
@@ -1870,15 +1872,7 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
   /// Grouped unit picker, replacing the free-text field this screen used to
   /// carry. Grouping by category is what makes the "you cannot sell kg from a
   /// litre product" rule visible before it can be broken.
-  Widget _buildUomDropdown(
-    InputDecoration Function(
-      String, {
-      String? hint,
-      String? prefix,
-      String? suffix,
-    })
-    deco,
-  ) {
+  Widget _buildUomDropdown() {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context);
     final grouped = uomsByCategory();
@@ -1919,7 +1913,7 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
 
     return DropdownButtonFormField<int>(
       initialValue: uomById(_uomId).id,
-      decoration: deco(l10n.measurementUnit),
+      decoration: _fieldDecoration(label: l10n.measurementUnit),
       isExpanded: true,
       items: items,
       onChanged: (v) {
@@ -1949,15 +1943,7 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
   /// EMPTY IS A REAL ANSWER and means the nominal: a catalogue where nobody has
   /// ever stated a box size must keep converting exactly as it did before the
   /// field existed, so the hint spells out what that number is.
-  Widget _buildPackSizeField(
-    InputDecoration Function(
-      String, {
-      String? hint,
-      String? prefix,
-      String? suffix,
-    })
-    deco,
-  ) {
+  Widget _buildPackSizeField() {
     final l10n = AppLocalizations.of(context);
     final unit = uomById(_uomId);
     final stockUnit = referenceUomOf(unit);
@@ -1971,8 +1957,8 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
       // Redraws the conversion note beside it as the number is typed.
       onChanged: (_) => setState(() {}),
-      decoration: deco(
-        l10n.uomPackSize(unit.code),
+      decoration: _fieldDecoration(
+        label: l10n.uomPackSize(unit.code),
         hint: l10n.uomPackSizeHint(nominal),
         suffix: stockUnit.code,
       ),
@@ -1997,42 +1983,36 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
     final unit = uomById(_uomId);
     final stockUnit = referenceUomOf(unit);
 
-    if (unit.isReference) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        child: Text(
-          l10n.uomStockHeldIn(stockUnit.code),
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-        ),
-      );
-    }
-
+    // One panel either way, at a field's height, so it sits level with the
+    // unit dropdown beside it instead of floating as a stray line of text.
     return Container(
+      constraints: const BoxConstraints(minHeight: 56),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      alignment: AlignmentDirectional.centerStart,
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
         children: [
           Icon(
-            Icons.info_outline,
+            unit.isReference ? Icons.inventory_2_outlined : Icons.info_outline,
             size: 18,
             color: theme.colorScheme.onSurfaceVariant,
           ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              l10n.uomStockConversionNote(
-                unit.code,
-                formatQuantityValue(
-                  uomToReference(1, unit.id, packSize: _packSize),
-                  stockUnit.id,
-                ),
-                stockUnit.code,
-              ),
+              unit.isReference
+                  ? l10n.uomStockHeldIn(stockUnit.code)
+                  : l10n.uomStockConversionNote(
+                      unit.code,
+                      formatQuantityValue(
+                        uomToReference(1, unit.id, packSize: _packSize),
+                        stockUnit.id,
+                      ),
+                      stockUnit.code,
+                    ),
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -2051,168 +2031,141 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
         UomCategory.length => l10n.uomCategoryLength,
       };
 
+  /// PRICE & COST, TAXES, UNIT & STOCK — what the till charges first, then
+  /// what is added to it, then what one unit of it is.
   Widget _buildPricingTab() {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context);
     final currencySymbol = ref.watch(currencySymbolProvider);
     final allTaxesAsync = ref.watch(allTaxesProvider);
 
-    InputDecoration deco(
-      String label, {
-      String? hint,
-      String? prefix,
-      String? suffix,
-    }) => InputDecoration(
-      labelText: label,
-      filled: true,
-      fillColor: theme.colorScheme.surface,
-      border: const OutlineInputBorder(),
-      hintText: hint,
-      prefixText: prefix,
-      suffixText: suffix,
+    // The price is what the till charges, so — like the name on General — it
+    // is set a weight above the rest. The "/ kg" suffix says what one unit of
+    // it buys, so a price never reads as per piece on a product sold by weight.
+    final priceField = TextFormField(
+      controller: _priceCtrl,
+      // Rebuilds the breakdown below as the price is typed.
+      onChanged: (_) => setState(() {}),
+      style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+      decoration: _fieldDecoration(
+        label: l10n.sellingPriceRequired,
+        prefix: '$currencySymbol ',
+        suffix: '/ ${uomById(_uomId).code}',
+      ),
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+    );
+    final costField = TextFormField(
+      controller: _costCtrl,
+      decoration: _fieldDecoration(
+        label: l10n.purchaseCost,
+        prefix: '$currencySymbol ',
+      ),
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+    );
+    final markupField = TextFormField(
+      controller: _markupCtrl,
+      decoration: _fieldDecoration(label: l10n.marginMarkup, suffix: '%'),
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
     );
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Unit + the stock note. Backed by catalog ids rather than free text
-          // so the POS can convert a sale into a stock movement — see
-          // lib/uom/unit_of_measure.dart.
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildUomDropdown(deco),
-                    // Only box and pack can carry one; every other unit is a
-                    // physical fact, not a packaging choice.
-                    if (isPackSizedUom(_uomId)) ...[
-                      const SizedBox(height: 12),
-                      _buildPackSizeField(deco),
-                    ],
-                  ],
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(child: _buildStockUnitNote()),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: TextFormField(
-                  controller: _priceCtrl,
-                  // Rebuilds the breakdown below as the price is typed.
-                  onChanged: (_) => setState(() {}),
-                  decoration: deco(
-                    l10n.sellingPriceRequired,
-                    prefix: "$currencySymbol ",
-                  ),
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: TextFormField(
-                  controller: _costCtrl,
-                  decoration: deco(
-                    l10n.purchaseCost,
-                    prefix: "$currencySymbol ",
-                  ),
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          // Directly under the price, per the request: you can see WHICH tax
-          // applies while creating the product, not two dialogs later.
-          allTaxesAsync.when(
-            loading: () => const LinearProgressIndicator(),
-            error: (_, __) => Text(l10n.failedToLoadTaxes),
-            data: (taxes) {
-              final enabled = taxes.where((t) => t.isEnabled).toList();
-              // A stale id (tax disabled or deleted since) must not be handed
-              // to the dropdown — Material asserts on a value with no item.
-              final safeValue = enabled.any((t) => t.id == _selectedTaxId)
-                  ? _selectedTaxId
-                  : null;
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: DropdownButtonFormField<int?>(
-                          initialValue: safeValue,
-                          decoration: deco(l10n.primaryTaxRate),
-                          items: [
-                            DropdownMenuItem(
-                              value: null,
-                              child: Text(l10n.noTax),
-                            ),
-                            ...enabled.map(
-                              (t) => DropdownMenuItem(
-                                value: t.id,
-                                child: Text(
-                                  "${t.name} (${t.rate}${t.isFixed ? '' : '%'})",
-                                ),
-                              ),
-                            ),
-                          ],
-                          onChanged: (v) => setState(() => _selectedTaxId = v),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: SwitchListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: Text(
-                            l10n.priceIsTaxInclusive,
-                            style: const TextStyle(fontSize: 13),
-                          ),
-                          value: _isTaxInclusive,
-                          onChanged: (v) => setState(() => _isTaxInclusive = v),
-                          visualDensity: VisualDensity.compact,
-                        ),
-                      ),
-                    ],
-                  ),
-                  _buildTaxBreakdown(enabled, currencySymbol),
-                ],
-              );
-            },
-          ),
-          if (_costPriceMarkupEnabled) ...[
-            const SizedBox(height: 16),
-            Row(
+    // Directly under the price, per the request: you can see WHICH tax applies
+    // while creating the product, not two dialogs later.
+    final taxContent = allTaxesAsync.when(
+      loading: () => const LinearProgressIndicator(),
+      error: (_, __) => Text(l10n.failedToLoadTaxes),
+      data: (taxes) {
+        final enabled = taxes.where((t) => t.isEnabled).toList();
+        // A stale id (tax disabled or deleted since) must not be handed to the
+        // dropdown — Material asserts on a value with no item.
+        final safeValue = enabled.any((t) => t.id == _selectedTaxId)
+            ? _selectedTaxId
+            : null;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            IlyassFieldRow(
+              flexes: const [3, 2],
               children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: _markupCtrl,
-                    decoration: deco(l10n.marginMarkup, suffix: "%"),
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
+                DropdownButtonFormField<int?>(
+                  initialValue: safeValue,
+                  isExpanded: true,
+                  decoration: _fieldDecoration(label: l10n.primaryTaxRate),
+                  items: [
+                    DropdownMenuItem(value: null, child: Text(l10n.noTax)),
+                    ...enabled.map(
+                      (t) => DropdownMenuItem(
+                        value: t.id,
+                        child: Text(
+                          "${t.name} (${t.rate}${t.isFixed ? '' : '%'})",
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                     ),
-                  ),
+                  ],
+                  onChanged: (v) => setState(() => _selectedTaxId = v),
                 ),
-                const SizedBox(width: 16),
-                const Expanded(child: SizedBox()),
+                // Same card as General's options: it qualifies the price, so
+                // it sits beside the tax that would be added to it.
+                IlyassOptionSwitch(
+                  title: l10n.priceIsTaxInclusive,
+                  value: _isTaxInclusive,
+                  onChanged: (v) => setState(() => _isTaxInclusive = v),
+                ),
               ],
             ),
+            _buildTaxBreakdown(enabled, currencySymbol),
           ],
-        ],
-      ),
+        );
+      },
     );
+
+    // Only box and pack can carry a pack size; every other unit is a physical
+    // fact, not a packaging choice. Beside the unit goes whichever says more:
+    // the pack size when there is one, otherwise the stock note.
+    final packSized = isPackSizedUom(_uomId);
+    final unitContent = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        IlyassFieldRow(
+          flexes: const [3, 2],
+          children: [
+            _buildUomDropdown(),
+            packSized ? _buildPackSizeField() : _buildStockUnitNote(),
+          ],
+        ),
+        if (packSized) ...[const SizedBox(height: 12), _buildStockUnitNote()],
+      ],
+    );
+
+    return _tabBody([
+      IlyassFormSection(
+        icon: Icons.payments_outlined,
+        title: l10n.priceAndCostSection,
+        // The dialog's usual 3:2 split; a company that prices from cost gets
+        // the markup as a third column rather than a half-empty row of its own.
+        child: IlyassFieldRow(
+          flexes: _costPriceMarkupEnabled ? const [3, 2, 2] : const [3, 2],
+          minFieldWidth: _costPriceMarkupEnabled ? 180 : 240,
+          children: [
+            priceField,
+            costField,
+            if (_costPriceMarkupEnabled) markupField,
+          ],
+        ),
+      ),
+      IlyassFormSection(
+        icon: Icons.receipt_long_outlined,
+        title: l10n.taxesLabel,
+        child: taxContent,
+      ),
+      // Backed by catalog ids rather than free text so the POS can convert a
+      // sale into a stock movement — see lib/uom/unit_of_measure.dart.
+      IlyassFormSection(
+        icon: Icons.straighten,
+        title: l10n.unitAndStockSection,
+        child: unitContent,
+      ),
+    ]);
   }
 
   /// Live "the tax IS being applied" confirmation under the price.
@@ -2244,25 +2197,37 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
     String money(double v) => '$currencySymbol ${v.toStringAsFixed(2)}';
     final l10n = AppLocalizations.of(context);
 
-    return Padding(
-      padding: const EdgeInsets.only(top: 8),
-      child: Column(
+    final cs = Theme.of(context).colorScheme;
+
+    // A quiet panel under the tax row: what the till will actually charge.
+    return Container(
+      margin: const EdgeInsets.only(top: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            l10n.taxBreakdownAdded(
-              money(price),
-              money(amount),
-              money(price + amount),
-            ),
-            style: TextStyle(
-              fontSize: 12,
-              color: Theme.of(
-                context,
-              ).colorScheme.onSurface.withValues(alpha: 0.65),
+          Icon(Icons.calculate_outlined, size: 18, color: cs.onSurfaceVariant),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.taxBreakdownAdded(
+                    money(price),
+                    money(amount),
+                    money(price + amount),
+                  ),
+                  style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+                ),
+                _buildTaxInclusiveWarning(),
+              ],
             ),
           ),
-          _buildTaxInclusiveWarning(),
         ],
       ),
     );
@@ -2299,202 +2264,162 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
   // otherwise a new product could never be given a colour or picture.
   Widget _buildAppearanceTab() {
     final theme = Theme.of(context);
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+    final l10n = AppLocalizations.of(context);
+    final hasImage =
+        _selectedImageBase64 != null && _selectedImageBase64!.isNotEmpty;
+
+    // 🚨 The swatches must stay the ONLY Wrap on this tab: the E2E `pickSwatch`
+    // takes the Nth InkWell inside any Wrap, so a button laid out in a second
+    // Wrap would shift every index it picks.
+    final colorSection = IlyassFormSection(
+      icon: Icons.palette_outlined,
+      title: l10n.productColorMarker,
+      subtitle: l10n.colorMarkerHint,
+      child: Wrap(
+        spacing: 12,
+        runSpacing: 12,
+        children: _colorPalette.map((color) {
+          final hex = _colorToHex(color);
+          final isSelected =
+              _selectedHexColor.toUpperCase() == hex.toUpperCase();
+          return InkWell(
+            onTap: () => setState(() => _selectedHexColor = hex),
+            borderRadius: BorderRadius.circular(24),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: color,
+                shape: BoxShape.circle,
+                border: isSelected
+                    ? Border.all(color: theme.colorScheme.primary, width: 3)
+                    : null,
+                boxShadow: [
+                  if (isSelected)
+                    BoxShadow(
+                      color: color.withValues(alpha: 0.4),
+                      blurRadius: 6,
+                      spreadRadius: 1,
+                    ),
+                ],
+              ),
+              child: isSelected
+                  ? const Icon(Icons.check, color: Colors.white, size: 20)
+                  : null,
+            ),
+          );
+        }).toList(),
+      ),
+    );
+
+    final imageSection = IlyassFormSection(
+      icon: Icons.image_outlined,
+      title: l10n.productImage,
+      subtitle: l10n.productImageHint,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  AppLocalizations.of(context).productColorMarker,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: theme.hintColor,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  AppLocalizations.of(context).colorMarkerHint,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.hintColor,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  children: _colorPalette.map((color) {
-                    final hex = _colorToHex(color);
-                    final isSelected =
-                        _selectedHexColor.toUpperCase() == hex.toUpperCase();
-                    return InkWell(
-                      onTap: () => setState(() => _selectedHexColor = hex),
-                      borderRadius: BorderRadius.circular(24),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color: color,
-                          shape: BoxShape.circle,
-                          border: isSelected
-                              ? Border.all(
-                                  color: Theme.of(context).colorScheme.primary,
-                                  width: 3,
-                                )
-                              : null,
-                          boxShadow: [
-                            if (isSelected)
-                              BoxShadow(
-                                color: color.withValues(alpha: 0.4),
-                                blurRadius: 6,
-                                spreadRadius: 1,
-                              ),
-                          ],
-                        ),
-                        child: isSelected
-                            ? const Icon(
-                                Icons.check,
-                                color: Colors.white,
-                                size: 20,
-                              )
-                            : null,
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ],
+          Container(
+            width: 140,
+            height: 140,
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: theme.colorScheme.outlineVariant),
             ),
+            child: hasImage
+                ? Image.memory(
+                    base64Decode(_selectedImageBase64!),
+                    fit: BoxFit.cover,
+                  )
+                : PhosphorIcon(
+                    PhosphorIconsRegular.forkKnife,
+                    color: theme.hintColor,
+                    size: 44,
+                  ),
           ),
-          const SizedBox(width: 32),
-          Expanded(
+          const SizedBox(width: 16),
+          Flexible(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  AppLocalizations.of(context).productImage,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: theme.hintColor,
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(0, 48),
                   ),
+                  icon: const Icon(Icons.upload, size: 18),
+                  label: Text(l10n.actionUpload),
+                  onPressed: _pickImage,
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  AppLocalizations.of(context).productImageHint,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.hintColor,
+                if (hasImage) ...[
+                  const SizedBox(height: 8),
+                  TextButton.icon(
+                    style: TextButton.styleFrom(
+                      foregroundColor: context.dangerColor,
+                      minimumSize: const Size(0, 48),
+                    ),
+                    onPressed: () =>
+                        setState(() => _selectedImageBase64 = null),
+                    icon: const Icon(Icons.delete_outline, size: 18),
+                    label: Text(l10n.removeImage),
                   ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Container(
-                      width: 140,
-                      height: 140,
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: theme.dividerColor),
-                      ),
-                      child:
-                          _selectedImageBase64 != null &&
-                              _selectedImageBase64!.isNotEmpty
-                          ? ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: Image.memory(
-                                base64Decode(_selectedImageBase64!),
-                                fit: BoxFit.cover,
-                              ),
-                            )
-                          : PhosphorIcon(
-                              PhosphorIconsRegular.forkKnife,
-                              color: theme.hintColor,
-                              size: 44,
-                            ),
-                    ),
-                    const SizedBox(width: 16),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        ElevatedButton.icon(
-                          icon: const Icon(Icons.upload, size: 18),
-                          label: Text(
-                            AppLocalizations.of(context).actionUpload,
-                          ),
-                          onPressed: _pickImage,
-                        ),
-                        if (_selectedImageBase64 != null &&
-                            _selectedImageBase64!.isNotEmpty) ...[
-                          const SizedBox(height: 8),
-                          TextButton(
-                            onPressed: () =>
-                                setState(() => _selectedImageBase64 = null),
-                            child: Text(
-                              AppLocalizations.of(context).removeImage,
-                              style: TextStyle(color: context.dangerColor),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ],
-                ),
+                ],
               ],
             ),
           ),
         ],
       ),
     );
+
+    // Side by side while both fit at 340dp, one height so neither card ends
+    // short; stacked below that.
+    return _tabBody([
+      IlyassTileGrid(
+        minTileWidth: 340,
+        children: [colorSection, imageSection],
+      ),
+    ]);
   }
 
   Widget _buildTaxesTab() {
-    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final allTaxesAsync = ref.watch(allTaxesProvider);
-    return Padding(
-      padding: const EdgeInsets.all(32.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            AppLocalizations.of(context).applyTaxes,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 16),
-          allTaxesAsync.when(
-            loading: () => const CircularProgressIndicator(),
-            error: (_, __) =>
-                Text(AppLocalizations.of(context).failedToLoadTaxes),
-            data: (taxes) {
-              return DropdownButtonFormField<int?>(
-                initialValue: _selectedTaxId,
-                decoration: InputDecoration(
-                  labelText: AppLocalizations.of(context).primaryTaxRate,
-                  filled: true,
-                  fillColor: theme.colorScheme.surface,
-                  border: const OutlineInputBorder(),
-                ),
-                items: [
-                  DropdownMenuItem(
-                    value: null,
-                    child: Text(AppLocalizations.of(context).noTax),
-                  ),
-                  ...taxes.map(
-                    (t) => DropdownMenuItem(
-                      value: t.id,
-                      child: Text("${t.name} (${t.rate}%)"),
+    return _tabBody([
+      IlyassFormSection(
+        icon: Icons.receipt_long_outlined,
+        title: l10n.applyTaxes,
+        // One picker does not need the full width of a desktop dialog.
+        child: Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 480),
+            child: allTaxesAsync.when(
+              loading: () => const LinearProgressIndicator(),
+              error: (_, __) => Text(l10n.failedToLoadTaxes),
+              data: (taxes) {
+                return DropdownButtonFormField<int?>(
+                  initialValue: _selectedTaxId,
+                  isExpanded: true,
+                  decoration: _fieldDecoration(label: l10n.primaryTaxRate),
+                  items: [
+                    DropdownMenuItem(value: null, child: Text(l10n.noTax)),
+                    ...taxes.map(
+                      (t) => DropdownMenuItem(
+                        value: t.id,
+                        child: Text("${t.name} (${t.rate}%)"),
+                      ),
                     ),
-                  ),
-                ],
-                onChanged: (v) => setState(() => _selectedTaxId = v),
-              );
-            },
+                  ],
+                  onChanged: (v) => setState(() => _selectedTaxId = v),
+                );
+              },
+            ),
           ),
-        ],
+        ),
       ),
-    );
+    ]);
   }
 
   Widget _buildModifiersTab() {
@@ -2508,14 +2433,15 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
     // Attaching a handful of groups on a 10-inch tablet overflowed the tab —
     // the exact RenderFlex failure the house rules call out. Capped at the
     // readable width too, so the fields do not stretch across a desktop.
-    return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: kMaxReadableWidth),
-        child: ListView(
-          padding: const EdgeInsets.all(32.0),
-          // The picker carries its own heading and hint — a second title above
-          // it said the same thing twice, and the one it said was about the
-          // catalogue that is now gone.
+    // The section carries the heading and hint; the picker is only the list
+    // and its button, so the title is said once.
+    return _tabBody([
+      IlyassFormSection(
+        icon: Icons.playlist_add_check,
+        title: AppLocalizations.of(context).productModifierGroups,
+        subtitle: AppLocalizations.of(context).productModifierGroupsHint,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // ── Modifier groups ──────────────────────────────────────────────
             // 🚨 The free-text comment catalogue that used to sit under this is
@@ -2533,7 +2459,7 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
           ],
         ),
       ),
-    );
+    ]);
   }
 
   /// Puts a generated code in the field, and says so when another product
@@ -2576,22 +2502,31 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
     // from Drift here — no per-open /Barcodes/GetByProductId fetch.
     final asyncBarcodes = ref.watch(barcodesByProductIdProvider(productId));
 
-    return Padding(
-      padding: const EdgeInsets.all(32.0),
+    final barcodeCount = asyncBarcodes.value?.length ?? 0;
+
+    // One card filling the tab: the entry row on top, the list taking the
+    // height that is left. 🚨 Deliberately NOT a scroll view: the E2E
+    // `addBarcode` taps Add without ensureVisible (inside this dialog that
+    // would scroll the TabBarView instead), so the entry row has to be on
+    // screen the moment the tab opens.
+    return Container(
+      margin: const EdgeInsets.all(kIlyassTabPadding),
+      padding: kIlyassSectionInsets,
+      decoration: ilyassSectionDecoration(theme.colorScheme),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            AppLocalizations.of(context).productBarcodes,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          IlyassSectionHeader(
+            icon: Icons.qr_code_2,
+            title: AppLocalizations.of(context).productBarcodes,
+            subtitle: AppLocalizations.of(context).barcodesHint,
+            trailing: barcodeCount == 0 ? null : IlyassCountBadge(barcodeCount),
           ),
-          Text(
-            AppLocalizations.of(context).barcodesHint,
-            style: TextStyle(color: theme.hintColor),
-          ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 14),
 
-          // INPUT ROW WITH GENERATOR
+          // INPUT ROW WITH GENERATOR. The field and Add share THIS Row on
+          // purpose — `addBarcode` finds the button through the field's
+          // innermost Row ancestor.
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -2614,7 +2549,9 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                             : AppLocalizations.of(context).scanOrEnterBarcode,
                         filled: true,
                         fillColor: theme.colorScheme.surface,
-                        border: const OutlineInputBorder(),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                         prefixIcon: const Icon(Icons.qr_code_scanner),
                         prefix: _isBarcodeChipActive
                             ? Padding(
@@ -2680,7 +2617,8 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                         TextButton.icon(
                           style: TextButton.styleFrom(
                             padding: EdgeInsets.zero,
-                            minimumSize: const Size(50, 30),
+                            // Finger-sized; 30 was a mouse target.
+                            minimumSize: const Size(50, 40),
                             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           ),
                           icon: Icon(
@@ -2776,9 +2714,11 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: theme.colorScheme.primary,
                   foregroundColor: theme.colorScheme.onPrimary,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 20,
+                  // The field's own height, so the two read as one control.
+                  minimumSize: const Size(0, 56),
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
                   ),
                 ),
                 onPressed: () async {
@@ -2844,17 +2784,37 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
               ),
               data: (barcodes) {
                 if (barcodes.isEmpty) {
+                  // Scrolls rather than overflows when a short screen leaves
+                  // the list only a sliver of height.
                   return Center(
-                    child: Text(
-                      AppLocalizations.of(context).noBarcodesYet,
-                      style: TextStyle(color: theme.hintColor, fontSize: 16),
+                    child: SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.qr_code_2,
+                            size: 44,
+                            color: theme.colorScheme.outline,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            AppLocalizations.of(context).noBarcodesYet,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: theme.hintColor,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   );
                 }
                 return Container(
+                  clipBehavior: Clip.antiAlias,
                   decoration: BoxDecoration(
-                    border: Border.all(color: theme.dividerColor),
-                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: theme.colorScheme.outlineVariant),
+                    borderRadius: BorderRadius.circular(10),
                   ),
                   child: ListView.separated(
                     itemCount: barcodes.length,
@@ -2866,7 +2826,7 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                           Icons.qr_code,
                           color: b.isPendingSync
                               ? theme.colorScheme.tertiary
-                              : Colors.blueGrey,
+                              : theme.colorScheme.onSurfaceVariant,
                         ),
                         title: Text(
                           b.value,
@@ -3032,19 +2992,10 @@ class _ProductModifierGroupsPicker extends ConsumerWidget {
       );
     }
 
+    // The heading and hint are the enclosing section's header now.
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          l10n.productModifierGroups,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-        Text(
-          l10n.productModifierGroupsHint,
-          style: TextStyle(color: theme.hintColor, fontSize: 12),
-        ),
-        const SizedBox(height: 12),
-
         if (attached.isEmpty)
           _HintCard(
             icon: Icons.info_outline,
@@ -3125,6 +3076,7 @@ class _ProductModifierGroupsPicker extends ConsumerWidget {
         Align(
           alignment: AlignmentDirectional.centerStart,
           child: FilledButton.tonalIcon(
+            style: FilledButton.styleFrom(minimumSize: const Size(0, 48)),
             // A real button with a real callback. It was previously a
             // TextButton with onPressed: null nested inside a PopupMenuButton,
             // which rendered permanently greyed out and looked broken — the

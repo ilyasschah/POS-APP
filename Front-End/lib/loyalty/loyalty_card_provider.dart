@@ -18,7 +18,12 @@ final allLoyaltyCardsProvider =
     ),
   ])
     ..where(db.loyaltyCardsTable.companyId.equals(companyId))
-    ..where(db.loyaltyCardsTable.syncStatus.isNotIn(['pending_delete']));
+    ..where(db.loyaltyCardsTable.syncStatus.isNotIn(['pending_delete']))
+    // A card whose customer is queued for deletion goes with it (the server
+    // cascades) — hide it now, not after the next sync. If the server refuses
+    // the delete the customer reverts to synced and the card reappears.
+    ..where(db.customersTable.syncStatus.isNull() |
+        db.customersTable.syncStatus.isNotIn(['pending_delete']));
 
   return query.watch().map((rows) => rows.map((row) {
         final card = row.readTable(db.loyaltyCardsTable);

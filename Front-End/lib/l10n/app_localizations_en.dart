@@ -2134,6 +2134,42 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get deleteCustomerLoyaltyTitle => 'Loyalty points will be lost';
+
+  @override
+  String deleteCustomerLoyaltyBody(int count, String points) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'This customer has $count loyalty cards with a combined balance of $points pts.',
+      one: 'This customer has a loyalty card with a balance of $points pts.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get deleteCustomerLoyaltyConsequence =>
+      'Deleting the customer permanently deletes their loyalty card, its points and their customer data. This cannot be undone.';
+
+  @override
+  String get deleteCustomerDisableHint =>
+      'To keep the points, cancel and disable the customer instead.';
+
+  @override
+  String deleteCustomerLoyaltyAcknowledge(String points) {
+    return 'I understand — delete this customer together with their loyalty points ($points pts).';
+  }
+
+  @override
+  String get deleteCustomerAndCard => 'Delete customer & card';
+
+  @override
+  String loyaltyPointsValue(String points) {
+    return '$points pts';
+  }
+
+  @override
   String codeValueLabel(Object code) {
     return 'Code: $code';
   }
@@ -3611,6 +3647,37 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get isEnabledVisible => 'Is Enabled (Visible)';
+
+  @override
+  String get productInformationSection => 'Product information';
+
+  @override
+  String get productBehaviorSection => 'Product behavior';
+
+  @override
+  String get productDescriptionPlaceholder =>
+      'Optional — a short note about this product';
+
+  @override
+  String get isServiceHint =>
+      'Not a physical item: stock is not checked when it is sold.';
+
+  @override
+  String get changePriceAllowedHint =>
+      'The cashier can set or change the price at the till.';
+
+  @override
+  String get isEnabledHint => 'Shown on the POS menu and available for sale.';
+
+  @override
+  String get priceAndCostSection => 'Price & cost';
+
+  @override
+  String get unitAndStockSection => 'Unit & stock';
+
+  @override
+  String get noDocumentDiscounts =>
+      'No promotions or order-level discounts on this document.';
 
   @override
   String get productColorMarker => 'Product Color Marker';

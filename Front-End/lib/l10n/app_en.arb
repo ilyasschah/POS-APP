@@ -831,6 +831,37 @@
       "name": {}
     }
   },
+  "deleteCustomerLoyaltyTitle": "Loyalty points will be lost",
+  "deleteCustomerLoyaltyBody": "{count, plural, =1{This customer has a loyalty card with a balance of {points} pts.} other{This customer has {count} loyalty cards with a combined balance of {points} pts.}}",
+  "@deleteCustomerLoyaltyBody": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "points": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteCustomerLoyaltyConsequence": "Deleting the customer permanently deletes their loyalty card, its points and their customer data. This cannot be undone.",
+  "deleteCustomerDisableHint": "To keep the points, cancel and disable the customer instead.",
+  "deleteCustomerLoyaltyAcknowledge": "I understand — delete this customer together with their loyalty points ({points} pts).",
+  "@deleteCustomerLoyaltyAcknowledge": {
+    "placeholders": {
+      "points": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteCustomerAndCard": "Delete customer & card",
+  "loyaltyPointsValue": "{points} pts",
+  "@loyaltyPointsValue": {
+    "placeholders": {
+      "points": {
+        "type": "String"
+      }
+    }
+  },
   "codeValueLabel": "Code: {code}",
   "@codeValueLabel": {
     "placeholders": {
@@ -1458,6 +1489,15 @@
   "isServiceNotPhysical": "Is Service (Not physical)",
   "changePriceAllowed": "Change Price Allowed",
   "isEnabledVisible": "Is Enabled (Visible)",
+  "productInformationSection": "Product information",
+  "productBehaviorSection": "Product behavior",
+  "productDescriptionPlaceholder": "Optional — a short note about this product",
+  "isServiceHint": "Not a physical item: stock is not checked when it is sold.",
+  "changePriceAllowedHint": "The cashier can set or change the price at the till.",
+  "isEnabledHint": "Shown on the POS menu and available for sale.",
+  "priceAndCostSection": "Price & cost",
+  "unitAndStockSection": "Unit & stock",
+  "noDocumentDiscounts": "No promotions or order-level discounts on this document.",
   "productColorMarker": "Product Color Marker",
   "productImage": "Product Image",
   "productImageHint": "Replaces the placeholder icon on the POS menu tile.",

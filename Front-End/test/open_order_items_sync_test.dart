@@ -401,6 +401,84 @@ void main() {
     expect(row.customerId, 99, reason: 'unpushed local choice wins');
   });
 
+  // ── The service status ─────────────────────────────────────────────────────
+  //
+  // Reported from production: picking "In Kitchen" (2) from the POS header
+  // always snapped back to 1, while the KDS's "ready" (3) stuck instantly. The
+  // poll exempted serviceStatus from the unpushed-work rule on the theory that
+  // only the server ever sets it — so it wrote the server's stale 1 over the
+  // cashier's 2 before the push could send it. 3 only survived via keepReady.
+
+  Future<void> setLocalStatus(String localId, int status) =>
+      (db.update(db.posOrdersTable)..where((t) => t.localId.equals(localId)))
+          .write(PosOrdersTableCompanion(serviceStatus: Value(status)));
+
+  Future<int> statusOf(String localId) async =>
+      (await (db.select(db.posOrdersTable)
+                ..where((t) => t.localId.equals(localId)))
+              .getSingle())
+          .serviceStatus;
+
+  test('a status picked here is not reverted by a stale server value',
+      () async {
+    await insertLocalSyncedOrder(
+      localId: 'local-uuid-status',
+      serverId: 77,
+      tableId: 12,
+      syncStatus: 'pending',
+    );
+    await setLocalStatus('local-uuid-status', 2);
+
+    // The server still reports 1 — the push has not landed yet.
+    await syncOpenOrdersToDrift(db, 1, fallbackWarehouseId: 2, api: _FakeApi(orders: [_order], items: _items));
+
+    // The assertion that fails against the pre-fix code: it came back as 1.
+    expect(await statusOf('local-uuid-status'), 2,
+        reason: 'unpushed local status wins');
+  });
+
+  test('a status changed on another terminal still reaches this one',
+      () async {
+    await insertLocalSyncedOrder(
+      localId: 'local-uuid-status',
+      serverId: 77,
+      tableId: 12,
+    );
+    await setLocalStatus('local-uuid-status', 1);
+
+    await syncOpenOrdersToDrift(
+      db,
+      1,
+      fallbackWarehouseId: 2,
+      api: _FakeApi(orders: [
+        {..._order, 'serviceStatus': 2},
+      ], items: _items),
+    );
+
+    // Nothing unpushed here, so the server's value is the newer one.
+    expect(await statusOf('local-uuid-status'), 2);
+  });
+
+  test('a KDS "ready" is still never downgraded by the poll', () async {
+    await insertLocalSyncedOrder(
+      localId: 'local-uuid-status',
+      serverId: 77,
+      tableId: 12,
+    );
+    await setLocalStatus('local-uuid-status', kServiceStatusReady);
+
+    await syncOpenOrdersToDrift(
+      db,
+      1,
+      fallbackWarehouseId: 2,
+      api: _FakeApi(orders: [
+        {..._order, 'serviceStatus': 2},
+      ], items: _items),
+    );
+
+    expect(await statusOf('local-uuid-status'), kServiceStatusReady);
+  });
+
   // ── Duplicate rows: the bug that killed open-order sync outright ───────────
   //
   // Case 2 required `syncStatus == 'synced'` to adopt a just-pushed local row —

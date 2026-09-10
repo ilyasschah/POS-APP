@@ -366,8 +366,27 @@ class CartNotifier extends Notifier<CartState> {
     );
   }
 
-  void setServiceStatus(int newStatus) {
+  /// Sets the order's service status from the POS header button.
+  ///
+  /// An order already parked in Drift is written through immediately, the same
+  /// way the KDS "ready" lands (`PosKitchenServer._markReady`): the floor plan
+  /// and the KDS read the ROW, not the cart, and a cashier who picks a status
+  /// and walks away without pressing Save expects it to have stuck. Marked
+  /// 'pending' so the push carries it up — and so the open-order poll leaves it
+  /// alone until then (see `locallyOwned` in `syncOpenOrdersToDrift`).
+  Future<void> setServiceStatus(int newStatus) async {
     state = state.copyWith(serviceStatus: newStatus);
+    final localId = state.existingLocalOrderId;
+    if (localId == null) return; // not parked yet — the next save carries it
+    final db = ref.read(appDatabaseProvider);
+    await (db.update(db.posOrdersTable)
+          ..where((t) => t.localId.equals(localId)))
+        .write(PosOrdersTableCompanion(
+      serviceStatus: Value(newStatus),
+      syncStatus: const Value('pending'),
+      lastModified: Value(DateTime.now().toUtc()),
+    ));
+    _notifyKitchen();
   }
 
   bool get _discountBeforeTax =>
@@ -894,7 +913,11 @@ class CartNotifier extends Notifier<CartState> {
     state = CartState(
       activePosOrderId: 0,
       serviceType: serviceType,
-      serviceStatus: 1,
+      // Kept, not reset to 1: this runs on the FIRST product tap of an empty
+      // cart, so a status the cashier picked from the header a moment earlier
+      // was wiped before the order existed. An empty cart only ever holds 1
+      // (clearCart / the CartState default) or that deliberate pick.
+      serviceStatus: state.serviceStatus,
       floorPlanTableId: null,
       orderNumber: orderNumber,
       activeWarehouseId: effectiveWarehouseId,
