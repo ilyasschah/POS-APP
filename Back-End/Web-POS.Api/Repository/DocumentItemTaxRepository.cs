@@ -60,7 +60,10 @@ namespace Api.Repository
 
         public async Task UpdateAsync(DocumentItemTax documentItemTax)
         {
-            _db.DocumentItemTaxes.Update(documentItemTax);
+            // The row alone. It arrives untracked with its Tax included, and
+            // DbSet.Update attaches the whole graph — a second copy of a Tax the
+            // caller has already loaded, which EF refuses, so every update threw.
+            _db.Entry(documentItemTax).State = EntityState.Modified;
             await _db.SaveChangesAsync();
         }
 

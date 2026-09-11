@@ -34,13 +34,7 @@ namespace Api.Services
             if (tax == null)
                 throw new InvalidOperationException("Tax not found.");
 
-            decimal rate = Convert.ToDecimal(tax.Rate);
-            decimal priceBeforeTax = Convert.ToDecimal(documentItem.PriceBeforeTax);
-            decimal quantity = Convert.ToDecimal(documentItem.Quantity);
-
-            decimal taxRateDecimal = rate / 100m;
-            decimal taxPerItem = priceBeforeTax * taxRateDecimal;
-            decimal totalTaxAmount = Math.Round(taxPerItem * quantity, 4);
+            decimal totalTaxAmount = LineTaxAmount(tax, documentItem.PriceBeforeTax, documentItem.Quantity);
 
             // 2. Create and Save
             var newDocumentItemTax = DocumentItemTax.Create(
@@ -76,13 +70,7 @@ namespace Api.Services
             if (documentItem != null && tax != null)
             {
                 // 1. Calculate the exact math based on PriceBeforeTax
-                decimal rate = Convert.ToDecimal(tax.Rate);
-                decimal priceBeforeTax = Convert.ToDecimal(documentItem.PriceBeforeTax);
-                decimal quantity = Convert.ToDecimal(documentItem.Quantity);
-
-                decimal taxRateDecimal = rate / 100m;
-                decimal taxPerItem = priceBeforeTax * taxRateDecimal;
-                decimal totalTaxAmount = Math.Round(taxPerItem * quantity, 4);
+                decimal totalTaxAmount = LineTaxAmount(tax, documentItem.PriceBeforeTax, documentItem.Quantity);
 
                 // 2. Update the existing entity (DO NOT CREATE NEW)
                 entityToUpdate.UpdateAmount(totalTaxAmount);
@@ -113,26 +101,40 @@ namespace Api.Services
             return true;
         }
 
+        // A fixed tax is a flat amount per unit — Rate × quantity — never a share of
+        // the price. Treating it as a percentage banked a 2.00 levy on 10 × 50.00
+        // as 10.00 (2% of 500) instead of 20.00.
+        private static decimal LineTaxAmount(Tax tax, decimal priceBeforeTax, decimal quantity)
+        {
+            decimal perUnit = tax.IsFixed ? tax.Rate : priceBeforeTax * (tax.Rate / 100m);
+            return Math.Round(perUnit * quantity, 4);
+        }
+
         // Recomputes DocumentItem.Price and .Total after any tax change.
-        // Price = PriceBeforeTax × (1 + sumOfAllAppliedRates / 100)
+        // Price = PriceBeforeTax × (1 + sumOfPercentRates / 100) + sumOfFixedAmounts
         private async Task RecalculateItemAsync(int documentItemId, int companyId)
         {
             var item = await _documentItemRepository.GetByIdAsync(documentItemId, companyId);
             if (item == null) return;
 
-            var appliedTaxes = await _repository.GetByDocumentItemIdAsync(documentItemId, companyId);
-            decimal totalTaxRate = appliedTaxes
+            var appliedTaxes = (await _repository.GetByDocumentItemIdAsync(documentItemId, companyId))
                 .Where(t => t.Tax != null)
-                .Sum(t => t.Tax!.Rate);
+                .Select(t => t.Tax!)
+                .ToList();
+            decimal percentRate = appliedTaxes.Where(t => !t.IsFixed).Sum(t => t.Rate);
+            decimal fixedPerUnit = appliedTaxes.Where(t => t.IsFixed).Sum(t => t.Rate);
 
             decimal pbt = item.PriceBeforeTax;
-            decimal price = pbt * (1 + totalTaxRate / 100m);
+            decimal price = pbt * (1 + percentRate / 100m) + fixedPerUnit;
 
             decimal disc = item.Discount;
             int discType = item.DiscountType;
 
+            // A percentage discount comes off the price and its percentage tax,
+            // never off a fixed tax — that stays Rate × quantity whatever the
+            // discount. Same rule as the document editor on the terminal.
             decimal discountBase = discType == 0 ? pbt * (disc / 100m) : disc;
-            decimal discountTaxed = discType == 0 ? price * (disc / 100m) : disc;
+            decimal discountTaxed = discType == 0 ? (price - fixedPerUnit) * (disc / 100m) : disc;
             decimal pbtd = pbt - discountBase;
             decimal pad = price - discountTaxed;
             decimal total = pad * item.Quantity;

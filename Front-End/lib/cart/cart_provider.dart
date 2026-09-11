@@ -674,7 +674,9 @@ class CartNotifier extends Notifier<CartState> {
             double currentDiscount = 0;
             // discountType: 0 for %, 1 for $
             if (pItem.discountType == 0) {
-              currentDiscount = item.price * (pItem.value / 100);
+              // Never from a fixed tax — see [discountableUnitPrice].
+              currentDiscount =
+                  discountableUnitPrice(item) * (pItem.value / 100);
             } else {
               currentDiscount = pItem.value;
             }

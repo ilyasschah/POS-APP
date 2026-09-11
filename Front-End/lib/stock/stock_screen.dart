@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:pos_app/core/ilyass_dropdown.dart';
 import 'package:pos_app/core/app_date_format.dart';
 import 'package:pos_app/core/ilyass_list_scaffold.dart';
 import 'package:pos_app/stock/warehouse_model.dart';
@@ -262,7 +263,9 @@ class _StockScreenState extends ConsumerState<StockScreen> {
     // rate the same way the cart does: its own assignment first, then the
     // configured default (only while the tax-inclusive feature is on).
     final ratesByProduct = <int, double>{};
+    final fixedByProduct = <int, double>{};
     double defaultPctRate = 0;
+    double defaultFixed = 0;
     try {
       final db = ref.read(appDatabaseProvider);
       final companyId = ref.read(selectedCompanyProvider)?.id;
@@ -271,12 +274,19 @@ class _StockScreenState extends ConsumerState<StockScreen> {
         for (final t in taxes)
           if (t.isEnabled && !t.isFixed) t.id: t.rate,
       };
+      // A fixed tax is money per sale unit, not a rate: it is added and
+      // subtracted, never multiplied in or divided out — as the cart does.
+      final fixedById = {
+        for (final t in taxes)
+          if (t.isEnabled && t.isFixed) t.id: t.rate,
+      };
 
       final settings = ref.read(appSettingsProvider);
       if (settings[SettingKeys.taxIncludedByDefault]?.toLowerCase() == 'true') {
         for (final id
             in parseDefaultTaxRateIds(settings[SettingKeys.defaultTaxRateIds])) {
           defaultPctRate += rateById[id] ?? 0;
+          defaultFixed += fixedById[id] ?? 0;
         }
       }
 
@@ -288,6 +298,8 @@ class _StockScreenState extends ConsumerState<StockScreen> {
         for (final a in assignments) {
           ratesByProduct[a.productId] =
               (ratesByProduct[a.productId] ?? 0) + (rateById[a.taxId] ?? 0);
+          fixedByProduct[a.productId] =
+              (fixedByProduct[a.productId] ?? 0) + (fixedById[a.taxId] ?? 0);
         }
       }
     } catch (_) {
@@ -315,8 +327,17 @@ class _StockScreenState extends ConsumerState<StockScreen> {
       // default, exactly like the cart's fallback.
       final pct     = ratesByProduct[p.id] ?? defaultPctRate;
       final divisor = 1 + pct / 100;
-      final saleBT  = p.isTaxInclusivePrice ? qty * unitPrice / divisor : qty * unitPrice;
-      final saleIT  = p.isTaxInclusivePrice ? qty * unitPrice : qty * unitPrice * divisor;
+      // Per reference unit, like the two prices above.
+      final fixed   = pricePerReferenceUnit(
+          fixedByProduct[p.id] ?? defaultFixed, p.uomId, packSize: p.packSize);
+      // Inclusive: the fixed amount comes off the top before the percentage is
+      // divided out — the cart's `lineTaxBasis` order.
+      final saleBT  = p.isTaxInclusivePrice
+          ? qty * ((unitPrice - fixed) / divisor).clamp(0.0, double.infinity)
+          : qty * unitPrice;
+      final saleIT  = p.isTaxInclusivePrice
+          ? qty * unitPrice
+          : qty * (unitPrice * divisor + fixed);
 
       totalCostBT  += costBT;
       totalCostIT  += costBT; // cost incl tax == cost bef tax (no cost tax rate)
@@ -1116,13 +1137,14 @@ class _AssignStockDialogState
           asyncWarehouses.when(
             loading: () => const CircularProgressIndicator(),
             error: (e, _) => Text(AppLocalizations.of(context).errorWithMessage(e.toString())),
-            data: (warehouses) => DropdownButtonFormField<int>(
-              decoration:
-                  InputDecoration(labelText: AppLocalizations.of(context).warehouse),
-              items: warehouses
-                  .map((w) => DropdownMenuItem(
-                      value: w.id, child: Text(w.name)))
-                  .toList(),
+            data: (warehouses) => IlyassDropdown<int>(
+              value: _selectedWarehouseId,
+              label: AppLocalizations.of(context).warehouse,
+              prefixIcon: Icons.warehouse_outlined,
+              items: [
+                for (final w in warehouses)
+                  IlyassDropdownItem(value: w.id, label: w.name),
+              ],
               onChanged: (v) =>
                   setState(() => _selectedWarehouseId = v),
             ),

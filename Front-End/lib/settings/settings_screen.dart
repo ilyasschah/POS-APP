@@ -3,6 +3,7 @@
 import 'dart:io';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:pos_app/core/ilyass_dropdown.dart';
 import 'package:pos_app/core/app_date_format.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter/services.dart';
@@ -50,6 +51,7 @@ import 'package:pos_app/currency/currencies_provider.dart';
 import 'package:pos_app/floor_plan/floor_plan_table_provider.dart';
 import 'package:pos_app/license/license_service.dart';
 import 'package:pos_app/navigation/nav_widgets.dart';
+import 'package:pos_app/menu/pos_header_order.dart';
 import 'package:pos_app/company/company_provider.dart';
 import 'package:pos_app/settings/printer_settings_screen.dart';
 import 'package:pos_app/kitchen/kitchen_push_service.dart';
@@ -496,6 +498,134 @@ class _SettingsCard extends StatelessWidget {
   }
 }
 
+/// Compact tiles for a small editable list (service types, service statuses):
+/// as many to a row as fit at [_minTileWidth], measured on the width the list
+/// actually has (Ilyass Style §2) — never one full-width bar per entry.
+class _EntryTileGrid extends StatelessWidget {
+  const _EntryTileGrid({required this.children});
+
+  final List<Widget> children;
+
+  static const double _minTileWidth = 210;
+  static const double _gap = 8;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Not clamped to the entry count: a single type stays a tile rather
+        // than stretching back into the full-width bar this replaces.
+        final perRow = ((constraints.maxWidth + _gap) / (_minTileWidth + _gap))
+            .floor()
+            .clamp(1, 4);
+        final width = (constraints.maxWidth - _gap * (perRow - 1)) / perRow;
+        return Wrap(
+          spacing: _gap,
+          runSpacing: _gap,
+          children: [
+            for (final child in children) SizedBox(width: width, child: child),
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// One entry of an [_EntryTileGrid]: a numbered colour dot, a name, an
+/// optional detail line, and its edit / delete actions. Tapping the tile
+/// edits it too — the whole tile is a bigger target than the pencil.
+class _EntryTile extends StatelessWidget {
+  const _EntryTile({
+    required this.avatarColor,
+    required this.avatarText,
+    required this.title,
+    required this.onEdit,
+    required this.onDelete,
+    this.subtitle,
+  });
+
+  final Color avatarColor;
+  final String avatarText;
+  final String title;
+  final String? subtitle;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    return Material(
+      color: cs.surfaceContainerHighest,
+      borderRadius: BorderRadius.circular(10),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onEdit,
+        child: Padding(
+          padding: const EdgeInsetsDirectional.fromSTEB(10, 6, 4, 6),
+          child: Row(
+            children: [
+              CircleAvatar(
+                backgroundColor: avatarColor,
+                radius: 14,
+                child: Text(
+                  avatarText,
+                  style: TextStyle(
+                    color: context.onStatusColor,
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    if (subtitle != null)
+                      Text(
+                        subtitle!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: cs.onSurfaceVariant,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              IconButton(
+                visualDensity: VisualDensity.compact,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints.tightFor(width: 36, height: 36),
+                icon: const Icon(Icons.edit_outlined, size: 18),
+                onPressed: onEdit,
+              ),
+              IconButton(
+                visualDensity: VisualDensity.compact,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints.tightFor(width: 36, height: 36),
+                icon: const Icon(Icons.delete_outline, size: 18),
+                color: cs.error,
+                onPressed: onDelete,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 // A text field row that saves on focus-loss / submit
 class _SettingTextField extends ConsumerStatefulWidget {
   final String settingKey;
@@ -728,28 +858,17 @@ class _SettingDropdown extends ConsumerWidget {
       child: Row(
         children: [
           Expanded(
-            child: DropdownButtonFormField<String>(
-              initialValue: safeValue,
-              decoration: InputDecoration(
-                labelText: label,
-                filled: true,
-                fillColor: theme.colorScheme.surface,
-                border: const OutlineInputBorder(),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 10,
-                ),
-                isDense: true,
-              ),
-              dropdownColor: theme.colorScheme.surfaceContainerHighest,
-              items: options
-                  .map(
-                    (o) => DropdownMenuItem(
-                      value: o,
-                      child: Text((optionLabel ?? _settingOptionLabel)(context, o)),
-                    ),
-                  )
-                  .toList(),
+            child: IlyassDropdown<String>(
+              value: safeValue,
+              label: label,
+              dense: true,
+              items: [
+                for (final o in options)
+                  IlyassDropdownItem(
+                    value: o,
+                    label: (optionLabel ?? _settingOptionLabel)(context, o),
+                  ),
+              ],
               onChanged: (v) {
                 if (v != null) {
                   ref.read(appSettingsProvider.notifier).set(settingKey, v);
@@ -878,52 +997,23 @@ class _CustomServiceTypesEditorState
             ],
           ),
           const SizedBox(height: 6),
-          ...types.asMap().entries.map((entry) {
-            final idx = entry.key;
-            final t = entry.value;
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 6),
-              child: Material(
-                color: theme.colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(8),
-                clipBehavior: Clip.antiAlias,
-                child: ListTile(
-                  dense: true,
-                  leading: CircleAvatar(
-                    backgroundColor: _palette[idx % _palette.length],
-                    radius: 14,
-                    child: Text(
-                      '${t.id}',
-                      style: TextStyle(
-                        color: context.onStatusColor,
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  title: Text(t.name),
-                  subtitle: Text(
-                    AppLocalizations.of(context).prefixColonValue(t.prefix),
-                    style: theme.textTheme.bodySmall,
-                  ),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.edit_outlined, size: 18),
-                        onPressed: () => _showTypeDialog(existing: t),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.delete_outline, size: 18),
-                        color: theme.colorScheme.error,
-                        onPressed: () => _delete(t),
-                      ),
-                    ],
-                  ),
+          // Compact tiles, as many to a row as fit — a type is a name and a
+          // prefix, which never needed a full-width bar of its own.
+          _EntryTileGrid(
+            children: [
+              for (final entry in types.asMap().entries)
+                _EntryTile(
+                  avatarColor: _palette[entry.key % _palette.length],
+                  avatarText: '${entry.value.id}',
+                  title: entry.value.name,
+                  subtitle: AppLocalizations.of(
+                    context,
+                  ).prefixColonValue(entry.value.prefix),
+                  onEdit: () => _showTypeDialog(existing: entry.value),
+                  onDelete: () => _delete(entry.value),
                 ),
-              ),
-            );
-          }),
+            ],
+          ),
         ],
       ),
     );
@@ -1113,45 +1203,18 @@ class _CustomServiceStatusesEditorState
             ],
           ),
           const SizedBox(height: 6),
-          ...statuses.map(
-            (s) => Padding(
-              padding: const EdgeInsets.only(bottom: 6),
-              child: Material(
-                color: theme.colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(8),
-                clipBehavior: Clip.antiAlias,
-                child: ListTile(
-                  dense: true,
-                  leading: CircleAvatar(
-                    backgroundColor: s.color,
-                    radius: 14,
-                    child: Text(
-                      '${s.id}',
-                      style: TextStyle(
-                        color: context.onStatusColor,
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  title: Text(s.name),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.edit_outlined, size: 18),
-                        onPressed: () => _showStatusDialog(existing: s),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.delete_outline, size: 18),
-                        color: theme.colorScheme.error,
-                        onPressed: () => _delete(s),
-                      ),
-                    ],
-                  ),
+          // The same compact tiles as the service types.
+          _EntryTileGrid(
+            children: [
+              for (final s in statuses)
+                _EntryTile(
+                  avatarColor: s.color,
+                  avatarText: '${s.id}',
+                  title: s.name,
+                  onEdit: () => _showStatusDialog(existing: s),
+                  onDelete: () => _delete(s),
                 ),
-              ),
-            ),
+            ],
           ),
         ],
       ),
@@ -1301,6 +1364,21 @@ class _BookingSettingsCardState extends ConsumerState<_BookingSettingsCard> {
     return _SettingsCard(
       title: AppLocalizations.of(context).setBooking,
       children: [
+        // The switch that turns bookings on sits with the settings it
+        // governs — it used to be a card away, under "Features".
+        _SettingSwitch(
+          settingKey: SettingKeys.featureBookingEnabled,
+          label: AppLocalizations.of(context).setEnableBookings,
+          subtitle: AppLocalizations.of(context).setRequiresFloorPlan,
+          icon: Icons.edit_calendar_outlined,
+          onChanged: (ref, enabled) {
+            if (enabled) {
+              ref
+                  .read(appSettingsProvider.notifier)
+                  .setBool(SettingKeys.featureFloorPlanEnabled, true);
+            }
+          },
+        ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
           child: Column(
@@ -1332,40 +1410,26 @@ class _BookingSettingsCardState extends ConsumerState<_BookingSettingsCard> {
                     ),
                   ),
                   const SizedBox(width: 16),
-                  DropdownButton<String>(
+                  IlyassDropdown<String>(
                     value: s.resourceMode,
-                    underline: const SizedBox.shrink(),
-                    borderRadius: BorderRadius.circular(8),
+                    dense: true,
+                    expand: false,
+                    width: 170,
                     items: [
-                      DropdownMenuItem(
+                      IlyassDropdownItem(
                         value: 'table',
-                        child: Row(
-                          children: [
-                            const Icon(Icons.table_restaurant, size: 16),
-                            const SizedBox(width: 6),
-                            Text(AppLocalizations.of(context).setTable),
-                          ],
-                        ),
+                        label: AppLocalizations.of(context).setTable,
+                        icon: Icons.table_restaurant,
                       ),
-                      DropdownMenuItem(
+                      IlyassDropdownItem(
                         value: 'room',
-                        child: Row(
-                          children: [
-                            const Icon(Icons.meeting_room, size: 16),
-                            const SizedBox(width: 6),
-                            Text(AppLocalizations.of(context).setRoom),
-                          ],
-                        ),
+                        label: AppLocalizations.of(context).setRoom,
+                        icon: Icons.meeting_room,
                       ),
-                      DropdownMenuItem(
+                      IlyassDropdownItem(
                         value: 'staff',
-                        child: Row(
-                          children: [
-                            const Icon(Icons.person, size: 16),
-                            const SizedBox(width: 6),
-                            Text(AppLocalizations.of(context).setStaff),
-                          ],
-                        ),
+                        label: AppLocalizations.of(context).setStaff,
+                        icon: Icons.person,
                       ),
                     ],
                     onChanged: (v) {
@@ -1402,20 +1466,17 @@ class _BookingSettingsCardState extends ConsumerState<_BookingSettingsCard> {
                     ),
                   ),
                   const SizedBox(width: 16),
-                  DropdownButton<int>(
+                  IlyassDropdown<int>(
                     value: _durationOptions.contains(s.defaultDurationMinutes)
                         ? s.defaultDurationMinutes
                         : _durationOptions.last,
-                    underline: const SizedBox.shrink(),
-                    borderRadius: BorderRadius.circular(8),
-                    items: _durationOptions
-                        .map(
-                          (m) => DropdownMenuItem(
-                            value: m,
-                            child: Text(_formatDuration(m)),
-                          ),
-                        )
-                        .toList(),
+                    dense: true,
+                    expand: false,
+                    width: 130,
+                    items: [
+                      for (final m in _durationOptions)
+                        IlyassDropdownItem(value: m, label: _formatDuration(m)),
+                    ],
                     onChanged: (v) {
                       if (v != null) {
                         _save(s.copyWith(defaultDurationMinutes: v));
@@ -1452,18 +1513,17 @@ class _BookingSettingsCardState extends ConsumerState<_BookingSettingsCard> {
                     ),
                   ),
                   const SizedBox(width: 16),
-                  DropdownButton<int>(
+                  IlyassDropdown<int>(
                     value: _snappingOptions.contains(s.timeSnappingMinutes)
                         ? s.timeSnappingMinutes
                         : 15,
-                    underline: const SizedBox.shrink(),
-                    borderRadius: BorderRadius.circular(8),
-                    items: _snappingOptions
-                        .map(
-                          (m) =>
-                              DropdownMenuItem(value: m, child: Text('$m min')),
-                        )
-                        .toList(),
+                    dense: true,
+                    expand: false,
+                    width: 130,
+                    items: [
+                      for (final m in _snappingOptions)
+                        IlyassDropdownItem(value: m, label: '$m min'),
+                    ],
                     onChanged: (v) {
                       if (v != null) _save(s.copyWith(timeSnappingMinutes: v));
                     },
@@ -1491,7 +1551,6 @@ class _CurrencyDropdown extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
     final currenciesAsync = ref.watch(currenciesProvider);
     final storedValue =
         ref.watch(appSettingsProvider)[SettingKeys.currencySymbol] ?? '';
@@ -1522,25 +1581,17 @@ class _CurrencyDropdown extends ConsumerWidget {
               ? storedValue
               : keys.first;
 
-          return DropdownButtonFormField<String>(
-            initialValue: safeValue,
-            decoration: InputDecoration(
-              labelText: AppLocalizations.of(context).setCurrency,
-              filled: true,
-              fillColor: theme.colorScheme.surface,
-              border: const OutlineInputBorder(),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 10,
-              ),
-              isDense: true,
-            ),
-            dropdownColor: theme.colorScheme.surfaceContainerHighest,
-            items: currencies.map((c) {
-              final key = c.code ?? c.name;
-              final label = c.code != null ? '${c.name} (${c.code})' : c.name;
-              return DropdownMenuItem<String>(value: key, child: Text(label));
-            }).toList(),
+          return IlyassDropdown<String>(
+            value: safeValue,
+            label: AppLocalizations.of(context).setCurrency,
+            dense: true,
+            items: [
+              for (final c in currencies)
+                IlyassDropdownItem(
+                  value: c.code ?? c.name,
+                  label: c.code != null ? '${c.name} (${c.code})' : c.name,
+                ),
+            ],
             onChanged: (val) {
               if (val != null) {
                 ref
@@ -2057,28 +2108,20 @@ class _DropdownControl extends ConsumerWidget {
         kSettingDefaults[settingKey] ??
         options.first;
     final safe = options.contains(current) ? current : options.first;
-    return ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 180),
-      child: DropdownButton<String>(
-        value: safe,
-        isDense: true,
-        underline: const SizedBox.shrink(),
-        borderRadius: BorderRadius.circular(8),
-        dropdownColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-        items: options
-            .map(
-              (o) => DropdownMenuItem(
-                value: o,
-                child: Text(_settingOptionLabel(context, o)),
-              ),
-            )
-            .toList(),
-        onChanged: (v) {
-          if (v != null) {
-            ref.read(appSettingsProvider.notifier).set(settingKey, v);
-          }
-        },
-      ),
+    return IlyassDropdown<String>(
+      value: safe,
+      dense: true,
+      expand: false,
+      width: 180,
+      items: [
+        for (final o in options)
+          IlyassDropdownItem(value: o, label: _settingOptionLabel(context, o)),
+      ],
+      onChanged: (v) {
+        if (v != null) {
+          ref.read(appSettingsProvider.notifier).set(settingKey, v);
+        }
+      },
     );
   }
 }
@@ -2101,15 +2144,15 @@ class _ThemeModeControl extends ConsumerWidget {
     final current =
         ref.watch(appSettingsProvider)[SettingKeys.themeMode] ?? 'light';
     final safe = _labels.containsKey(current) ? current : 'light';
-    return DropdownButton<String>(
+    return IlyassDropdown<String>(
       value: safe,
-      isDense: true,
-      underline: const SizedBox.shrink(),
-      borderRadius: BorderRadius.circular(8),
-      dropdownColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-      items: _labels.entries
-          .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
-          .toList(),
+      dense: true,
+      expand: false,
+      width: 180,
+      items: [
+        for (final e in _labels.entries)
+          IlyassDropdownItem(value: e.key, label: e.value),
+      ],
       onChanged: (v) {
         if (v != null) {
           ref.read(appSettingsProvider.notifier).set(SettingKeys.themeMode, v);
@@ -2474,7 +2517,7 @@ List<SearchableSetting> _kSearchableSettings(
   // ── Order & Payment ──────────────────────────────────────────────────────────
   SearchableSetting(
     title: AppLocalizations.of(context).setEnableFloorPlan,
-    tabName: 'Order & Payment · Features',
+    tabName: 'Order & Payment · Tables & Floor Plan',
     tabIndex: 1,
     trailingBuilder: (_) => _SwitchControl(
       SettingKeys.featureFloorPlanEnabled,
@@ -2489,7 +2532,7 @@ List<SearchableSetting> _kSearchableSettings(
   ),
   SearchableSetting(
     title: AppLocalizations.of(context).setEnableBookings,
-    tabName: 'Order & Payment · Features',
+    tabName: 'Order & Payment · Booking',
     tabIndex: 1,
     trailingBuilder: (_) => _SwitchControl(
       SettingKeys.featureBookingEnabled,
@@ -2504,7 +2547,7 @@ List<SearchableSetting> _kSearchableSettings(
   ),
   SearchableSetting(
     title: AppLocalizations.of(context).setTablesButtonLabel,
-    tabName: 'Order & Payment · Features',
+    tabName: 'Order & Payment · Tables & Floor Plan',
     tabIndex: 1,
     trailingBuilder: (_) => _TextFieldControl(
       SettingKeys.tablesButtonLabel,
@@ -2513,14 +2556,14 @@ List<SearchableSetting> _kSearchableSettings(
   ),
   SearchableSetting(
     title: AppLocalizations.of(context).setAllowTablelessOrders,
-    tabName: 'Order & Payment · Features',
+    tabName: 'Order & Payment · Tables & Floor Plan',
     tabIndex: 1,
     trailingBuilder: (_) =>
         const _SwitchControl(SettingKeys.allowTablelessOrders),
   ),
   SearchableSetting(
     title: AppLocalizations.of(context).setAllowWalkInTableOrders,
-    tabName: 'Order & Payment · Features',
+    tabName: 'Order & Payment · Tables & Floor Plan',
     tabIndex: 1,
     trailingBuilder: (_) =>
         const _SwitchControl(SettingKeys.allowWalkInTableOrders),
@@ -2661,28 +2704,28 @@ List<SearchableSetting> _kSearchableSettings(
   ),
   SearchableSetting(
     title: AppLocalizations.of(context).setServiceStatusSelector,
-    tabName: 'Order & Payment · Service Type',
+    tabName: 'Order & Payment · Service Status',
     tabIndex: 1,
     trailingBuilder: (_) =>
         const _SwitchControl(SettingKeys.featureServiceStatusEnabled),
   ),
   SearchableSetting(
     title: AppLocalizations.of(context).setResetOrderNumber,
-    tabName: 'Order & Payment · Advanced',
+    tabName: 'Order & Payment · Service Type',
     tabIndex: 1,
     trailingBuilder: (_) =>
         const _SwitchControl(SettingKeys.resetOrderNumberOnDayClose),
   ),
   SearchableSetting(
     title: AppLocalizations.of(context).setShowItemsOnPaymentForm,
-    tabName: 'Order & Payment · Advanced',
+    tabName: 'Order & Payment · Payment',
     tabIndex: 1,
     trailingBuilder: (_) =>
         const _SwitchControl(SettingKeys.showItemsOnPaymentForm),
   ),
   SearchableSetting(
     title: AppLocalizations.of(context).setPaymentTypeRows,
-    tabName: 'Order & Payment · Advanced',
+    tabName: 'Order & Payment · Payment',
     tabIndex: 1,
     trailingBuilder: (_) => const _NumericStepper(
       settingKey: SettingKeys.numberOfPaymentTypeRows,
@@ -2692,7 +2735,7 @@ List<SearchableSetting> _kSearchableSettings(
   ),
   SearchableSetting(
     title: AppLocalizations.of(context).setShowAllOccupied,
-    tabName: 'Order & Payment · Advanced',
+    tabName: 'Order & Payment · Tables & Floor Plan',
     tabIndex: 1,
     trailingBuilder: (_) =>
         const _SwitchControl(SettingKeys.showAllOccupiedTablesInFloorPlan),
@@ -3037,6 +3080,41 @@ class _TabScrollView extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: cards,
       ),
+    );
+  }
+}
+
+/// Two settings cards side by side while each keeps a readable width, stacked
+/// below that — measured on the width the tab actually has (Ilyass Style §2).
+/// For groups too small to deserve the whole width of the tab on their own.
+class _CardPair extends StatelessWidget {
+  const _CardPair({required this.start, required this.end});
+
+  final Widget start;
+  final Widget end;
+
+  static const double _minCardWidth = 400;
+  static const double _gap = 16;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 2 * _minCardWidth + _gap) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [start, end],
+          );
+        }
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: start),
+            const SizedBox(width: _gap),
+            Expanded(child: end),
+          ],
+        );
+      },
     );
   }
 }
@@ -4041,6 +4119,25 @@ class _GeneralTab extends ConsumerWidget {
                 ),
               ),
             ),
+            // The header buttons, one row each: the switch shows or hides it
+            // on EVERY till (company setting, synced); the drag handle sets
+            // its place on THIS till (device preference). The close-register
+            // switch in there governs the red button in BOTH places it
+            // appears — the till header and the session screen.
+            const PosHeaderButtonOrderList(),
+            Divider(
+              height: 1,
+              color: Theme.of(context).dividerColor.withValues(alpha: 0.1),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+              child: Text(
+                AppLocalizations.of(context).posOtherButtons,
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
             LayoutBuilder(
               builder: (context, constraints) {
                 // Responsive: 2 columns on tablets/desktops (>600px), 1 column on phones
@@ -4049,6 +4146,9 @@ class _GeneralTab extends ConsumerWidget {
                     ? constraints.maxWidth / 2
                     : constraints.maxWidth;
 
+                // Buttons that are not in the till header — the browser's
+                // search, the cart's quantity key, the session screen's
+                // "continue selling". Switches only; there is no order to set.
                 final posButtons = [
                   (
                     key: SettingKeys.showSearchBtn,
@@ -4056,76 +4156,9 @@ class _GeneralTab extends ConsumerWidget {
                     icon: Icons.search,
                   ),
                   (
-                    key: SettingKeys.showTransferBtn,
-                    label: AppLocalizations.of(context).posTransfer,
-                    icon: Icons.swap_horiz,
-                  ),
-                  (
-                    key: SettingKeys.showCustomerBtn,
-                    label: AppLocalizations.of(context).customerLabel,
-                    icon: Icons.person_outline,
-                  ),
-                  (
-                    key: SettingKeys.showDiscountBtn,
-                    label: AppLocalizations.of(context).posDiscount,
-                    icon: Icons.local_offer_outlined,
-                  ),
-                  (
-                    key: SettingKeys.showModifiersBtn,
-                    label: AppLocalizations.of(context).posModifiers,
-                    icon: Icons.tune,
-                  ),
-                  (
-                    key: SettingKeys.showRefundBtn,
-                    label: AppLocalizations.of(context).posRefund,
-                    icon: Icons.assignment_return_outlined,
-                  ),
-                  (
-                    key: SettingKeys.showCashDrawerBtn,
-                    label: AppLocalizations.of(context).setCashDrawer,
-                    icon: Icons.point_of_sale,
-                  ),
-                  (
-                    key: SettingKeys.showWarehouseBtn,
-                    label: AppLocalizations.of(context).setWarehouseSwitcher,
-                    icon: Icons.warehouse_outlined,
-                  ),
-                  (
-                    key: SettingKeys.showBookingBtn,
-                    label: AppLocalizations.of(context).posBookings,
-                    icon: Icons.calendar_month_outlined,
-                  ),
-                  (
-                    key: SettingKeys.showTablesBtn,
-                    label: AppLocalizations.of(context).setTablesFloorPlan,
-                    icon: Icons.table_restaurant_outlined,
-                  ),
-                  (
-                    key: SettingKeys.showKitchenBtn,
-                    label: AppLocalizations.of(context).setSendToKitchen,
-                    icon: Icons.kitchen_outlined,
-                  ),
-                  (
-                    key: SettingKeys.showAdditionBtn,
-                    label: AppLocalizations.of(context).posAddition,
-                    icon: Icons.receipt_long_outlined,
-                  ),
-                  (
-                    key: SettingKeys.showTaxBtn,
-                    label: AppLocalizations.of(context).fieldTax,
-                    icon: Icons.account_balance_outlined,
-                  ),
-                  (
                     key: SettingKeys.showQuantityBtn,
                     label: AppLocalizations.of(context).setChangeQuantity,
                     icon: Icons.numbers,
-                  ),
-                  // Governs the red button in BOTH places it appears — the till
-                  // header and the session screen. One action, one switch.
-                  (
-                    key: SettingKeys.showCloseRegisterBtn,
-                    label: AppLocalizations.of(context).closeRegister,
-                    icon: Icons.lock_outline,
                   ),
                   (
                     key: SettingKeys.showContinueSellingBtn,
@@ -4201,10 +4234,19 @@ class _OrderPaymentTab extends ConsumerWidget {
       );
     }
 
+    final l = AppLocalizations.of(context);
+
+    // Grouped by what each setting is ABOUT, and paired side by side where a
+    // group is small (see [_CardPair]) — a card with three settings no longer
+    // stretches across the whole tab on its own. There used to be a
+    // "Features" card holding the floor plan AND the bookings switch (whose
+    // settings lived in the next card), and an "Advanced" card that was
+    // really one floor-plan, two payment and one order-number setting.
     return _TabScrollView(
       cards: [
+        // ── Tables & floor plan ───────────────────────────────────────────
         _SettingsCard(
-          title: AppLocalizations.of(context).setFeatures,
+          title: l.setTablesFloorPlanHeader,
           children: [
             buildGrid([
               _SettingSwitch(
@@ -4217,19 +4259,6 @@ class _OrderPaymentTab extends ConsumerWidget {
                     ref
                         .read(appSettingsProvider.notifier)
                         .setBool(SettingKeys.featureBookingEnabled, false);
-                  }
-                },
-              ),
-              _SettingSwitch(
-                settingKey: SettingKeys.featureBookingEnabled,
-                label: AppLocalizations.of(context).setEnableBookings,
-                subtitle: AppLocalizations.of(context).setRequiresFloorPlan,
-                icon: Icons.edit_calendar_outlined,
-                onChanged: (ref, enabled) {
-                  if (enabled) {
-                    ref
-                        .read(appSettingsProvider.notifier)
-                        .setBool(SettingKeys.featureFloorPlanEnabled, true);
                   }
                 },
               ),
@@ -4252,11 +4281,43 @@ class _OrderPaymentTab extends ConsumerWidget {
                 enabled: floorPlanEnabled,
                 icon: Icons.directions_walk_outlined,
               ),
+              // A floor-plan setting — it used to hide under "Advanced".
+              _SettingSwitch(
+                settingKey: SettingKeys.showAllOccupiedTablesInFloorPlan,
+                label: l.setShowAllOccupied,
+                enabled: floorPlanEnabled,
+                icon: Icons.event_seat_outlined,
+              ),
             ]),
             const SizedBox(height: 8),
           ],
         ),
-        const _BookingSettingsCard(),
+        // ── Booking | POS session ─────────────────────────────────────────
+        // 🚨 In the POS session card the register comes first because it
+        // decides WHOSE session the two below are describing. Point two
+        // terminals at one register and they share its open session, its
+        // documents and its drawer; leave it unset and each device is its own
+        // till, which is how this worked before registers existed.
+        //
+        // The other two decide what happens at CLOSING. Without the cash
+        // methods the till has to guess which tenders came out of the drawer,
+        // and a mis-guess moves money between "counted" and merely
+        // "confirmed" — which is why the session screen nags until this is set
+        // rather than quietly carrying on.
+        _CardPair(
+          start: const _BookingSettingsCard(),
+          end: _SettingsCard(
+            title: l.setPosSession,
+            children: const [
+              _RegisterSelector(),
+              Divider(height: 24),
+              _CashPaymentMethodsSelector(),
+              Divider(height: 24),
+              _MaxCashDifferenceField(),
+              SizedBox(height: 8),
+            ],
+          ),
+        ),
         _SettingsCard(
           title: AppLocalizations.of(context).setItems,
           children: [
@@ -4296,19 +4357,6 @@ class _OrderPaymentTab extends ConsumerWidget {
           ],
         ),
         _SettingsCard(
-          title: AppLocalizations.of(context).setUsers,
-          children: [
-            buildGrid([
-              _SettingSwitch(
-                settingKey: SettingKeys.singleUser,
-                label: AppLocalizations.of(context).setSingleUser,
-                icon: Icons.person_outline,
-              ),
-            ]),
-            const SizedBox(height: 8),
-          ],
-        ),
-        _SettingsCard(
           title: AppLocalizations.of(context).setPayment,
           children: [
             buildGrid([
@@ -4333,132 +4381,123 @@ class _OrderPaymentTab extends ConsumerWidget {
                 label: AppLocalizations.of(context).setSingleItemDiscount,
                 icon: Icons.local_offer_outlined,
               ),
-            ]),
-            const SizedBox(height: 8),
-          ],
-        ),
-        // ── POS session ───────────────────────────────────────────────────
-        // 🚨 The register comes first because it decides WHOSE session the two
-        // below are describing. Point two terminals at one register and they
-        // share its open session, its documents and its drawer; leave it unset
-        // and each device is its own till, which is how this worked before
-        // registers existed.
-        //
-        // The other two decide what happens at CLOSING. Without the cash
-        // methods the till has to guess which tenders came out of the drawer,
-        // and a mis-guess moves money between "counted" and merely "confirmed" —
-        // which is why the session screen nags until this is set rather than
-        // quietly carrying on.
-        _SettingsCard(
-          title: AppLocalizations.of(context).setPosSession,
-          children: const [
-            _RegisterSelector(),
-            Divider(height: 24),
-            _CashPaymentMethodsSelector(),
-            Divider(height: 24),
-            _MaxCashDifferenceField(),
-            SizedBox(height: 8),
-          ],
-        ),
-        _SettingsCard(
-          title: AppLocalizations.of(context).setVoidItems,
-          children: [
-            buildGrid([
-              _SettingSwitch(
-                settingKey: SettingKeys.requireReasonOnVoid,
-                label: AppLocalizations.of(context).setRequireReasonOnVoid,
-                icon: Icons.remove_circle_outline,
-              ),
-              _SettingSwitch(
-                settingKey: SettingKeys.trackUnconfirmedVoidedItems,
-                label: AppLocalizations.of(context).setTrackUnconfirmedVoids,
-                icon: Icons.track_changes_outlined,
-              ),
-            ]),
-            const SizedBox(height: 8),
-          ],
-        ),
-        _SettingsCard(
-          title: AppLocalizations.of(context).setServiceTypeHeader,
-          children: [
-            buildGrid([
-              _SettingSwitch(
-                settingKey: SettingKeys.requestServiceTypeAutomatically,
-                label: AppLocalizations.of(context).setRequestServiceTypeAuto,
-                icon: Icons.room_service_outlined,
-              ),
-              _SettingDropdown(
-                settingKey: SettingKeys.defaultServiceType,
-                label: AppLocalizations.of(context).setDefaultServiceType,
-                options: const ['Dine-in', 'Takeaway', 'Delivery'],
-              ),
-              _SettingSwitch(
-                settingKey: SettingKeys.printLargeOrderNumberInReceipt,
-                label: AppLocalizations.of(context).setPrintLargeOrderNumber,
-                icon: Icons.numbers_outlined,
-              ),
-              _SettingSwitch(
-                settingKey: SettingKeys.featureServiceTypeEnabled,
-                label: AppLocalizations.of(context).setServiceTypeSelector,
-                subtitle: AppLocalizations.of(context).setShowOrderTypeButtons,
-                icon: Icons.touch_app_outlined,
-              ),
-            ]),
-            Opacity(
-              opacity: typeEnabled ? 1.0 : 0.4,
-              child: IgnorePointer(
-                ignoring: !typeEnabled,
-                child: const _CustomServiceTypesEditor(),
-              ),
-            ),
-            buildGrid([
-              _SettingSwitch(
-                settingKey: SettingKeys.featureServiceStatusEnabled,
-                label: AppLocalizations.of(context).setServiceStatusSelector,
-                subtitle: AppLocalizations.of(
-                  context,
-                ).setShowServiceStatusBadge,
-                icon: Icons.toggle_on_outlined,
-              ),
-            ]),
-            Opacity(
-              opacity: statusEnabled ? 1.0 : 0.4,
-              child: IgnorePointer(
-                ignoring: !statusEnabled,
-                child: const _CustomServiceStatusesEditor(),
-              ),
-            ),
-            const SizedBox(height: 8),
-          ],
-        ),
-        _SettingsCard(
-          title: AppLocalizations.of(context).setAdvancedSettings,
-          children: [
-            buildGrid([
-              _SettingSwitch(
-                settingKey: SettingKeys.resetOrderNumberOnDayClose,
-                label: AppLocalizations.of(context).setResetOrderNumber,
-                icon: Icons.restart_alt_outlined,
-              ),
+              // Both about the payment form — they used to sit in "Advanced".
               _SettingSwitch(
                 settingKey: SettingKeys.showItemsOnPaymentForm,
-                label: AppLocalizations.of(context).setShowItemsOnPaymentForm,
+                label: l.setShowItemsOnPaymentForm,
                 icon: Icons.list_alt_outlined,
               ),
               _StepperRow(
-                label: AppLocalizations.of(context).setPaymentTypeRows,
+                label: l.setPaymentTypeRows,
                 settingKey: SettingKeys.numberOfPaymentTypeRows,
                 min: 0,
                 max: 10,
               ),
-              _SettingSwitch(
-                settingKey: SettingKeys.showAllOccupiedTablesInFloorPlan,
-                label: AppLocalizations.of(context).setShowAllOccupied,
-                icon: Icons.event_seat_outlined,
-              ),
             ]),
             const SizedBox(height: 8),
           ],
+        ),
+        // ── Service type | Service status ─────────────────────────────────
+        // Each card opens with its selector: the switch decides whether the
+        // list under it is offered at the till at all, so it comes before the
+        // list, not three settings below it.
+        _CardPair(
+          start: _SettingsCard(
+            title: l.setServiceTypeHeader,
+            children: [
+              _SettingSwitch(
+                settingKey: SettingKeys.featureServiceTypeEnabled,
+                label: l.setServiceTypeSelector,
+                subtitle: l.setShowOrderTypeButtons,
+                icon: Icons.touch_app_outlined,
+              ),
+              Opacity(
+                opacity: typeEnabled ? 1.0 : 0.4,
+                child: IgnorePointer(
+                  ignoring: !typeEnabled,
+                  child: const _CustomServiceTypesEditor(),
+                ),
+              ),
+              buildGrid([
+                _SettingDropdown(
+                  settingKey: SettingKeys.defaultServiceType,
+                  label: l.setDefaultServiceType,
+                  options: const ['Dine-in', 'Takeaway', 'Delivery'],
+                ),
+                _SettingSwitch(
+                  settingKey: SettingKeys.requestServiceTypeAutomatically,
+                  label: l.setRequestServiceTypeAuto,
+                  icon: Icons.room_service_outlined,
+                ),
+                // Order numbers carry the type's prefix, so their two settings
+                // live with the types (the reset used to be in "Advanced").
+                _SettingSwitch(
+                  settingKey: SettingKeys.printLargeOrderNumberInReceipt,
+                  label: l.setPrintLargeOrderNumber,
+                  icon: Icons.numbers_outlined,
+                ),
+                _SettingSwitch(
+                  settingKey: SettingKeys.resetOrderNumberOnDayClose,
+                  label: l.setResetOrderNumber,
+                  icon: Icons.restart_alt_outlined,
+                ),
+              ]),
+              const SizedBox(height: 8),
+            ],
+          ),
+          end: _SettingsCard(
+            title: l.setServiceStatusHeader,
+            children: [
+              _SettingSwitch(
+                settingKey: SettingKeys.featureServiceStatusEnabled,
+                label: l.setServiceStatusSelector,
+                subtitle: l.setShowServiceStatusBadge,
+                icon: Icons.toggle_on_outlined,
+              ),
+              Opacity(
+                opacity: statusEnabled ? 1.0 : 0.4,
+                child: IgnorePointer(
+                  ignoring: !statusEnabled,
+                  child: const _CustomServiceStatusesEditor(),
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+        // ── Void items | Users ────────────────────────────────────────────
+        _CardPair(
+          start: _SettingsCard(
+            title: l.setVoidItems,
+            children: [
+              buildGrid([
+                _SettingSwitch(
+                  settingKey: SettingKeys.requireReasonOnVoid,
+                  label: l.setRequireReasonOnVoid,
+                  icon: Icons.remove_circle_outline,
+                ),
+                _SettingSwitch(
+                  settingKey: SettingKeys.trackUnconfirmedVoidedItems,
+                  label: l.setTrackUnconfirmedVoids,
+                  icon: Icons.track_changes_outlined,
+                ),
+              ]),
+              const SizedBox(height: 8),
+            ],
+          ),
+          end: _SettingsCard(
+            title: l.setUsers,
+            children: [
+              buildGrid([
+                _SettingSwitch(
+                  settingKey: SettingKeys.singleUser,
+                  label: l.setSingleUser,
+                  icon: Icons.person_outline,
+                ),
+              ]),
+              const SizedBox(height: 8),
+            ],
+          ),
         ),
       ],
     );
@@ -5028,31 +5067,14 @@ class _DefaultWarehouseDropdown extends ConsumerWidget {
                     final validId = list.any((w) => w.id == currentId)
                         ? currentId
                         : null;
-                    return DropdownButtonFormField<int>(
-                      isExpanded: true,
-                      initialValue: validId,
-                      decoration: const InputDecoration(
-                        isDense: true,
-                        border: OutlineInputBorder(),
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 10,
-                        ),
-                      ),
-                      hint: Text(
-                        AppLocalizations.of(context).selectEllipsisShort,
-                      ),
-                      items: list
-                          .map(
-                            (w) => DropdownMenuItem<int>(
-                              value: w.id,
-                              child: Text(
-                                w.name,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          )
-                          .toList(),
+                    return IlyassDropdown<int>(
+                      value: validId,
+                      dense: true,
+                      hint: AppLocalizations.of(context).selectEllipsisShort,
+                      items: [
+                        for (final w in list)
+                          IlyassDropdownItem(value: w.id, label: w.name),
+                      ],
                       onChanged: (id) {
                         if (id == null) return;
                         ref
@@ -7718,38 +7740,18 @@ class _TimezoneCardState extends ConsumerState<_TimezoneCard> {
           const SizedBox(height: 4),
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-            child: DropdownButtonFormField<String>(
-              // FormField seeds its state from initialValue ONCE. _tzIds loads
-              // asynchronously, so safeId can legitimately change after the first
-              // build (empty list → resolved id); without this the field would
-              // keep serving the stale seed to the DropdownButton underneath.
-              key: ValueKey(safeId),
-              initialValue: safeId,
-              isExpanded: true,
-              decoration: InputDecoration(
-                labelText: AppLocalizations.of(context).setIanaTimezone,
-                labelStyle: TextStyle(fontSize: 13, color: theme.hintColor),
-                filled: true,
-                fillColor: theme.colorScheme.surface,
-                border: const OutlineInputBorder(),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 10,
-                ),
-                isDense: true,
-              ),
-              dropdownColor: theme.colorScheme.surfaceContainerHighest,
-              items: _tzIds
-                  .map(
-                    (id) => DropdownMenuItem(
-                      value: id,
-                      child: Text(
-                        _tzOffsetLabel(id),
-                        style: const TextStyle(fontSize: 13),
-                      ),
-                    ),
-                  )
-                  .toList(),
+            // _tzIds loads asynchronously, so safeId can change after the first
+            // build (empty list → resolved id); IlyassDropdown re-seeds itself
+            // whenever its value or label changes.
+            child: IlyassDropdown<String>(
+              value: safeId,
+              label: AppLocalizations.of(context).setIanaTimezone,
+              dense: true,
+              textStyle: const TextStyle(fontSize: 13),
+              items: [
+                for (final id in _tzIds)
+                  IlyassDropdownItem(value: id, label: _tzOffsetLabel(id)),
+              ],
               onChanged: (val) {
                 if (val != null) {
                   ref

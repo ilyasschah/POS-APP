@@ -5,6 +5,7 @@ import 'package:pos_app/barcode/scan_bus.dart';
 import 'dart:async';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:pos_app/core/ilyass_dropdown.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
@@ -75,6 +76,8 @@ import 'package:pos_app/stock/stock_control_provider.dart';
 import 'package:pos_app/stock/stock_control_model.dart';
 import 'package:pos_app/navigation/nav_widgets.dart';
 import 'package:pos_app/settings/local_ui_prefs.dart';
+import 'package:pos_app/menu/pos_header_bar.dart';
+import 'package:pos_app/menu/pos_header_order.dart';
 
 final currentGroupProvider = StateProvider<ProductGroup?>((ref) => null);
 final searchQueryProvider = StateProvider<String>((ref) => "");
@@ -436,27 +439,14 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
     // already-resolved value on first build, not only on later changes.
     _activePromos = ref.watch(activePromotionsProvider).value ?? const [];
 
-    return Scaffold(
-      appBar: AppBar(
-        toolbarHeight: 62,
-        automaticallyImplyLeading: false,
-        // Hamburger as the shell's POS tab, back arrow if ever pushed — the
-        // mounting decides. See `lib/core/ilyass_screen.dart`.
-        leading: IlyassLeading.maybe(
-          context,
-          widget.showAppBarNavigation ? widget.onToggleSidebar : null,
-        ),
-        titleSpacing: 0,
-        centerTitle: false,
-        // Order-control buttons live in the AppBar title slot (which, unlike
-        // actions:, is width-bounded) so they scroll horizontally instead of
-        // running off a small (7") screen.
-        title: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: [
+    // Every order-control button, each keyed with its stable id so this till's
+    // saved order (Settings → POS Buttons) can be applied — see
+    // lib/menu/pos_header_order.dart. The order declared here is the default.
+    final headerButtons = <Widget>[
               if (showCustomerBtn)
-                asyncCustomers.when(
+                KeyedSubtree(
+                  key: const ValueKey(kPosBtnCustomer),
+                  child: asyncCustomers.when(
                   loading: () => const SizedBox(
                     width: 20,
                     height: 20,
@@ -498,9 +488,11 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                     );
                   },
                 ),
+                ),
               // ── Dynamic Order Type button (unified shape) ──────────
               if (serviceTypeEnabled)
                 _MenuHeaderActionBtn(
+                  key: const ValueKey(kPosBtnOrderType),
                   icon: Icons.restaurant_menu,
                   label:
                       customServiceTypes
@@ -675,6 +667,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
               // ── Dynamic Service Status button (unified shape) ──────
               if (serviceStatusEnabled)
                 _MenuHeaderActionBtn(
+                  key: const ValueKey(kPosBtnServiceStatus),
                   icon: Icons.label,
                   label:
                       customServiceStatuses
@@ -773,6 +766,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                 ),
               if (showDiscountBtn)
                 _MenuHeaderActionBtn(
+                  key: const ValueKey(kPosBtnDiscount),
                   icon: Icons.percent,
                   label: AppLocalizations.of(context).posDiscount,
                   onTap: () => ref
@@ -788,6 +782,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                 ),
               if (showTaxBtn)
                 _MenuHeaderActionBtn(
+                  key: const ValueKey(kPosBtnTax),
                   icon: Icons.receipt,
                   label: AppLocalizations.of(context).posTax,
                   // Greyed out until a cart line is selected — the tax
@@ -817,6 +812,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                 ),
               if (showModifiersBtn)
                 _MenuHeaderActionBtn(
+                  key: const ValueKey(kPosBtnModifiers),
                   icon: Icons.tune,
                   label: AppLocalizations.of(context).posModifiers,
                   // Greyed out until a cart line is selected — modifiers
@@ -827,6 +823,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                 ),
               if (showTransferBtn)
                 _MenuHeaderActionBtn(
+                  key: const ValueKey(kPosBtnTransfer),
                   icon: Icons.swap_horiz,
                   label: AppLocalizations.of(context).posTransfer,
                   onTap: cartState.activePosOrderId == null
@@ -846,6 +843,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                 ),
               if (showRefundBtn)
                 _MenuHeaderActionBtn(
+                  key: const ValueKey(kPosBtnRefund),
                   icon: Icons.undo,
                   label: AppLocalizations.of(context).posRefund,
                   onTap: () => ref
@@ -861,6 +859,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                 ),
               if (showCashDrawerBtn)
                 _MenuHeaderActionBtn(
+                  key: const ValueKey(kPosBtnCashDrawer),
                   icon: Icons.point_of_sale,
                   label: AppLocalizations.of(context).posOpenDrawer,
                   // Admin-only the moment the admin sets CashDrawer.Open to
@@ -878,6 +877,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
 
               if (showKitchenBtn)
                 _MenuHeaderActionBtn(
+                  key: const ValueKey(kPosBtnKitchen),
                   icon: Icons.soup_kitchen,
                   label: AppLocalizations.of(context).posKitchen,
                   onTap: cartState.items.isEmpty
@@ -995,6 +995,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
               // in the reports.
               if (showAdditionBtn)
                 _MenuHeaderActionBtn(
+                  key: const ValueKey(kPosBtnAddition),
                   icon: Icons.receipt_long,
                   label: AppLocalizations.of(context).posAddition,
                   onTap: cartState.items.isEmpty
@@ -1008,6 +1009,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
               // thing a cashier does every single shift.
               if (showCloseRegisterBtn)
                 _MenuHeaderActionBtn(
+                  key: const ValueKey(kPosBtnCloseRegister),
                   icon: Icons.lock_outline,
                   label: AppLocalizations.of(context).closeRegister,
                   onTap: () => SessionScreen.show(context),
@@ -1015,6 +1017,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
               // --- Warehouse Switcher (centered picker, like the customer one) ---
               if (showWarehouseBtn)
                 Consumer(
+                  key: const ValueKey(kPosBtnWarehouse),
                   builder: (context, ref, child) {
                     final selectedWarehouse = ref.watch(
                       selectedWarehouseProvider,
@@ -1045,6 +1048,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
 
               if (bookingEnabled && showBookingBtn)
                 _MenuHeaderActionBtn(
+                  key: const ValueKey(kPosBtnBooking),
                   icon: Icons.calendar_month,
                   label: AppLocalizations.of(context).posBookings,
                   // Index 2 is Bookings. Parks the order on the way out, same as
@@ -1054,6 +1058,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                 ),
               if (floorPlanEnabled && showTablesBtn)
                 _MenuHeaderActionBtn(
+                  key: const ValueKey(kPosBtnTables),
                   icon: Icons.grid_view,
                   label:
                       settings[SettingKeys.tablesButtonLabel] ??
@@ -1061,88 +1066,158 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                   onTap: () => _leavePosFor(4), // Index 4 is the floor plan
                 ),
 
-              // Promotion — special override action, pinned to the far right. Amber
+              // Promotion — special override action, last by default. Amber
               // star icon with a count badge.
               if (_activePromos.isNotEmpty)
                 _MenuHeaderActionBtn(
+                  key: const ValueKey(kPosBtnPromos),
                   icon: Icons.star,
                   label: AppLocalizations.of(context).posPromos,
                   iconColor: context.warningColor,
                   badgeCount: _activePromos.length,
                   onTap: () => _showActivePromosPopup(context),
                 ),
-            ],
-          ),
-        ),
-        // Kitchen-ready notification stays pinned to the right, outside the
-        // overflow bar, so it's always visible when the KDS marks orders ready.
-        actions: [
-          Builder(
-            builder: (context) {
-              final readyCount = ref.watch(readyOrdersCountProvider).value ?? 0;
-              if (readyCount == 0) return const SizedBox.shrink();
-              return Padding(
-                padding: const EdgeInsets.only(right: 4),
-                child: IconButton(
-                  tooltip: AppLocalizations.of(context).ordersReady(readyCount),
-                  onPressed: () =>
-                      ref.read(mainNavigationIndexProvider.notifier).state = 1,
-                  icon: Badge.count(
-                    count: readyCount,
-                    child: Icon(
-                      Icons.notifications_active,
-                      size: 26,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-          const SizedBox(width: 4),
-        ],
-      ),
-      body: Row(
-        children: [
-          Expanded(
-            child: Container(
-              color: Theme.of(context).scaffoldBackgroundColor,
-              child: const BrowserSection(),
-            ),
-          ),
-          GestureDetector(
-            onHorizontalDragUpdate: (details) {
-              final currentWidth = ref.read(cartWidthProvider);
-              final screenWidth = MediaQuery.of(context).size.width;
-              final maxWidth = screenWidth * 0.5;
-              double newWidth = currentWidth - details.delta.dx;
-              if (newWidth < 250) newWidth = 250;
-              if (newWidth > maxWidth) newWidth = maxWidth;
-              // Live in-memory update during the drag.
-              ref.read(cartWidthProvider.notifier).set(newWidth);
-            },
-            // Flush to on-device storage once the drag settles (one write per
-            // resize). Stored locally — not cloud-synced — so resizing here
-            // never changes the layout on another terminal.
-            onHorizontalDragEnd: (_) {
-              ref.read(cartWidthProvider.notifier).persist();
-            },
-            child: const MouseRegion(
-              cursor: SystemMouseCursors.resizeLeftRight,
-              child: SizedBox(
-                width: 8,
-                child: VerticalDivider(width: 8, thickness: 1),
+    ];
+
+    // Kitchen-ready notification stays pinned to the end of the header,
+    // outside the slider, so it's always visible when the KDS marks orders
+    // ready.
+    final readyBell = Builder(
+      builder: (context) {
+        final readyCount = ref.watch(readyOrdersCountProvider).value ?? 0;
+        if (readyCount == 0) return const SizedBox.shrink();
+        return Padding(
+          padding: const EdgeInsetsDirectional.only(end: 4),
+          child: IconButton(
+            tooltip: AppLocalizations.of(context).ordersReady(readyCount),
+            onPressed: () =>
+                ref.read(mainNavigationIndexProvider.notifier).state = 1,
+            icon: Badge.count(
+              count: readyCount,
+              child: Icon(
+                Icons.notifications_active,
+                size: 26,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
           ),
-          Material(
-            color: Theme.of(context).colorScheme.surface,
-            child: SizedBox(
-              width: ref.watch(cartWidthProvider),
-              child: const CartSection(),
+        );
+      },
+    );
+
+    final cs = Theme.of(context).colorScheme;
+    // Hamburger as the shell's POS tab, back arrow if ever pushed — the
+    // mounting decides. See `lib/core/ilyass_screen.dart`.
+    final leading = IlyassLeading.maybe(
+      context,
+      widget.showAppBarNavigation ? widget.onToggleSidebar : null,
+    );
+
+    return Scaffold(
+      body: SafeArea(
+        bottom: false,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // The product side carries its own header strip. It ends where
+            // the cart begins, so the order buttons slide UNDER the cart —
+            // and the cart runs the full height of the screen, from the top.
+            Expanded(
+              child: Column(
+                children: [
+                  Container(
+                    height: kTopBarHeight,
+                    decoration: BoxDecoration(
+                      color: cs.surface,
+                      border: Border(
+                        bottom: BorderSide(color: context.navDivider),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        leading ?? const SizedBox(width: 12),
+                        Expanded(
+                          child: PosHeaderBar(
+                            // This till's saved order (Settings → POS
+                            // Buttons); the declaration order is the default.
+                            children: applyPosHeaderOrder(
+                              headerButtons,
+                              ref.watch(posHeaderOrderProvider),
+                            ),
+                          ),
+                        ),
+                        readyBell,
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: Container(
+                      color: Theme.of(context).scaffoldBackgroundColor,
+                      child: const BrowserSection(),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+            GestureDetector(
+              // The whole gap is the handle, not just the grip drawn in it.
+              behavior: HitTestBehavior.opaque,
+              onHorizontalDragUpdate: (details) {
+                final currentWidth = ref.read(cartWidthProvider);
+                final screenWidth = MediaQuery.of(context).size.width;
+                final maxWidth = screenWidth * 0.5;
+                double newWidth = currentWidth - details.delta.dx;
+                if (newWidth < 250) newWidth = 250;
+                if (newWidth > maxWidth) newWidth = maxWidth;
+                // Live in-memory update during the drag.
+                ref.read(cartWidthProvider.notifier).set(newWidth);
+              },
+              // Flush to on-device storage once the drag settles (one write per
+              // resize). Stored locally — not cloud-synced — so resizing here
+              // never changes the layout on another terminal.
+              onHorizontalDragEnd: (_) {
+                ref.read(cartWidthProvider.notifier).persist();
+              },
+              // A small grip instead of a divider line: the rounded cart card
+              // already draws the edge.
+              child: MouseRegion(
+                cursor: SystemMouseCursors.resizeLeftRight,
+                child: SizedBox(
+                  width: 12,
+                  child: Center(
+                    child: Container(
+                      width: 4,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: cs.outlineVariant,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            // The cart: a rounded card like every other surface in the app,
+            // inset from the screen edge. Its ORDER strip is sized so it ends
+            // on the header strip's bottom line — the two read as one top bar.
+            Padding(
+              padding: const EdgeInsetsDirectional.only(
+                top: 8,
+                end: 8,
+                bottom: 8,
+              ),
+              child: Material(
+                color: cs.surface,
+                borderRadius: BorderRadius.circular(12),
+                clipBehavior: Clip.antiAlias,
+                child: SizedBox(
+                  width: ref.watch(cartWidthProvider),
+                  child: const CartSection(),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -3286,7 +3361,9 @@ class _CartSectionState extends ConsumerState<CartSection> {
         // there is room and drops to the icon alone when the cart column is
         // narrow, so the order number is never the thing that gets ellipsized.
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          // 8 + 38 + 8 = 54: under the cart card's 8px top inset it ends on
+          // the header strip's 62px line, so the two read as one top bar.
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           color: Theme.of(context).colorScheme.surfaceContainerHighest,
           width: double.infinity,
           child: LayoutBuilder(
@@ -4034,6 +4111,7 @@ class _MenuHeaderActionBtn extends StatelessWidget {
   // the exact same shape as every other action button.
   final Color? customTint;
   const _MenuHeaderActionBtn({
+    super.key,
     required this.icon,
     required this.label,
     required this.onTap,
@@ -4916,24 +4994,17 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                   (u) => u.id,
                 );
                 final unique = opts.options;
-                return DropdownButtonFormField<int?>(
-                  initialValue: opts.value,
-                  decoration: InputDecoration(
-                    labelText: AppLocalizations.of(context).assignStaff,
-                    prefixIcon: const Icon(Icons.badge),
-                    border: const OutlineInputBorder(),
-                  ),
+                return IlyassDropdown<int?>(
+                  value: opts.value,
+                  label: AppLocalizations.of(context).assignStaff,
+                  prefixIcon: Icons.badge,
                   items: [
-                    DropdownMenuItem<int?>(
+                    IlyassDropdownItem<int?>(
                       value: null,
-                      child: Text(AppLocalizations.of(context).unassigned),
+                      label: AppLocalizations.of(context).unassigned,
                     ),
-                    ...unique.map(
-                      (u) => DropdownMenuItem<int?>(
-                        value: u.id,
-                        child: Text(u.displayName),
-                      ),
-                    ),
+                    for (final u in unique)
+                      IlyassDropdownItem<int?>(value: u.id, label: u.displayName),
                   ],
                   onChanged: (id) => setState(() {
                     _selectedStaff = unique
@@ -4972,26 +5043,17 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                   );
                   final unique = opts.options;
 
-                  return DropdownButtonFormField<int?>(
-                    initialValue: opts.value,
-                    decoration: InputDecoration(
-                      labelText: AppLocalizations.of(
-                        context,
-                      ).assignRoomOrResource,
-                      prefixIcon: const Icon(Icons.meeting_room),
-                      border: const OutlineInputBorder(),
-                    ),
+                  return IlyassDropdown<int?>(
+                    value: opts.value,
+                    label: AppLocalizations.of(context).assignRoomOrResource,
+                    prefixIcon: Icons.meeting_room,
                     items: [
-                      DropdownMenuItem<int?>(
+                      IlyassDropdownItem<int?>(
                         value: null,
-                        child: Text(AppLocalizations.of(context).noRoom),
+                        label: AppLocalizations.of(context).noRoom,
                       ),
-                      ...unique.map(
-                        (t) => DropdownMenuItem<int?>(
-                          value: t.id,
-                          child: Text(t.name),
-                        ),
-                      ),
+                      for (final t in unique)
+                        IlyassDropdownItem<int?>(value: t.id, label: t.name),
                     ],
                     // Re-resolve the object from the LIVE list, so everything
                     // downstream (_confirm's floorPlanTableId / name) works off

@@ -423,25 +423,17 @@ Future<void> fillKeyedField(
   await tester.pump(const Duration(milliseconds: 250));
 }
 
-/// Any `DropdownButtonFormField`, whatever its type argument.
+/// Any `IlyassDropdown` — the app's one dropdown — whatever its type argument.
 ///
 /// 🚨 `find.byType` compares the EXACT runtime type, so
-/// `find.byType(DropdownButtonFormField<Object?>)` matches neither the
-/// `<int?>` used for a product group nor the `<String>` used for a setting —
-/// it simply finds nothing, quietly. Matching on the type's name is the only
-/// thing that works across all of them.
+/// `find.byType(IlyassDropdown<Object?>)` matches neither the `<int?>` used
+/// for a product group nor the `<String>` used for a setting — it simply finds
+/// nothing, quietly. Matching on the type's name is the only thing that works
+/// across all of them.
 final Finder anyDropdownField = find.byWidgetPredicate(
-  (w) => w.runtimeType.toString().startsWith('DropdownButtonFormField'),
+  (w) => w.runtimeType.toString().startsWith('IlyassDropdown<'),
 );
 
-/// Opens a [DropdownButtonFormField] by the label on its decoration and picks
-/// the entry reading [optionText].
-///
-/// 🚨 The option is tapped with `.last`. An open dropdown paints its menu OVER
-/// the button, and the button still shows the current selection — so when the
-/// value being chosen is also the value already selected, the text matches
-/// twice and `.first` hits the button underneath, closing the menu without
-/// changing anything.
 /// Locates a labelled dropdown, whichever way it is labelled.
 ///
 /// Two shapes exist and only one is an ancestor relationship:
@@ -487,7 +479,8 @@ Future<void> pickDropdown(
       within: within, matchSubstring: matchSubstring,
     );
 
-    // 🚨 Read the selection back FROM INSIDE THE DROPDOWN, not from the screen.
+    // 🚨 Read the selection back FROM THE DROPDOWN'S OWN FIELD, not from the
+    // screen — and not from "any text inside the dropdown" either.
     //
     // An unscoped `find.textContaining(optionText)` matches anything on the
     // page — including the products table BEHIND the dialog, whose Category
@@ -495,13 +488,15 @@ Future<void> pickDropdown(
     // dropdown had not changed at all, and the product was saved with no group:
     // reproducibly the third one, because by then a previous product carrying
     // that same group was sitting in the filtered list behind the dialog.
-    final shown = find.descendant(
-      of: findDropdown(fieldLabel, within: within),
-      matching: matchSubstring
-          ? find.textContaining(optionText)
-          : find.text(optionText),
-    );
-    if (shown.evaluate().isNotEmpty) return;
+    //
+    // A text search scoped to the dropdown is no better: a Material 3 dropdown
+    // keeps every option's label in its subtree (the open menu, and a hidden
+    // measuring copy), so it would find the option whatever was selected.
+    final shown = dropdownSelection(tester, fieldLabel, within: within);
+    if (shown != null &&
+        (matchSubstring ? shown.contains(optionText) : shown == optionText)) {
+      return;
+    }
 
     if (attempt == attempts) {
       throw TestFailure(
@@ -522,7 +517,7 @@ Future<void> _pickDropdownOnce(
   bool matchSubstring = false,
 }) async {
   // 🚨 Matched by NAME, not by `find.byType`. These fields are generic —
-  // `DropdownButtonFormField<int?>` for a group, `<String>` for a setting — and
+  // `IlyassDropdown<int?>` for a group, `<String>` for a setting — and
   // `find.byType` compares the exact runtime type, so a guess at the type
   // argument silently matches nothing.
   //
@@ -559,64 +554,116 @@ Future<void> _pickDropdownOnce(
   // "20" comes back as "VAT 20% [E2E 0906] (20.0%)" — an exact match on the
   // name finds nothing. Substring matching lets the caller identify an option
   // by the part it actually controls.
-  final optionText0 =
+  await tapDropdownMenuEntry(
+    tester,
+    target,
+    optionText,
+    matchSubstring: matchSubstring,
+    describe: 'Dropdown "$fieldLabel"',
+  );
+}
+
+/// Taps the entry reading [optionText] in the OPEN menu of [dropdown] (an
+/// [anyDropdownField] match).
+///
+/// 🚨 Confined to the menu entries (`MenuItemButton`s) UNDER THIS DROPDOWN.
+///
+/// These option labels are not unique on screen. Picking a product's group
+/// while the products table sits behind the dialog means "Beverages [E2E …]"
+/// matches twice: once in the menu, once in that table's Category column —
+/// and a tap on the table cell lands on the modal barrier, closes the menu, and
+/// the product is saved with no group at all. The menu is drawn in the Overlay
+/// but it is the dropdown's OverlayPortal child, so its entries ARE element
+/// descendants of the dropdown — and the table cell is not.
+///
+/// 🚨 Only a HIT-TESTABLE entry is tapped. A dropdown that does not fill its
+/// width keeps an invisible measuring copy of every entry in its subtree —
+/// same `MenuItemButton`s, same labels, never reachable by a finger.
+///
+/// 🚨 An unreachable entry usually means "below the fold", not "absent". The
+/// menu builds every entry, but one past the bottom of its viewport cannot be
+/// hit. So the MENU is scrolled — the Scrollable around the entries a finger
+/// can reach right now — never the dialog, and never the table behind it: a tap
+/// at off-screen coordinates lands on the barrier, which closes the menu AND
+/// (showDialog being barrier-dismissible) the editor dialog under it.
+Future<void> tapDropdownMenuEntry(
+  WidgetTester tester,
+  Finder dropdown,
+  String optionText, {
+  bool matchSubstring = false,
+  String describe = 'Dropdown',
+}) async {
+  final label =
       matchSubstring ? find.textContaining(optionText) : find.text(optionText);
+  final entries = find.descendant(
+    of: dropdown,
+    matching: find.byType(MenuItemButton),
+  );
+  final entryLabels = find.descendant(of: entries, matching: label);
 
-  // 🚨 Confine the search to the OPEN MENU.
-  //
-  // These option labels are not unique on screen. Picking a product's group
-  // while the products table sits behind the dialog means "Beverages [E2E …]"
-  // matches twice: once in the menu, once in that table's Category column. And
-  // `.last` is not a safe tie-break — it picked the TABLE cell, so
-  // `ensureVisible` scrolled the table, the tap landed on the modal barrier,
-  // the menu closed, and the product was saved with no group at all.
-  //
-  // The menu is the most recently pushed scrollable on screen, so scoping to it
-  // removes every match that is not really an option.
-  // No fallback to the unscoped finder: when the option is merely off-screen
-  // the scoped finder is empty too, and falling back would put the table cell
-  // straight back in play. Scrolling the menu is what reveals it (below).
-  final menu = find.byType(Scrollable).last;
-  final option = find.descendant(of: menu, matching: optionText0);
-
-  // 🚨 An unfound option usually means "off-screen", not "absent".
-  //
-  // The menu is a ListView, and a ListView builds only the range it is
-  // showing — so an entry below the fold is not in the widget tree at all and
-  // `find.text` reports it missing. That is indistinguishable from a genuinely
-  // absent option until you scroll, and it gets likelier every run: these
-  // tests leave their groups behind, so the list that fitted on one screen on
-  // day one does not on day ten.
-  if (option.evaluate().isEmpty) {
-    try {
-      await tester.scrollUntilVisible(
-        option,
-        200,
-        scrollable: menu,
-        maxScrolls: 100,
-      );
-    } catch (_) {
+  var target = entryLabels.hitTestable();
+  if (target.evaluate().isEmpty) {
+    final reachable = entries.hitTestable();
+    if (reachable.evaluate().isEmpty) {
       throw TestFailure(
-        'Dropdown "$fieldLabel" has no option "$optionText", '
-        'and scrolling the menu did not reveal one\n'
+        '$describe did not open its menu (the tap missed the field?)\n'
+        '  On screen now: ${visibleTexts(tester)}',
+      );
+    }
+    final menu = find
+        .ancestor(of: reachable.first, matching: find.byType(Scrollable))
+        .first;
+    final inMenu = find.descendant(of: menu, matching: label);
+    if (inMenu.evaluate().isEmpty) {
+      throw TestFailure(
+        '$describe has no option "$optionText"\n'
+        '  Offered: ${_menuEntryLabels(tester, menu).join(' | ')}',
+      );
+    }
+    await tester.ensureVisible(inMenu.first);
+    await tester.pump(const Duration(milliseconds: 200));
+    target = entryLabels.hitTestable();
+    if (target.evaluate().isEmpty) {
+      throw TestFailure(
+        '$describe: option "$optionText" is in the menu but could not be '
+        'scrolled under a finger\n'
         '  On screen now: ${visibleTexts(tester)}',
       );
     }
   }
 
-  // 🚨 Scroll the item into view before tapping it, and do NOT silence a miss.
-  //
-  // An open dropdown is a scrollable menu. Once a company has a few dozen
-  // groups the wanted entry is built but sits below the fold, and a tap at its
-  // off-screen coordinates lands on the barrier instead — which closes the menu
-  // AND, because `showDialog` is barrier-dismissible by default, closes the
-  // editor dialog underneath it. The test then fails several steps later
-  // looking for a field on a form that is no longer on screen, with nothing
-  // pointing back to the dropdown that actually caused it.
-  await tester.ensureVisible(option.last);
-  await tester.pump(const Duration(milliseconds: 200));
-  await tester.tap(option.last);
+  await tester.tap(target.first);
   await pumpFor(tester, const Duration(milliseconds: 700));
+}
+
+List<String> _menuEntryLabels(WidgetTester tester, Finder menu) => [
+      for (final e in find
+          .descendant(of: menu, matching: find.byType(Text))
+          .evaluate())
+        if ((e.widget as Text).data case final String data) data,
+    ];
+
+/// What [fieldLabel]'s dropdown is SHOWING — the text in its closed field — or
+/// null when there is no such dropdown on screen.
+///
+/// 🚨 This is the only honest read-back. A Material 3 dropdown's closed field
+/// is a read-only text field; its option labels, meanwhile, all live in its
+/// subtree too (the menu, and a hidden measuring copy). So "is the text X
+/// inside the dropdown" is true for EVERY option whatever is selected, and an
+/// assertion built on it can never fail.
+String? dropdownSelection(
+  WidgetTester tester,
+  String fieldLabel, {
+  Finder? within,
+}) {
+  final field = findDropdown(fieldLabel, within: within);
+  if (field.evaluate().isEmpty) return null;
+  final editable = find.descendant(
+    of: field.first,
+    matching: find.byType(EditableText),
+  );
+  if (editable.evaluate().isEmpty) return null;
+  return tester.widget<EditableText>(editable.first).controller.text;
 }
 
 /// Flips the [SwitchListTile] whose title is [label] to [on].
@@ -1207,8 +1254,8 @@ void _appendCustomerBlock({
 ///
 /// ```dart
 /// items: [
-///   DropdownMenuItem(value: null, child: Text(l10n.noTax)),   // <- index 0
-///   ...enabled.map((t) => DropdownMenuItem(value: t.id, ...)),
+///   IlyassDropdownItem(value: null, label: l10n.noTax),       // <- index 0
+///   for (final t in enabled) IlyassDropdownItem(value: t.id, ...),
 /// ]
 /// ```
 ///
@@ -1267,16 +1314,12 @@ Future<String> pickDropdownAt(
 
 /// The option labels a dropdown is currently offering, in menu order.
 ///
-/// 🚨 Read from the `DropdownButton` INSIDE the form field, not from the
-/// `DropdownButtonFormField` itself. The form field takes `items` as a
-/// constructor argument and captures it in its `FormField` builder closure —
-/// it is not a public field, so there is nothing to read on that widget.
-/// The `DropdownButton` it builds does expose `items` publicly.
+/// Read straight off the `IlyassDropdown` widget: its `items` are public, and
+/// each carries its `value`, the `label` the menu shows, and whether it is a
+/// non-selectable `header` or `enabled: false`. Nothing is read off the menu,
+/// so the menu does not have to be open.
 ///
-/// Matched by type NAME for the usual reason: these are generic
-/// (`DropdownButton<int?>` for a group, `<String>` for a setting) and
-/// `find.byType` compares the exact runtime type, so a guess at the type
-/// argument silently matches nothing.
+/// Matched by type NAME for the usual reason (see [anyDropdownField]).
 List<String> dropdownOptions(
   WidgetTester tester,
   String fieldLabel, {
@@ -1286,40 +1329,28 @@ List<String> dropdownOptions(
   final field = findDropdown(fieldLabel, within: within);
   if (field.evaluate().isEmpty) {
     throw TestFailure(
-      'No dropdown labelled "$fieldLabel"\n'
+      'No dropdown labelled "$fieldLabel" — if the field is there, it is '
+      'probably still showing a LinearProgressIndicator while its provider '
+      'loads.\n'
       '  On screen now: ${visibleTexts(tester)}',
     );
   }
 
-  final button = find.descendant(
-    of: field.first,
-    matching: find.byWidgetPredicate(
-      (w) => w.runtimeType.toString().startsWith('DropdownButton<'),
-    ),
-  );
-  if (button.evaluate().isEmpty) {
-    throw TestFailure(
-      'Dropdown "$fieldLabel" has not built its button yet — it is probably '
-      'still showing a LinearProgressIndicator while its provider loads.',
-    );
-  }
-
-  final items = (tester.widget(button.first) as dynamic).items as List?;
-  if (items == null) return const [];
+  final items = (tester.widget(field.first) as dynamic).items as List;
 
   final labels = <String>[];
   for (final item in items) {
     final dynamic entry = item;
 
-    // 🚨 Skip DISABLED entries always, placeholder or not. The unit picker is
-    // built as `[CATEGORY HEADER, unit, unit, CATEGORY HEADER, unit, ...]`,
-    // where each header is a `DropdownMenuItem` with `enabled: false` and a
-    // NEGATIVE value standing in for the category. A header is therefore not
-    // caught by the null-value rule below — and being first, it is exactly what
-    // `index: 0` would land on. The tap then does nothing (that is what
-    // `enabled: false` means), the dropdown keeps its old value, and the retry
-    // in `pickDropdown` burns its attempts before failing somewhere unhelpful.
-    if (entry.enabled == false) continue;
+    // 🚨 Skip HEADERS and DISABLED entries always, placeholder or not. The
+    // unit picker is built as `[CATEGORY HEADER, unit, unit, CATEGORY HEADER,
+    // unit, ...]`, where each header carries a NEGATIVE value standing in for
+    // the category. A header is therefore not caught by the null-value rule
+    // below — and being first, it is exactly what `index: 0` would land on. The
+    // tap then does nothing (a header cannot be selected), the dropdown keeps
+    // its old value, and the retry in `pickDropdown` burns its attempts before
+    // failing somewhere unhelpful.
+    if (entry.header == true || entry.enabled == false) continue;
 
     // The placeholder is the one carrying a null value — "No Tax",
     // "None (Root)". Identified by its VALUE, never by its text: that text is
@@ -1327,10 +1358,7 @@ List<String> dropdownOptions(
     // untaxed product on a French terminal.
     if (!includePlaceholder && entry.value == null) continue;
 
-    final child = entry.child;
-    if (child is Text && child.data != null) {
-      labels.add(child.data as String);
-    }
+    labels.add(entry.label as String);
   }
   return labels;
 }

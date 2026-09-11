@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
+import 'package:pos_app/core/ilyass_dropdown.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pos_app/api/promotion_models.dart';
@@ -902,22 +903,18 @@ class _PromotionEditScreenState extends ConsumerState<PromotionEditScreen> {
                                         const SizedBox(width: 12),
                                         Expanded(
                                           child:
-                                              DropdownButtonFormField<int>(
-                                            initialValue: item.discountType,
-                                            isDense: true,
-                                            decoration: InputDecoration(
-                                              labelText: AppLocalizations.of(context).typeLabel,
-                                              isDense: true,
-                                              border: const OutlineInputBorder(),
-                                            ),
+                                              IlyassDropdown<int>(
+                                            value: item.discountType,
+                                            dense: true,
+                                            label: AppLocalizations.of(context).typeLabel,
                                             items: [
-                                              DropdownMenuItem(
+                                              IlyassDropdownItem(
                                                 value: 0,
-                                                child: Text(AppLocalizations.of(context).percentage),
+                                                label: AppLocalizations.of(context).percentage,
                                               ),
-                                              DropdownMenuItem(
+                                              IlyassDropdownItem(
                                                 value: 1,
-                                                child: Text(AppLocalizations.of(context).fixedAmount),
+                                                label: AppLocalizations.of(context).fixedAmount,
                                               ),
                                             ],
                                             onChanged: (v) => setState(
@@ -966,20 +963,14 @@ class _PromotionEditScreenState extends ConsumerState<PromotionEditScreen> {
                                           const SizedBox(width: 12),
                                           Expanded(
                                             child:
-                                                DropdownButtonFormField<int>(
-                                              initialValue:
-                                                  item.conditionType,
-                                              isDense: true,
-                                              decoration:
-                                                  InputDecoration(
-                                                labelText: AppLocalizations.of(context).appliesTo,
-                                                isDense: true,
-                                                border: const OutlineInputBorder(),
-                                              ),
+                                                IlyassDropdown<int>(
+                                              value: item.conditionType,
+                                              dense: true,
+                                              label: AppLocalizations.of(context).appliesTo,
                                               items: [
-                                                DropdownMenuItem(
+                                                IlyassDropdownItem(
                                                   value: 0,
-                                                  child: Text(AppLocalizations.of(context).sameProduct),
+                                                  label: AppLocalizations.of(context).sameProduct,
                                                 ),
                                               ],
                                               onChanged: (v) => setState(

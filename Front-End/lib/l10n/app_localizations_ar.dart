@@ -3662,6 +3662,28 @@ class AppLocalizationsAr extends AppLocalizations {
       'لا توجد عروض أو خصومات على مستوى الطلب في هذا المستند.';
 
   @override
+  String get posHeaderOrderHint =>
+      'اسحب الزر من مقبضه لتحديد ترتيب الشريط العلوي على نقطة البيع هذه. المفاتيح تنطبق على جميع نقاط البيع.';
+
+  @override
+  String get posOtherButtons => 'أزرار أخرى';
+
+  @override
+  String get dragToReorderButtons => 'اسحب لإعادة الترتيب';
+
+  @override
+  String get resetButtonOrder => 'إعادة تعيين الترتيب';
+
+  @override
+  String get posButtonAutomatic => 'يظهر تلقائيًا عند تفعيل ميزته';
+
+  @override
+  String get setTablesFloorPlanHeader => 'الطاولات ومخطط القاعة';
+
+  @override
+  String get setServiceStatusHeader => 'حالة الخدمة';
+
+  @override
   String get productColorMarker => 'علامة لون المنتج';
 
   @override
@@ -3753,6 +3775,86 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get splitPayments => 'تقسيم الدفع';
+
+  @override
+  String get splitBillTitle => 'تقسيم الفاتورة';
+
+  @override
+  String get splitUnassigned => 'عناصر غير مخصصة';
+
+  @override
+  String get splitAllAssigned => 'تم تخصيص جميع العناصر';
+
+  @override
+  String get splitSelectHint => 'اختر عنصرًا ثم اضغط على جزء — أو اسحبه إليه';
+
+  @override
+  String get splitAddSplit => 'إضافة جزء';
+
+  @override
+  String splitName(int number) {
+    return 'الجزء $number';
+  }
+
+  @override
+  String get splitDropHere => 'اضغط أو اسحب العناصر إلى هنا';
+
+  @override
+  String get splitReturnItem => 'إرجاع إلى غير المخصصة';
+
+  @override
+  String get splitRemove => 'حذف الجزء';
+
+  @override
+  String get splitPrintGuestCheck => 'طباعة فاتورة الضيف';
+
+  @override
+  String splitPayAmount(String amount) {
+    return 'دفع $amount';
+  }
+
+  @override
+  String splitPaidWith(String method, String amount) {
+    return 'مدفوع · $method $amount';
+  }
+
+  @override
+  String splitOnAccount(String method) {
+    return 'على الحساب · $method';
+  }
+
+  @override
+  String get splitUndoPayment => 'إلغاء الدفع';
+
+  @override
+  String splitHowMany(String name) {
+    return 'كم من «$name»؟';
+  }
+
+  @override
+  String get splitAssign => 'تخصيص';
+
+  @override
+  String splitAllQuantity(int count) {
+    return 'الكل ($count)';
+  }
+
+  @override
+  String get splitDiscardTitle => 'تجاهل المدفوعات المحصّلة؟';
+
+  @override
+  String splitDiscardBody(int count) {
+    return 'الأجزاء المدفوعة: $count. لم يُحفظ شيء بعد — أعد هذا المبلغ قبل الإغلاق.';
+  }
+
+  @override
+  String get splitDiscardConfirm => 'تجاهل وإغلاق';
+
+  @override
+  String get splitFinish => 'حفظ البيع';
+
+  @override
+  String get splitGuestCheckPrinted => 'تمت طباعة فاتورة الضيف';
 
   @override
   String get totalLabel => 'الإجمالي';
@@ -7703,4 +7805,110 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get saveExportFileTitle => 'حفظ ملف التصدير';
+
+  @override
+  String get stockMoves => 'حركات المخزون';
+
+  @override
+  String get colReference => 'المرجع';
+
+  @override
+  String get colProduct => 'المنتج';
+
+  @override
+  String get colFrom => 'من';
+
+  @override
+  String get colTo => 'إلى';
+
+  @override
+  String get colQuantity => 'الكمية';
+
+  @override
+  String get colDoneBy => 'بواسطة';
+
+  @override
+  String get stockLocationVendors => 'الموردون';
+
+  @override
+  String get stockLocationCustomers => 'العملاء';
+
+  @override
+  String get stockLocationInventoryAdjustment => 'تسوية المخزون';
+
+  @override
+  String get stockLocationScrap => 'التالف';
+
+  @override
+  String stockLocationWarehouse(String warehouse) {
+    return '$warehouse/المخزون';
+  }
+
+  @override
+  String get moveStatusDone => 'منجز';
+
+  @override
+  String get searchStockMoves => 'ابحث عن منتج أو باركود أو مرجع…';
+
+  @override
+  String get noStockMoves => 'لا توجد حركات مخزون بعد';
+
+  @override
+  String get printPdf => 'طباعة (PDF)';
+
+  @override
+  String get exportToExcel => 'تصدير إلى Excel';
+
+  @override
+  String get noStockMovesToExport => 'لا توجد حركات مخزون للتصدير';
+
+  @override
+  String stockMovesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count حركة',
+      one: 'حركة واحدة',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get stockHistoryTab => 'سجل المخزون';
+
+  @override
+  String get stockHistoryHint => 'كل حركات هذا المنتج، من الأحدث إلى الأقدم';
+
+  @override
+  String get stockOnHand => 'المخزون المتوفر';
+
+  @override
+  String get stockOnHandHint =>
+      'ما يحتويه كل مستودع حسب آخر مزامنة لهذا الجهاز';
+
+  @override
+  String get noStockRuleSet => 'لم يتم تعيين قاعدة مخزون لهذا المنتج.';
+
+  @override
+  String get periodAllTime => 'كل الفترات';
+
+  @override
+  String printSelectedPdf(int count) {
+    return 'طباعة المحدد ($count)';
+  }
+
+  @override
+  String saveSelectedAsPdf(int count) {
+    return 'حفظ المحدد بصيغة PDF ($count)';
+  }
+
+  @override
+  String exportSelectedToExcel(int count) {
+    return 'تصدير المحدد إلى Excel ($count)';
+  }
+
+  @override
+  String productQuantityUpdated(String user) {
+    return 'تم تحديث كمية المنتج ($user)';
+  }
 }

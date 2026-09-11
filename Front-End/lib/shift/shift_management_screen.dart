@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:pos_app/core/ilyass_dropdown.dart';
 import 'package:pos_app/core/app_date_format.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter/services.dart';
@@ -481,53 +482,28 @@ class _HoursTabState extends ConsumerState<_HoursTab> {
                   loading: () => const SizedBox(
                       height: 44, child: LinearProgressIndicator()),
                   error: (_, __) => const SizedBox.shrink(),
-                  data: (users) => Container(
-                    height: 44,
+                  data: (users) => ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 280),
-                    padding: const EdgeInsets.symmetric(horizontal: 14),
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                          color: cs.outline.withValues(alpha: 0.4)),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<int?>(
-                        value: _selectedUserId,
-                        isExpanded: true,
-                        dropdownColor: theme.cardColor,
-                        style: theme.textTheme.bodyMedium
-                            ?.copyWith(color: cs.onSurface),
-                        items: [
-                          DropdownMenuItem<int?>(
-                            value: null,
-                            child: Text(AppLocalizations.of(context).allEmployees,
-                                style: TextStyle(color: cs.onSurface)),
+                    child: IlyassDropdown<int?>(
+                      value: _selectedUserId,
+                      dense: true,
+                      prefixIcon: Icons.person_outline,
+                      items: [
+                        IlyassDropdownItem<int?>(
+                          value: null,
+                          label: AppLocalizations.of(context).allEmployees,
+                        ),
+                        for (final u in users)
+                          IlyassDropdownItem<int?>(
+                            value: u.id,
+                            label: _employeeName(context, u.firstName,
+                                u.lastName, u.username, u.id),
                           ),
-                          ...users.map((u) {
-                            final name = [u.firstName, u.lastName]
-                                .whereType<String>()
-                                .where((s) => s.isNotEmpty)
-                                .join(' ')
-                                .trim();
-                            return DropdownMenuItem<int?>(
-                              value: u.id,
-                              child: Text(
-                                name.isEmpty
-                                    ? (u.username ??
-                                        AppLocalizations.of(context)
-                                            .userNumbered('${u.id}'))
-                                    : name,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(color: cs.onSurface),
-                              ),
-                            );
-                          }),
-                        ],
-                        onChanged: (id) => setState(() {
-                          _selectedUserId = id;
-                          _page = 0;
-                        }),
-                      ),
+                      ],
+                      onChanged: (id) => setState(() {
+                        _selectedUserId = id;
+                        _page = 0;
+                      }),
                     ),
                   ),
                 ),
@@ -870,23 +846,20 @@ class _SessionsReportCard extends ConsumerWidget {
                 const Spacer(),
                 Text(AppLocalizations.of(context).rowsPerPage, style: labelStyle),
                 const SizedBox(width: 8),
-                DropdownButtonHideUnderline(
-                  child: DropdownButton<int>(
-                    value: rowsPerPage,
-                    isDense: true,
-                    dropdownColor: theme.cardColor,
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: cs.onSurface),
-                    items: [10, 25, 50]
-                        .map((n) => DropdownMenuItem<int>(
-                              value: n,
-                              child: Text('$n'),
-                            ))
-                        .toList(),
-                    onChanged: (n) {
-                      if (n != null) onRowsPerPageChanged(n);
-                    },
-                  ),
+                IlyassDropdown<int>(
+                  value: rowsPerPage,
+                  dense: true,
+                  expand: false,
+                  width: 96,
+                  textStyle:
+                      theme.textTheme.bodySmall?.copyWith(color: cs.onSurface),
+                  items: [
+                    for (final n in const [10, 25, 50])
+                      IlyassDropdownItem(value: n, label: '$n'),
+                  ],
+                  onChanged: (n) {
+                    if (n != null) onRowsPerPageChanged(n);
+                  },
                 ),
                 const SizedBox(width: 8),
               ],
@@ -1038,46 +1011,22 @@ class _AddTimeCardDialogState extends ConsumerState<_AddTimeCardDialog> {
               loading: () => const LinearProgressIndicator(),
               error: (_, __) => Text(AppLocalizations.of(context).couldNotLoadEmployees,
                   style: TextStyle(color: cs.error)),
-              data: (users) => Container(
-                height: 48,
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                decoration: BoxDecoration(
-                  border:
-                      Border.all(color: cs.outline.withValues(alpha: 0.4)),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<int?>(
-                    value: _userId,
-                    isExpanded: true,
-                    hint: Text(AppLocalizations.of(context).selectEmployee,
-                        style: TextStyle(color: cs.onSurfaceVariant)),
-                    dropdownColor: theme.cardColor,
-                    items: users.map((u) {
-                      final name = [u.firstName, u.lastName]
-                          .whereType<String>()
-                          .where((s) => s.isNotEmpty)
-                          .join(' ')
-                          .trim();
-                      return DropdownMenuItem<int?>(
-                        value: u.id,
-                        child: Text(
-                          name.isEmpty
-                              ? (u.username ??
-                                  AppLocalizations.of(context)
-                                      .userNumbered('${u.id}'))
-                              : name,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(color: cs.onSurface),
-                        ),
-                      );
-                    }).toList(),
-                    onChanged: (v) => setState(() {
-                      _userId = v;
-                      _error = null;
-                    }),
-                  ),
-                ),
+              data: (users) => IlyassDropdown<int?>(
+                value: _userId,
+                hint: AppLocalizations.of(context).selectEmployee,
+                prefixIcon: Icons.person_outline,
+                items: [
+                  for (final u in users)
+                    IlyassDropdownItem<int?>(
+                      value: u.id,
+                      label: _employeeName(
+                          context, u.firstName, u.lastName, u.username, u.id),
+                    ),
+                ],
+                onChanged: (v) => setState(() {
+                  _userId = v;
+                  _error = null;
+                }),
               ),
             ),
             const SizedBox(height: 16),
@@ -1138,6 +1087,19 @@ class _AddTimeCardDialogState extends ConsumerState<_AddTimeCardDialog> {
       ],
     );
   }
+}
+
+/// An employee's display name for the pickers: "First Last", else the
+/// username, else "User #id".
+String _employeeName(BuildContext context, String? firstName,
+    String? lastName, String? username, Object? id) {
+  final name = [firstName, lastName]
+      .whereType<String>()
+      .where((s) => s.isNotEmpty)
+      .join(' ')
+      .trim();
+  if (name.isNotEmpty) return name;
+  return username ?? AppLocalizations.of(context).userNumbered('$id');
 }
 
 class _FieldLabel extends StatelessWidget {

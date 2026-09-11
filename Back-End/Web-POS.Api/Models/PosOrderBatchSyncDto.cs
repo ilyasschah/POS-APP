@@ -34,6 +34,10 @@ namespace Api.Models
         public int? PaymentTypeId { get; set; }
         public decimal? AmountPaid { get; set; }
 
+        /// Every tender of a split bill — one document, one payment per guest.
+        /// Empty for an ordinary sale, which travels in PaymentTypeId/AmountPaid.
+        public List<CheckoutPaymentDto> Payments { get; set; } = new();
+
         /// Device-local document number the client issued offline at checkout
         /// (e.g. "CAISSE1-200-000045"). When present, checkout keeps it verbatim
         /// instead of generating a server-side YY-CCC-NNNNNN number, so the

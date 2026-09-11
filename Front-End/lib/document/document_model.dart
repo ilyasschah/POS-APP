@@ -151,6 +151,35 @@ class DocumentCategory {
   }
 }
 
+/// The money of one manual editor line carrying a single tax. Shared by the add
+/// and edit dialogs so they cannot drift apart, and mirrored server-side by
+/// `DocumentItemTaxService.RecalculateItemAsync`, which rewrites the line when
+/// its tax is pushed — the two must agree or the line changes after a sync.
+///
+/// A fixed tax is a flat amount per unit: it is added to the price rather than
+/// multiplied into it, and a percentage discount never shrinks it.
+({double unitPrice, double unitDiscount, double total}) editorLineMoney({
+  required double priceBeforeTax,
+  required double quantity,
+  required double discount,
+  required int discountType,
+  required double taxRate,
+  required bool taxIsFixed,
+}) {
+  final fixedPerUnit = taxIsFixed ? taxRate : 0.0;
+  final unitPrice = taxIsFixed
+      ? priceBeforeTax + taxRate
+      : priceBeforeTax * (1 + taxRate / 100);
+  final unitDiscount = discountType == 0
+      ? (unitPrice - fixedPerUnit) * (discount / 100)
+      : discount;
+  return (
+    unitPrice: unitPrice,
+    unitDiscount: unitDiscount,
+    total: (unitPrice - unitDiscount) * quantity,
+  );
+}
+
 class DocumentItem {
   final int id;
   /// Drift local UUID + sync state — present only for items read from the
@@ -177,7 +206,9 @@ class DocumentItem {
   final double totalAfterDocumentDiscount;
   final bool discountApplyRule;
   final int? taxId;
+  /// A percentage, or — when [taxIsFixed] — a flat amount per unit.
   final double taxRate;
+  final bool taxIsFixed;
   /// The resolved tax money on this line. Needed wherever the tax must be shown
   /// or re-applied (the receipt reprint rebuilds its cart taxes from this), since
   /// the rate alone can't be re-based safely across the two `total` conventions.
@@ -192,12 +223,21 @@ class DocumentItem {
   final double? _totalWithTax;
   double get totalWithTax => _totalWithTax ?? total;
 
+  /// The tax column's text: "20%" for a percentage, the bare amount for a fixed
+  /// tax — that is money per unit, not a rate. Null when the line is untaxed.
+  String? get taxRateLabel {
+    if (taxRate <= 0) return null;
+    if (taxIsFixed) return taxRate.toStringAsFixed(2);
+    return '${taxRate.toStringAsFixed(taxRate % 1 == 0 ? 0 : 1)}%';
+  }
+
   DocumentItem({
     required this.id,
     this.localId,
     this.syncStatus = 'synced',
     this.taxId,
     this.taxRate = 0,
+    this.taxIsFixed = false,
     this.taxAmount = 0,
     this.expirationDate,
     double? totalWithTax,
@@ -242,7 +282,11 @@ class DocumentItem {
     required int companyId,
     required int documentId,
     ProductsTableData? product,
+    Set<int> fixedTaxIds = const {},
   }) {
+    // The row stores only the tax's id and number, not its kind. A line whose
+    // tax is fixed holds a flat amount per unit in `taxRate`, never a rate.
+    final taxIsFixed = r.taxId != null && fixedTaxIds.contains(r.taxId);
     // Heal older rows where checkout didn't persist these: fall back to the unit
     // price for the tax base, and derive the rate from the stored tax amount, so
     // readers load real values instead of 0 / "No tax".
@@ -251,16 +295,25 @@ class DocumentItem {
     // The rate is always tax over the EX-tax base, so pick the base that matches
     // this document's convention.
     final exTaxBase = isCheckoutDoc ? r.total : r.total - r.taxAmount;
-    final effectiveTaxRate = r.taxRate > 0
-        ? r.taxRate
-        : (r.taxAmount > 0 && exTaxBase > 0
-            ? (r.taxAmount / exTaxBase * 100)
-            : 0.0);
+    final double effectiveTaxRate;
+    if (r.taxRate > 0) {
+      effectiveTaxRate = r.taxRate;
+    } else if (taxIsFixed) {
+      effectiveTaxRate = r.quantity != 0 ? r.taxAmount / r.quantity : 0.0;
+    } else {
+      effectiveTaxRate = r.taxAmount > 0 && exTaxBase > 0
+          ? r.taxAmount / exTaxBase * 100
+          : 0.0;
+    }
     final beforeTaxAfterDisc = isCheckoutDoc
         ? r.total
-        : (effectiveTaxRate > 0
-            ? r.total / (1 + effectiveTaxRate / 100)
-            : r.total);
+        // A fixed tax is not a share of the total, so it cannot be divided out
+        // of it — the amount the line banked is subtracted instead.
+        : taxIsFixed
+            ? r.total - r.taxAmount
+            : (effectiveTaxRate > 0
+                ? r.total / (1 + effectiveTaxRate / 100)
+                : r.total);
     return DocumentItem(
       totalWithTax: isCheckoutDoc ? r.total + r.taxAmount : r.total,
       id: r.serverId ?? 0,
@@ -268,6 +321,7 @@ class DocumentItem {
       syncStatus: r.syncStatus,
       taxId: r.taxId,
       taxRate: effectiveTaxRate,
+      taxIsFixed: taxIsFixed,
       taxAmount: r.taxAmount,
       expirationDate: r.expirationDate,
       companyId: companyId,
@@ -277,7 +331,9 @@ class DocumentItem {
       productCode: product?.code,
       measurementUnit: product?.measurementUnit,
       quantity: r.quantity,
-      expectedQuantity: r.quantity,
+      // Recorded only on inventory count lines; every other line expected
+      // exactly what it carries.
+      expectedQuantity: r.expectedQuantity ?? r.quantity,
       priceBeforeTax: effectivePriceBeforeTax,
       price: r.unitPrice,
       discount: r.discount,

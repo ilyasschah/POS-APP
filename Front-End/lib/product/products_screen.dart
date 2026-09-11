@@ -11,6 +11,7 @@ import 'package:pos_app/database/app_database.dart';
 import 'package:pos_app/uom/unit_of_measure.dart';
 import 'package:pos_app/database/database_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:pos_app/core/ilyass_dropdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import 'package:image_picker/image_picker.dart';
@@ -48,6 +49,7 @@ import 'package:pos_app/app_settings/app_settings_model.dart';
 import 'package:pos_app/app_settings/app_settings_provider.dart';
 import 'package:pos_app/product/product_import_screen.dart';
 import 'package:pos_app/product/product_search.dart';
+import 'package:pos_app/product/product_stock_tabs.dart';
 import 'package:pos_app/sync/sync_notifier.dart';
 import 'package:pos_app/utils/snackbar_helper.dart';
 import 'package:uuid/uuid.dart';
@@ -1565,11 +1567,26 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
 
     // Add Advanced Tabs (If creating Phase 2, OR if normal editing)
     if (_isEditing || widget.isPostCreation) {
+      // Stock and Stock History sit beside Barcodes: what this product holds,
+      // and how it got there. Widgets of their own, so their streams open only
+      // when their tab does — and only for a product that exists.
+      final product = widget.existingProduct;
       dialogTabs.addAll([
         Tab(text: l10n.barcodesTab),
+        if (product != null) ...[
+          Tab(text: l10n.stock),
+          Tab(text: l10n.stockHistoryTab),
+        ],
         Tab(text: l10n.posModifiers),
       ]);
-      dialogTabViews.addAll([_buildBarcodesTab(), _buildModifiersTab()]);
+      dialogTabViews.addAll([
+        _buildBarcodesTab(),
+        if (product != null) ...[
+          ProductStockTab(product: product),
+          ProductStockHistoryTab(product: product),
+        ],
+        _buildModifiersTab(),
+      ]);
     }
 
     // The standalone Taxes tab survives ONLY for Phase 2, which has no Pricing
@@ -1744,18 +1761,13 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
     final groupField = allGroupsAsync.when(
       loading: () => const LinearProgressIndicator(),
       error: (_, __) => Text(l10n.errorLoadingGroups),
-      data: (groups) => DropdownButtonFormField<int?>(
-        initialValue: _selectedGroupId,
-        isExpanded: true,
-        decoration: _fieldDecoration(label: l10n.categoryGroup),
+      data: (groups) => IlyassDropdown<int?>(
+        value: _selectedGroupId,
+        label: l10n.categoryGroup,
         items: [
-          DropdownMenuItem(value: null, child: Text(l10n.noneUncategorized)),
-          ...groups.map(
-            (g) => DropdownMenuItem(
-              value: g.id,
-              child: Text(g.name, overflow: TextOverflow.ellipsis),
-            ),
-          ),
+          IlyassDropdownItem<int?>(value: null, label: l10n.noneUncategorized),
+          for (final g in groups)
+            IlyassDropdownItem<int?>(value: g.id, label: g.name),
         ],
         onChanged: (v) => setState(() => _selectedGroupId = v),
       ),
@@ -1873,48 +1885,34 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
   /// carry. Grouping by category is what makes the "you cannot sell kg from a
   /// litre product" rule visible before it can be broken.
   Widget _buildUomDropdown() {
-    final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context);
     final grouped = uomsByCategory();
 
-    final items = <DropdownMenuItem<int>>[];
+    final items = <IlyassDropdownItem<int>>[];
     for (final entry in grouped.entries) {
+      // A header is not selectable — it names the category, and its negative
+      // value keeps a tap from ever assigning an id that is not in the catalog.
       items.add(
-        DropdownMenuItem<int>(
-          // A header is not selectable — `enabled: false` keeps a tap from
-          // assigning a category id that is not in the catalog.
-          enabled: false,
+        IlyassDropdownItem<int>(
+          header: true,
           value: -entry.key.index - 1,
-          child: Text(
-            _uomCategoryLabel(entry.key, l10n).toUpperCase(),
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 0.8,
-            ),
-          ),
+          label: _uomCategoryLabel(entry.key, l10n),
         ),
       );
 
       for (final u in entry.value) {
         items.add(
-          DropdownMenuItem<int>(
+          IlyassDropdownItem<int>(
             value: u.id,
-            child: Padding(
-              padding: const EdgeInsetsDirectional.only(start: 12),
-              child: Text(
-                u.isReference ? '${u.code}  ·  ${l10n.uomStockUnit}' : u.code,
-              ),
-            ),
+            label: u.isReference ? '${u.code}  ·  ${l10n.uomStockUnit}' : u.code,
           ),
         );
       }
     }
 
-    return DropdownButtonFormField<int>(
-      initialValue: uomById(_uomId).id,
-      decoration: _fieldDecoration(label: l10n.measurementUnit),
-      isExpanded: true,
+    return IlyassDropdown<int>(
+      value: uomById(_uomId).id,
+      label: l10n.measurementUnit,
       items: items,
       onChanged: (v) {
         if (v == null || v < 0) return;
@@ -2086,21 +2084,16 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
             IlyassFieldRow(
               flexes: const [3, 2],
               children: [
-                DropdownButtonFormField<int?>(
-                  initialValue: safeValue,
-                  isExpanded: true,
-                  decoration: _fieldDecoration(label: l10n.primaryTaxRate),
+                IlyassDropdown<int?>(
+                  value: safeValue,
+                  label: l10n.primaryTaxRate,
                   items: [
-                    DropdownMenuItem(value: null, child: Text(l10n.noTax)),
-                    ...enabled.map(
-                      (t) => DropdownMenuItem(
+                    IlyassDropdownItem<int?>(value: null, label: l10n.noTax),
+                    for (final t in enabled)
+                      IlyassDropdownItem<int?>(
                         value: t.id,
-                        child: Text(
-                          "${t.name} (${t.rate}${t.isFixed ? '' : '%'})",
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                        label: "${t.name} (${t.rate}${t.isFixed ? '' : '%'})",
                       ),
-                    ),
                   ],
                   onChanged: (v) => setState(() => _selectedTaxId = v),
                 ),
@@ -2399,18 +2392,16 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
               loading: () => const LinearProgressIndicator(),
               error: (_, __) => Text(l10n.failedToLoadTaxes),
               data: (taxes) {
-                return DropdownButtonFormField<int?>(
-                  initialValue: _selectedTaxId,
-                  isExpanded: true,
-                  decoration: _fieldDecoration(label: l10n.primaryTaxRate),
+                return IlyassDropdown<int?>(
+                  value: _selectedTaxId,
+                  label: l10n.primaryTaxRate,
                   items: [
-                    DropdownMenuItem(value: null, child: Text(l10n.noTax)),
-                    ...taxes.map(
-                      (t) => DropdownMenuItem(
+                    IlyassDropdownItem<int?>(value: null, label: l10n.noTax),
+                    for (final t in taxes)
+                      IlyassDropdownItem<int?>(
                         value: t.id,
-                        child: Text("${t.name} (${t.rate}%)"),
+                        label: "${t.name} (${t.rate}%)",
                       ),
-                    ),
                   ],
                   onChanged: (v) => setState(() => _selectedTaxId = v),
                 );

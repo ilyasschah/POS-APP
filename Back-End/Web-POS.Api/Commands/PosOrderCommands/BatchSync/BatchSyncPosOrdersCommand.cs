@@ -3,9 +3,11 @@ using Api.Commands.PosOrderCommands.Add;
 using Api.Commands.PosOrderCommands.Delete;
 using Api.Commands.PosOrderItemCommands.Add;
 using Api.Constants;
+using Api.DataBase;
 using Api.Models;
 using FluentValidation;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace Api.Commands.PosOrderCommands.BatchSync
 {
@@ -43,11 +45,13 @@ namespace Api.Commands.PosOrderCommands.BatchSync
         public class Handler : IRequestHandler<BatchSyncPosOrdersCommand, BatchSyncPosOrdersResponse>
         {
             private readonly IMediator _mediator;
+            private readonly AppDbContext _db;
             private readonly ILogger<Handler> _logger;
 
-            public Handler(IMediator mediator, ILogger<Handler> logger)
+            public Handler(IMediator mediator, AppDbContext db, ILogger<Handler> logger)
             {
                 _mediator = mediator;
+                _db = db;
                 _logger = logger;
             }
 
@@ -56,6 +60,25 @@ namespace Api.Commands.PosOrderCommands.BatchSync
                 CancellationToken cancellationToken)
             {
                 var response = new BatchSyncPosOrdersResponse();
+
+                // What a percentage item discount is taken from depends on which
+                // of a line's taxes are fixed and whether its price carries them
+                // — see BuildCheckoutItems. Read once for the whole batch.
+                var fixedTaxRates = await _db.Taxes
+                    .Where(t => t.CompanyId == command.CompanyId && t.IsFixed)
+                    .ToDictionaryAsync(t => t.Id, t => t.Rate, cancellationToken);
+                var productIds = command.Request.Orders
+                    .SelectMany(o => o.Items)
+                    .Select(i => i.ProductId)
+                    .Distinct()
+                    .ToList();
+                var inclusiveProductIds = (await _db.Products
+                        .Where(p => p.CompanyId == command.CompanyId
+                                    && productIds.Contains(p.Id)
+                                    && p.IsTaxInclusivePrice)
+                        .Select(p => p.Id)
+                        .ToListAsync(cancellationToken))
+                    .ToHashSet();
 
                 // Deliberately NO outer transaction wrapping the loop. Per the
                 // offline-first plan: one bad order (e.g. stale product reference,
@@ -85,7 +108,8 @@ namespace Api.Commands.PosOrderCommands.BatchSync
                                 ClientDocumentNumber = item.ClientDocumentNumber,
                                 SessionLocalId = item.SessionLocalId,
                                 Discounts = item.Discounts,
-                                Items = BuildCheckoutItems(item),
+                                Payments = item.Payments,
+                                Items = BuildCheckoutItems(item, fixedTaxRates, inclusiveProductIds),
                             };
 
                             var checkoutResult = await _mediator.Send(
@@ -192,7 +216,8 @@ namespace Api.Commands.PosOrderCommands.BatchSync
                                 ClientDocumentNumber = item.ClientDocumentNumber,
                                 SessionLocalId = item.SessionLocalId,
                                 Discounts = item.Discounts,
-                                Items = BuildCheckoutItems(item),
+                                Payments = item.Payments,
+                                Items = BuildCheckoutItems(item, fixedTaxRates, inclusiveProductIds),
                             };
 
                             // Returns Document.Id (+ per-line DocumentItem ids) so the
@@ -255,8 +280,10 @@ namespace Api.Commands.PosOrderCommands.BatchSync
             /// would silently miss loyalty points and promotions — those leave
             /// <c>Order.Discount</c> at 0 and land in <c>DiscountLine</c> instead.
             /// </summary>
-            private static List<CheckoutItemDto> BuildCheckoutItems(
-                BatchSyncOrderItem item)
+            public static List<CheckoutItemDto> BuildCheckoutItems(
+                BatchSyncOrderItem item,
+                IReadOnlyDictionary<int, decimal> fixedTaxRates,
+                IReadOnlySet<int> inclusiveProductIds)
             {
                 return item.Items.Select(i =>
                 {
@@ -265,8 +292,19 @@ namespace Api.Commands.PosOrderCommands.BatchSync
                     // offline client and the document editor resolve it, so a
                     // "50%" item line stays 50% end-to-end instead of being read
                     // as 50 money off.
+                    //
+                    // 🚨 A percentage never takes from a fixed tax: that is Rate ×
+                    // quantity whatever the discount, a rule the owner locked in.
+                    // On a tax-inclusive line the price carries it, so it is left
+                    // out of what the % is taken from — the terminal's
+                    // `discountableUnitPrice`, which this must agree with or the
+                    // banked line differs from what the customer paid.
+                    var taxIds = i.Taxes.Count > 0 ? i.Taxes.Select(t => t.TaxId) : i.AppliedTaxIds;
+                    var fixedPerUnit = (i.IsTaxInclusive ?? inclusiveProductIds.Contains(i.ProductId))
+                        ? taxIds.Distinct().Sum(id => fixedTaxRates.TryGetValue(id, out var rate) ? rate : 0m)
+                        : 0m;
                     var discAmt = i.DiscountType == 0
-                        ? i.Price * i.Discount / 100m
+                        ? Math.Max(0m, i.Price - fixedPerUnit) * i.Discount / 100m
                         : i.Discount;
                     var net = i.Price - discAmt;
                     var total = net * i.Quantity;

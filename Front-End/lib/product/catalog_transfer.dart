@@ -162,7 +162,8 @@ const String barcodeSeparator = '|';
 
 const List<String> productCsvHeaders = [
   'Name', 'ProductGroup', 'SKU', 'Barcode', 'MeasurementUnit', 'Cost',
-  'Markup', 'Price', 'Tax', 'IsTaxInclusivePrice', 'IsPriceChangeAllowed',
+  'Markup', 'Price', 'Tax', 'TaxIsFixed', 'IsTaxInclusivePrice',
+  'IsPriceChangeAllowed',
   'IsUsingDefaultQuantity', 'IsService', 'IsEnabled', 'Description',
   'Quantity', 'Supplier', 'ReorderPoint', 'PreferredQuantity',
   'LowStockWarning', 'WarningQuantity', 'IsToWeigh', 'PackSize', 'Color',
@@ -183,6 +184,8 @@ String buildProductsCsv(List<ProductExportRow> rows) => encodeCsv([
           p.markup,
           p.price,
           p.taxes.isNotEmpty ? p.taxes.first.rate : null,
+          // Without it a fixed 5.00 came back in as a 5% tax.
+          p.taxes.isNotEmpty ? p.taxes.first.isFixed : null,
           p.isTaxInclusivePrice,
           p.isPriceChangeAllowed,
           p.isUsingDefaultQuantity,
@@ -448,11 +451,15 @@ void _writeProduct(XmlBuilder b, ProductExportRow p, _Counter barcodeIds) {
 Map<String, dynamic> _productRow(XmlElement el, List<String> path) {
   bool? flag(String tag) => parseCsvBool(_text(el, tag));
 
-  final taxRate = el
+  // The first tax that carries a rate, WITH its kind: a fixed 5.00 and a 5%
+  // are different taxes, and the number alone cannot tell them apart.
+  final firstTax = el
       .getElement('Taxes')
       ?.findElements('Tax')
-      .map((t) => parseCsvNumber(t.getElement('Rate')?.innerText))
-      .firstWhere((r) => r != null, orElse: () => null);
+      .where((t) => parseCsvNumber(t.getElement('Rate')?.innerText) != null)
+      .firstOrNull;
+  final taxRate = parseCsvNumber(firstTax?.getElement('Rate')?.innerText);
+  final taxIsFixed = parseCsvBool(firstTax?.getElement('IsFixed')?.innerText);
 
   final barcodes = el
           .getElement('Barcodes')
@@ -478,6 +485,7 @@ Map<String, dynamic> _productRow(XmlElement el, List<String> path) {
     'markup': parseCsvNumber(_text(el, 'Markup')),
     'price': parseCsvNumber(_text(el, 'Price')),
     'taxRate': taxRate,
+    'taxIsFixed': taxIsFixed,
     'isTaxInclusivePrice': flag('IsTaxInclusivePrice'),
     'isPriceChangeAllowed': flag('IsPriceChangeAllowed'),
     'isUsingDefaultQuantity': flag('IsUsingDefaultQuantity'),
@@ -537,6 +545,8 @@ const List<ImportField> productImportFields = [
   ImportField('markup', ['Markup', 'Marge'], kind: ImportFieldKind.number),
   ImportField('price', ['Price', 'Prix'], kind: ImportFieldKind.number),
   ImportField('taxRate', ['Tax', 'TaxRate', 'VAT', 'TVA', 'Taxe'], kind: ImportFieldKind.number),
+  // Blank means a percentage — what a bare number in a spreadsheet is.
+  ImportField('taxIsFixed', ['TaxIsFixed', 'FixedTax', 'IsFixed'], kind: ImportFieldKind.flag),
   ImportField('isTaxInclusivePrice', ['IsTaxInclusivePrice', 'TaxInclusivePrice'], kind: ImportFieldKind.flag),
   ImportField('isPriceChangeAllowed', ['IsPriceChangeAllowed', 'PriceChangeAllowed'], kind: ImportFieldKind.flag),
   ImportField('isUsingDefaultQuantity', ['IsUsingDefaultQuantity', 'UsingDefaultQuantity'], kind: ImportFieldKind.flag),

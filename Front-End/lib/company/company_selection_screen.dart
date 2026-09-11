@@ -1,6 +1,7 @@
 // ignore_for_file: invalid_use_of_visible_for_testing_member, invalid_use_of_protected_member
 
 import 'package:flutter/material.dart';
+import 'package:pos_app/core/ilyass_dropdown.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
@@ -215,12 +216,12 @@ class _CreateFirstUserDialogState
                 keyboardType: TextInputType.emailAddress,
               ),
               const SizedBox(height: 12),
-              DropdownButtonFormField<int>(
-                initialValue: _accessLevel,
-                decoration: InputDecoration(labelText: AppLocalizations.of(context).accessLevel),
+              IlyassDropdown<int>(
+                value: _accessLevel,
+                label: AppLocalizations.of(context).accessLevel,
                 items: [
-                  DropdownMenuItem(value: 0, child: Text(AppLocalizations.of(context).roleAdmin)),
-                  DropdownMenuItem(value: 1, child: Text(AppLocalizations.of(context).roleCashier)),
+                  IlyassDropdownItem(value: 0, label: AppLocalizations.of(context).roleAdmin),
+                  IlyassDropdownItem(value: 1, label: AppLocalizations.of(context).roleCashier),
                 ],
                 onChanged: (v) => setState(() => _accessLevel = v ?? 0),
               ),

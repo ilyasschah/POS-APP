@@ -144,6 +144,11 @@ namespace Api.Models
         public decimal? Markup { get; set; }
         public decimal? Price { get; set; }
         public decimal? TaxRate { get; set; }
+        /// <summary>
+        /// True when <see cref="TaxRate"/> is a fixed amount per unit rather than a
+        /// percentage. Null — a bare number in a spreadsheet — means a percentage.
+        /// </summary>
+        public bool? TaxIsFixed { get; set; }
         public bool? IsTaxInclusivePrice { get; set; }
         public bool? IsPriceChangeAllowed { get; set; }
         public bool? IsUsingDefaultQuantity { get; set; }

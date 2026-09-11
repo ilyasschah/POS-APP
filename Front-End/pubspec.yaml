@@ -18,6 +18,9 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   pdf: ^3.11.0
+  # Zips the .xlsx the exports write (lib/core/xlsx_writer.dart). Already in
+  # the build through `pdf`; declared because the app now imports it directly.
+  archive: ^4.0.9
   printing: ^5.12.0
   # State Management & Network
   flutter_riverpod: ^3.1.0

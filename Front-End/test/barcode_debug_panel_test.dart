@@ -18,6 +18,7 @@ import 'package:pos_app/barcode/barcode_debug_widget.dart';
 import 'package:pos_app/barcode/barcode_provider.dart';
 import 'package:pos_app/barcode/nomenclature/barcode_rule.dart';
 import 'package:pos_app/barcode/nomenclature/barcode_rules_provider.dart';
+import 'package:pos_app/core/ilyass_dropdown.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:pos_app/product/product_model.dart';
 import 'package:pos_app/product/product_provider.dart';
@@ -222,7 +223,7 @@ void main() {
         },
       );
 
-      expect(find.byType(DropdownButtonFormField<String>), findsOneWidget);
+      expect(find.byType(IlyassDropdown<String>), findsOneWidget);
       expect(find.textContaining(sharedBarcode), findsWidgets);
     });
 

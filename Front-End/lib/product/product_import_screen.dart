@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:dio/dio.dart' show Dio;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:pos_app/core/ilyass_dropdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pos_app/api/api_client.dart';
 import 'package:pos_app/auth/auth_provider.dart';
@@ -541,38 +542,20 @@ class _ProductImportScreenState extends ConsumerState<ProductImportScreen>
       style: TextStyle(fontSize: 14, color: cs.onSurface),
     );
 
-    final dropdown = InputDecorator(
-      decoration: InputDecoration(
-        isDense: true,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-        border: const OutlineInputBorder(),
-        enabledBorder: missing
-            ? OutlineInputBorder(borderSide: BorderSide(color: cs.error))
-            : null,
-        // The first value the column holds — the quickest proof that "Price"
-        // really was matched to the prices and not to the costs.
-        helperText: sample == null ? null : l.importSampleValue(sample),
-        helperMaxLines: 1,
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<int?>(
-          value: column,
-          isDense: true,
-          isExpanded: true,
-          items: [
-            DropdownMenuItem<int?>(
-              value: null,
-              child: Text(l.skipColumn, style: TextStyle(color: cs.onSurfaceVariant)),
-            ),
-            for (var i = 0; i < table.headers.length; i++)
-              DropdownMenuItem<int?>(
-                value: i,
-                child: Text(_headerLabel(table, i), overflow: TextOverflow.ellipsis),
-              ),
-          ],
-          onChanged: _busy ? null : (v) => _setMapping(f.key, v),
-        ),
-      ),
+    final dropdown = IlyassDropdown<int?>(
+      value: column,
+      dense: true,
+      // A required field still unmapped is outlined in the error colour.
+      hasError: missing,
+      // The first value the column holds — the quickest proof that "Price"
+      // really was matched to the prices and not to the costs.
+      helperText: sample == null ? null : l.importSampleValue(sample),
+      items: [
+        IlyassDropdownItem<int?>(value: null, label: l.skipColumn),
+        for (var i = 0; i < table.headers.length; i++)
+          IlyassDropdownItem<int?>(value: i, label: _headerLabel(table, i)),
+      ],
+      onChanged: _busy ? null : (v) => _setMapping(f.key, v),
     );
 
     return Padding(
@@ -811,6 +794,7 @@ String _fieldLabel(AppLocalizations l, String key) => switch (key) {
       'markup' => l.fieldMarkup,
       'price' => l.fieldPrice,
       'taxRate' => l.fieldTax,
+      'taxIsFixed' => '${l.fieldTax} · ${l.fixed}',
       'isTaxInclusivePrice' => l.fieldTaxInclusivePrice,
       'isPriceChangeAllowed' => l.fieldPriceChangeAllowed,
       'isUsingDefaultQuantity' => l.fieldUsingDefaultQuantity,

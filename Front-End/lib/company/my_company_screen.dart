@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:pos_app/core/ilyass_dropdown.dart';
 import 'package:pos_app/core/status_colors.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -767,21 +768,13 @@ class _MyCompanyScreenState extends ConsumerState<MyCompanyScreen> {
               height: 54,
               child: Center(child: LinearProgressIndicator()),
             )
-          : DropdownButtonFormField<int>(
-              initialValue: _selectedCountryId,
-              dropdownColor: theme.colorScheme.surfaceContainerHighest,
-              decoration: _inputDecoration(theme, icon: Icons.public),
-              items: _countries
-                  .map(
-                    (c) => DropdownMenuItem(
-                      value: c.id,
-                      child: Text(
-                        c.name,
-                        style: TextStyle(color: theme.colorScheme.onSurface),
-                      ),
-                    ),
-                  )
-                  .toList(),
+          : IlyassDropdown<int>(
+              value: _selectedCountryId,
+              prefixIcon: Icons.public,
+              items: [
+                for (final c in _countries)
+                  IlyassDropdownItem(value: c.id, label: c.name),
+              ],
               onChanged: (v) => setState(() => _selectedCountryId = v),
               validator: (v) =>
                   v == null ? AppLocalizations.of(context).requiredField : null,

@@ -271,11 +271,8 @@ Future<String?> _resolveTax(
   // disabled id, so a silent failure here would ship an untaxed product that
   // nothing downstream would notice.
   expect(
-    find.descendant(
-      of: findDropdown(ctx.l.primaryTaxRate),
-      matching: find.textContaining(chosen),
-    ),
-    findsWidgets,
+    dropdownSelection(tester, ctx.l.primaryTaxRate),
+    contains(chosen),
     reason: 'The Primary Tax Rate did not stay set to "$chosen"',
   );
   return chosen;

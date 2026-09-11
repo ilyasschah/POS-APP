@@ -1,10 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:uuid/uuid.dart';
 import 'package:pos_app/app_settings/app_settings_model.dart';
 import 'package:pos_app/app_settings/app_settings_provider.dart';
 import 'package:pos_app/auth/auth_provider.dart';
@@ -14,8 +12,9 @@ import 'package:pos_app/core/sound_service.dart';
 import 'package:pos_app/core/status_colors.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:pos_app/cart/checkout_models.dart';
+import 'package:pos_app/cart/sale_banking.dart';
+import 'package:pos_app/cart/split_payment_dialog.dart';
 import 'package:pos_app/session/session_gate.dart';
-import 'package:pos_app/session/session_provider.dart';
 import 'package:pos_app/cart/payment_type_model.dart';
 import 'package:pos_app/cart/payment_type_provider.dart';
 import 'package:pos_app/company/company_provider.dart';
@@ -23,14 +22,10 @@ import 'package:pos_app/currency/currencies_provider.dart';
 import 'package:pos_app/customer/customer_model.dart';
 import 'package:pos_app/customer/customer_provider.dart';
 import 'package:pos_app/database/app_database.dart';
-import 'package:pos_app/database/database_provider.dart';
-import 'package:pos_app/document/document_type_constants.dart';
-import 'package:pos_app/settings/device_identity.dart';
 import 'package:pos_app/navigation/main_layout.dart';
 import 'package:pos_app/printer/cash_drawer_service.dart';
 import 'package:pos_app/printer/receipt_printer_service.dart';
 import 'package:pos_app/printer/printer_routing_service.dart';
-import 'package:pos_app/cart/discount_display.dart';
 import 'package:pos_app/uom/unit_of_measure.dart';
 import 'package:pos_app/utils/snackbar_helper.dart';
 import 'package:pos_app/utils/customer_display_service.dart';
@@ -308,425 +303,46 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
       final amountToSave = _paid.clamp(0.0, _effectiveTotal);
 
       // ── OFFLINE CHECKOUT (Phase 4) ───────────────────────────────────────
-      // No Dio. No network. The order + items go straight into local SQLite
-      // as `syncStatus: 'pending'`. Phase 5's BatchSync push reconciles with
-      // the server when connectivity returns.
-      //
-      // INVARIANT: the order / document / payment / discount rows below are all
-      // written as `'pending'` — NOT `'pending_create'`. They are created
-      // server-side by the BatchSync push, so pushPendingDocuments /
-      // pushPendingPayments deliberately skip them; writing `'pending_create'`
-      // here would double-create them. See `lib/sync/sync_status.dart`.
-      final cartState = ref.read(cartProvider);
-      final cartNotifier = ref.read(cartProvider.notifier);
-      final db = ref.read(appDatabaseProvider);
-      final now = DateTime.now().toUtc();
-
-      // 🚨 The session this sale belongs to, stamped on EVERY row it creates —
-      // order, document, payment. Without it the drawer owns nothing: the
-      // session screen reports "0 documents / 0.00 taken" for a till that sold
-      // all day, and the closing count is measured against the opening float
-      // alone. Null is legitimate (the gate fails open, and a pre-session sale
-      // predates all of this) and banks the sale unattached rather than
-      // refusing it.
-      final sessionLocalId = ref.read(activeSessionProvider).value?.localId;
-
-      // Offline document number — issued LOCALLY (device-local counter) so the
-      // sale is numbered + scannable the instant it completes: refunds work
-      // offline and two terminals never collide (the DeviceName prefix). Stamped
-      // on BOTH the PosOrder (so BatchSync carries it to the server, which keeps
-      // it instead of generating its own) and the local Document.
-      final deviceName = await getDeviceName();
-      final docNumber = await db.nextDocumentNumber(
-        companyId: company.id,
-        deviceName: deviceName,
-        docTypeCode: DocumentTypes.salesCode,
-      );
-
-      // If the cart was loaded from an existing local row (e.g. 'svr_3280'),
-      // UPDATE that row instead of inserting a new one. This prevents duplicate
-      // orders in both SQLite and SQL Server when the same order is re-opened
-      // and paid multiple times.
-      final existingLocalId = cartState.existingLocalOrderId;
-      final orderLocalId = existingLocalId ?? const Uuid().v4();
-
-      // One stable line id per cart line, SHARED by the pos_order_item, the
-      // document_item, and the discount_lines.itemLocalId. BatchSync echoes each
-      // created DocumentItem's server id back keyed by this id, so the local
-      // document_items row gets its serverId stamped (without which its later
-      // edits/deletes could never sync). It also keeps duplicate-product lines
-      // distinct end-to-end.
-      final lineLocalIds = {
-        for (final item in _cartItems) item.cartItemId: const Uuid().v4(),
-      };
-
-      // Build items first — orderId is the same whether we insert or update.
-      final itemCompanions = _cartItems.map((item) {
-        final summedRate = item.appliedTaxes
-            .where((t) => !t.isFixed)
-            .fold<double>(0, (sum, t) => sum + t.rate);
-        // Per-tax amounts so SyncManager can pass CheckoutItemDto.Taxes to the
-        // server, creating DocumentItemTax rows during BatchSync. Sourced from
-        // the cart so the banked tax is the tax the cashier was shown — this
-        // used to re-derive it and silently ignored `discountApplyRule`.
-        final taxEntries = cartNotifier
-            .taxAmountsForItem(item)
-            .map((t) => {'id': t.id, 'amount': t.amount})
-            .toList();
-        final taxesJsonStr = taxEntries.isEmpty ? null : jsonEncode(taxEntries);
-        // A %-entered item discount is stored as (type 0, the % value) rather
-        // than its resolved money, so the saved document line reads "50%" not
-        // "Fixed 5". Totals are identical — the backend BatchSync applies the
-        // discount type-aware. Skipped when a promotion is mixed in, since one
-        // discount field can't hold both a % and the promo's money.
-        final pctItemDiscount =
-            item.discountInputType == 0 &&
-            item.discountInputValue != null &&
-            item.promotionalDiscount == 0;
-        return PosOrderItemsTableCompanion(
-          localId: Value(lineLocalIds[item.cartItemId]!),
-          orderId: Value(orderLocalId),
-          productId: Value(item.productId),
-          quantity: Value(item.quantity),
-          unitPrice: Value(item.price),
-          discount: Value(
-            pctItemDiscount
-                ? item.discountInputValue!
-                : item.discount + item.promotionalDiscount,
+      // No Dio. No network. The order, its document and its payment go
+      // straight into local SQLite as `syncStatus: 'pending'`; Phase 5's
+      // BatchSync push reconciles with the server when connectivity returns.
+      // The writing itself lives in `bankCartSale`, shared with the split bill.
+      final markAsPaidFlag = (selectedPayType?.markAsPaid ?? true) ? 1 : 0;
+      final banked = await bankCartSale(
+        ref,
+        company: company,
+        user: user,
+        items: _cartItems,
+        total: _effectiveTotal,
+        tenders: [
+          SaleTender(
+            paymentTypeId: _selectedPaymentTypeId!,
+            amount: amountToSave.toDouble(),
           ),
-          discountType: Value(pctItemDiscount ? 0 : item.discountType),
-          taxRate: Value(summedRate),
-          taxesJson: Value(taxesJsonStr),
-          comment: Value(item.comment),
-          warehouseId: Value(
-            item.warehouseId ?? cartNotifier.effectiveWarehouseId,
-          ),
-          syncStatus: const Value('pending'),
-        );
-      }).toList();
-
-      // The cart may have been opened on a table created offline, whose temp id
-      // was swapped for a real one by a sync while this cart sat open. Checkout
-      // is the last writer, so resolve before persisting or the dead id wins.
-      final resolvedTableId = await db.resolveFloorPlanTableId(
-        cartState.floorPlanTableId,
+        ],
+        paidStatus: markAsPaidFlag,
+        currencySymbol: _sym,
+        pointsUsed: _pointsUsed,
+        pointsDiscount: _pointsDiscount,
       );
-
-      if (existingLocalId != null) {
-        // Existing open order (server-originated or previously synced) —
-        // update the header row and replace its items in a single transaction.
-        await db.completeExistingOrder(
-          existingLocalId,
-          PosOrdersTableCompanion(
-            number: Value(docNumber),
-            closedAt: Value(now),
-            status: const Value(1),
-            sessionLocalId: Value(sessionLocalId),
-            total: Value(_effectiveTotal),
-            discount: Value(cartState.manualCartDiscount),
-            warehouseId: Value(cartNotifier.effectiveWarehouseId),
-            customerId: Value(cartState.selectedCustomer?.id),
-            serviceStatus: Value(cartState.serviceStatus),
-            paymentTypeId: Value(_selectedPaymentTypeId!),
-            amountPaid: Value(amountToSave.toDouble()),
-            syncStatus: const Value('pending'),
-            lastModified: Value(now),
-          ),
-          itemCompanions,
-        );
-      } else {
-        // Brand-new order — insert header + items.
-        await db.insertOfflineOrder(
-          PosOrdersTableCompanion(
-            localId: Value(orderLocalId),
-            number: Value(docNumber),
-            serverId: const Value(null),
-            companyId: Value(company.id),
-            userId: Value(user.id),
-            tableId: Value(resolvedTableId),
-            customerId: Value(cartState.selectedCustomer?.id),
-            serviceType: Value(cartState.serviceType),
-            serviceStatus: Value(cartState.serviceStatus),
-            orderName: Value(orderNum),
-            openedAt: Value(now),
-            closedAt: Value(now),
-            status: const Value(1),
-            sessionLocalId: Value(sessionLocalId),
-            total: Value(_effectiveTotal),
-            discount: Value(cartState.manualCartDiscount),
-            warehouseId: Value(cartNotifier.effectiveWarehouseId),
-            paymentTypeId: Value(_selectedPaymentTypeId!),
-            amountPaid: Value(amountToSave.toDouble()),
-            syncStatus: const Value('pending'),
-            lastModified: Value(now),
-          ),
-          itemCompanions,
-        );
-      }
-
-      // ── Local inventory deduction ─────────────────────────────────────────
-      // Mirror the server-side delta logic so local stock stays accurate.
-      // Stock is verified up-front in the menu / cart when items are added, so
-      // checkout NEVER blocks here — it just deducts (allowing negative if the
-      // item somehow went out of stock) and proceeds. This matches the server's
-      // offline-replay behaviour (BatchSync replays sales with AllowNegativeStock).
-      await db.deductStockForCheckout(
-        items: _cartItems
-            .map(
-              (item) => (
-                productId: item.productId,
-                quantity: item.quantity,
-                // The line's own unit — a 100 g line takes 0.100 kg off the
-                // shelf, and deductStockForCheckout does that conversion.
-                uomId: item.uomId,
-                warehouseId:
-                    item.warehouseId ?? cartNotifier.effectiveWarehouseId,
-                isService: item.isService,
-                productName: item.productName,
-              ),
-            )
-            .toList(),
-        allowNegative: true,
-      );
-
-      // ── Create Document + Payment locally ────────────────────────────────
-      // The Document localId = orderLocalId so sync_manager can link it to
-      // the server Document returned by CheckoutPosOrderCommand after BatchSync.
-      // cartItemId → document_item localId, so discount_lines link to the
-      // permanent document record (the source of truth for receipts/reports).
-      final docItemLocalIds = <String, String>{};
-      // The choices, snapshotted onto the banked line. Same rows as the parked
-      // order carried, re-keyed to the DOCUMENT line — the open order and its
-      // lines are deleted the moment this sale is banked, so nothing survives
-      // to a reprint unless it is copied here.
-      final docItemModifiers = <DocumentItemModifiersTableCompanion>[];
-      final docItems = _cartItems.map((item) {
-        // Same id as this line's pos_order_item, so BatchSync can stamp the
-        // returned DocumentItem serverId onto this exact row.
-        final docItemLocalId = lineLocalIds[item.cartItemId]!;
-        docItemLocalIds[item.cartItemId] = docItemLocalId;
-        for (var mi = 0; mi < item.selectedModifiers.length; mi++) {
-          final m = item.selectedModifiers[mi];
-          docItemModifiers.add(
-            DocumentItemModifiersTableCompanion(
-              localId: Value(const Uuid().v4()),
-              documentItemLocalId: Value(docItemLocalId),
-              // Nullable and unenforced: the snapshot is the record, the id
-              // only exists so reports can group by option.
-              modifierOptionId: Value(m.modifierOptionId),
-              groupName: Value(m.groupName),
-              name: Value(m.name),
-              additionalPrice: Value(m.additionalPrice),
-              rank: Value(mi),
-            ),
-          );
-        }
-        final lineTotal =
-            (item.price - item.discount - item.promotionalDiscount) *
-            item.quantity;
-        // From the cart, so `total + taxAmount` reconciles with the document
-        // total the customer actually paid under EITHER discountApplyRule.
-        // Re-deriving it here hardcoded the "Before tax" rule, so an "After tax"
-        // company banked a line that contradicted its own document by
-        // (discount × rate) — 30 + 6 on a 37.00 document.
-        final taxAmt = cartNotifier.taxForItem(item);
-        // Persist the tax-base price + the applied tax so the document editor's
-        // Edit-Item dialog can load real values (it was showing 0 / "No tax"
-        // because these were never written). The editor is single-tax, so carry
-        // the combined % rate and the first applied tax id. The rate stays
-        // %-only — a fixed tax has no rate — while taxAmt above is every tax.
-        final combinedRate = item.appliedTaxes
-            .where((t) => !t.isFixed)
-            .fold<double>(0, (s, t) => s + t.rate);
-        final firstTaxId = item.appliedTaxes.isNotEmpty
-            ? item.appliedTaxes.first.id
-            : null;
-        // Mirror the pos_order_items choice so local + pulled docs agree: keep a
-        // %-entered discount as (type 0, the % value) instead of the resolved
-        // money, so the Edit-Item dialog shows "50%". `total` (lineTotal) stays
-        // authoritative and unchanged.
-        final pctItemDiscount =
-            item.discountInputType == 0 &&
-            item.discountInputValue != null &&
-            item.promotionalDiscount == 0;
-        return DocumentItemsTableCompanion(
-          localId: Value(docItemLocalId),
-          documentId: Value(orderLocalId),
-          productId: Value(item.productId),
-          quantity: Value(item.quantity),
-          unitPrice: Value(item.price),
-          // The EX-TAX price, which for a tax-inclusive product is NOT
-          // `item.price` — that already contains the tax. Writing the gross
-          // figure here made the banked document claim a 90 MAD inclusive line
-          // had a 90 MAD taxable base, and the backend recomputes
-          // DocumentItemTax straight off this column.
-          priceBeforeTax: Value(cartNotifier.netUnitPriceFor(item)),
-          // Store ONLY the manual item discount here — exactly what the server's
-          // CheckoutAsync persists (from pos_order_items.discount), so the column
-          // is identical on the originating device and on devices that pull the
-          // doc back. The promotion is NOT baked in: it lives in discount_lines
-          // and surfaces in the Discount Breakdown. Baking it in here made the
-          // promotion show twice (item "Item Disc." column + breakdown) and made
-          // local docs disagree with pulled ones. `total`/`taxAmount` already net
-          // out the promotion via `lineTotal`, so they're unaffected.
-          discount: Value(
-            pctItemDiscount ? item.discountInputValue! : item.discount,
-          ),
-          discountType: Value(pctItemDiscount ? 0 : item.discountType),
-          total: Value(lineTotal),
-          taxAmount: Value(taxAmt),
-          taxRate: Value(combinedRate),
-          taxId: Value(firstTaxId),
-        );
-      }).toList();
-
-      final markAsPaidFlag =
-          (payTypes
-                  .where((p) => p.id == _selectedPaymentTypeId)
-                  .firstOrNull
-                  ?.markAsPaid ??
-              true)
-          ? 1
-          : 0;
-
-      await db.insertOfflineDocument(
-        document: DocumentsTableCompanion(
-          localId: Value(orderLocalId),
-          number: Value(docNumber),
-          companyId: Value(company.id),
-          userId: Value(user.id),
-          warehouseId: Value(cartNotifier.effectiveWarehouseId),
-          total: Value(_effectiveTotal),
-          discount: Value(cartState.manualCartDiscount),
-          discountType: Value(cartState.manualCartDiscountType),
-          customerId: Value(cartState.selectedCustomer?.id),
-          orderNumber: Value(orderNum),
-          serviceType: Value(cartState.serviceType),
-          paidStatus: Value(markAsPaidFlag),
-          date: Value(now),
-          sessionLocalId: Value(sessionLocalId),
-          syncStatus: const Value('pending'),
-          lastModified: Value(now),
-        ),
-        items: docItems,
-        payment: PaymentsTableCompanion(
-          localId: Value(const Uuid().v4()),
-          documentId: Value(orderLocalId),
-          paymentTypeId: Value(_selectedPaymentTypeId!),
-          amount: Value(amountToSave.toDouble()),
-          userId: Value(user.id),
-          date: Value(now),
-          companyId: Value(company.id),
-          dateCreated: Value(now),
-          sessionLocalId: Value(sessionLocalId),
-        ),
-        itemModifiers: docItemModifiers,
-      );
-
-      // ── Phase 2: persist the normalized discount breakdown ────────────────
-      // Cart-derived lines (manual item/cart, promotion, customer profile) come
-      // from buildDiscountLines; the loyalty-points redemption — which lives in
-      // this dialog, not cart state — is appended last. Must run BEFORE
-      // clearCart() since buildDiscountLines reads the live cart.
-      final discountLines = cartNotifier.buildDiscountLines(
-        companyId: company.id,
-        orderLocalId: orderLocalId,
-        documentLocalId: orderLocalId,
-        itemLocalIds: docItemLocalIds,
-      );
-      if (_pointsDiscount > 0) {
-        discountLines.add(
-          DiscountLinesTableCompanion(
-            localId: Value(const Uuid().v4()),
-            companyId: Value(company.id),
-            orderLocalId: Value(orderLocalId),
-            documentLocalId: Value(orderLocalId),
-            source: const Value(DiscountSource.loyaltyPoints),
-            sourceRefId: Value(cartState.selectedCustomer?.id),
-            value: Value(_pointsUsed), // points redeemed
-            valueType: const Value(1), // resolved to money in `amount`
-            amount: Value(double.parse(_pointsDiscount.toStringAsFixed(4))),
-            sequence: Value(discountLines.length),
-            label: const Value('Loyalty points'),
-            syncStatus: const Value('pending'),
-            lastModified: Value(now),
-          ),
-        );
-      }
-      await db.replaceDiscountLines(
-        orderLocalId: orderLocalId,
-        documentLocalId: orderLocalId,
-        lines: discountLines,
-      );
-
-      // Read the persisted lines back as rows to itemize on the receipt. Loyalty
-      // is excluded here because the receipt already prints a "Points Used" row.
-      final receiptDiscountLines = toReceiptDiscountLines(
-        await db.getDiscountLinesForDocument(orderLocalId),
-        _sym,
-        includeLoyalty: false,
-      );
-
-      // Local-only counter bump — replaces the old syncLatestOrderNumber API
-      // call. Phase 5 can reconcile with the server's official sequence after
-      // BatchSync push if a global counter is needed across devices.
-      final nextOrderNum = ref.read(dailyOrderNumberProvider) + 1;
-      ref.read(dailyOrderNumberProvider.notifier).state = nextOrderNum;
-
-      // Clear cart now that the order is durably saved.
-      cartNotifier.clearCart();
-
-      // A booking's order was just paid — mark the reservation Completed
-      // (status 4) so it leaves the In-Service list instead of lingering there.
-      // Offline-first: the flip is written to Drift now (allBookingsProvider is a
-      // Drift stream, so the calendar updates at once) and the sync below pushes
-      // /Bookings/UpdateStatus. Best-effort — a booking-status hiccup must never
-      // fail an already-banked sale. bookingId is read from the captured
-      // cartState, so clearCart() above doesn't erase it.
-      final paidBookingId = cartState.bookingId;
-      if (paidBookingId != null) {
-        try {
-          await db.setBookingStatusLocal(paidBookingId, 4); // 4 = Completed
-        } catch (e) {
-          debugPrint(
-            'mark booking $paidBookingId completed on pay failed — $e',
-          );
-        }
-      }
+      // The cart AS SOLD — banking has already cleared the live one.
+      final cartState = banked.cartState;
+      final docNumber = banked.documentNumber;
+      final receiptDiscountLines = banked.receiptDiscountLines;
 
       // ── Loyalty points: earn and deduct ──────────────────────────────────
-      final loyaltyCustomer = cartState.selectedCustomer;
-      if (_settingsAtOpen[SettingKeys.loyaltyEnabled]?.toLowerCase() ==
-              'true' &&
-          loyaltyCustomer != null &&
-          loyaltyCustomer.code != 'C000') {
-        final minAmt =
-            double.tryParse(
-              _settingsAtOpen[SettingKeys.loyaltyMinAmount] ?? '100',
-            ) ??
-            100;
-        final ptsPerThreshold =
-            double.tryParse(
-              _settingsAtOpen[SettingKeys.loyaltyPointsPerThreshold] ?? '10',
-            ) ??
-            10;
-        final earned = minAmt > 0
-            ? ((_grandTotal / minAmt).floor() * ptsPerThreshold).toDouble()
-            : 0.0;
-        final loyaltyNotifier = ref.read(loyaltyCardNotifierProvider.notifier);
-        await loyaltyNotifier.adjustPoints(
-          loyaltyCustomer.id,
-          earned - _pointsUsed,
-        );
-        final updatedCard = await loyaltyNotifier.findByCustomerId(
-          loyaltyCustomer.id,
-        );
-        if (mounted) {
-          setState(() {
-            _pointsEarned = earned;
-            _pointsBalance = updatedCard?.points ?? 0;
-          });
-        }
+      final loyalty = await settleLoyaltyPoints(
+        ref,
+        settings: _settingsAtOpen,
+        customer: cartState.selectedCustomer,
+        grandTotal: _grandTotal,
+        pointsUsed: _pointsUsed,
+      );
+      if (loyalty != null && mounted) {
+        setState(() {
+          _pointsEarned = loyalty.earned;
+          _pointsBalance = loyalty.balance;
+        });
       }
 
       // Customer display: checkoutSuccess state shows cash+change for 5 s,
@@ -890,50 +506,7 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
 
       if (!ctx.mounted) return;
 
-      // ── Close checkout dialog ─────────────────────────────────────
-      // Capture the navigator BEFORE popping. Once the dialog closes, `ctx` is
-      // being torn down, so reusing it for the post-checkout navigation below
-      // (multi-user auto-logout) risks a "deactivated widget's ancestor" throw.
-      // The NavigatorState itself outlives the dialog route, so it's safe to hold.
-      final navigator = Navigator.of(ctx);
-      navigator.pop();
-
-      // ── Background sync — create Document + Payment on server immediately ─
-      // Fire-and-forget: the local order row is already saved as 'pending'.
-      // If this sync fails the sync button / connectivity watcher will retry.
-      ref.read(syncStateProvider.notifier).sync().catchError((_) {});
-
-      // The old syncLatestOrderNumber API call is gone — Phase 4 is offline-only.
-      // The local counter bump above (dailyOrderNumberProvider) keeps the next
-      // order number unique on this device until Phase 5 reconciles with the
-      // server's official sequence.
-
-      // Single-user mode: stay logged in. Multi-user mode: auto-logout so the
-      // next cashier can log in.
-      final singleUser =
-          appSettings[SettingKeys.singleUser]?.toLowerCase() != 'false';
-      if (!singleUser && mounted) {
-        ref.invalidate(currentUserProvider);
-        ref.read(cartProvider.notifier).clearCart();
-        navigator.pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const LoginScreen()),
-          (r) => false,
-        );
-        return;
-      }
-
-      // Return to the user's configured default screen, validated against the
-      // feature flags so we never land on a disabled (empty) tab — the source
-      // of the post-checkout black screen.
-      final nextIndex = resolveDefaultScreenIndex(appSettings);
-
-      // The checkout dialog was already closed above (navigator.pop()).
-      // Just swap the underlying MainLayout tab reactively — no extra pop (a
-      // second pop would remove MainLayout itself → black screen) and no
-      // MainLayout rebuild, so the startup cash-in hook never re-fires.
-      if (mounted) {
-        ref.read(mainNavigationIndexProvider.notifier).state = nextIndex;
-      }
+      _finishSale(ctx, appSettings);
     } catch (e) {
       if (mounted) {
         setState(() => _isProcessing = false);
@@ -944,6 +517,82 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
           isError: true,
         );
       }
+    }
+  }
+
+  /// Hands the till back once a sale is banked: closes this checkout, kicks the
+  /// sync, then signs out or returns to the default screen. Shared by Complete
+  /// and by the split bill, which banks on its own.
+  void _finishSale(BuildContext ctx, Map<String, String> appSettings) {
+    // ── Close checkout dialog ─────────────────────────────────────
+    // Capture the navigator BEFORE popping. Once the dialog closes, `ctx` is
+    // being torn down, so reusing it for the post-checkout navigation below
+    // (multi-user auto-logout) risks a "deactivated widget's ancestor" throw.
+    // The NavigatorState itself outlives the dialog route, so it's safe to hold.
+    final navigator = Navigator.of(ctx);
+    navigator.pop();
+
+    // ── Background sync — create Document + Payment on server immediately ─
+    // Fire-and-forget: the local order row is already saved as 'pending'.
+    // If this sync fails the sync button / connectivity watcher will retry.
+    ref.read(syncStateProvider.notifier).sync().catchError((_) {});
+
+    // The old syncLatestOrderNumber API call is gone — Phase 4 is offline-only.
+    // The local counter bump (dailyOrderNumberProvider, in bankCartSale) keeps
+    // the next order number unique on this device until Phase 5 reconciles
+    // with the server's official sequence.
+
+    // Single-user mode: stay logged in. Multi-user mode: auto-logout so the
+    // next cashier can log in.
+    final singleUser =
+        appSettings[SettingKeys.singleUser]?.toLowerCase() != 'false';
+    if (!singleUser && mounted) {
+      ref.invalidate(currentUserProvider);
+      ref.read(cartProvider.notifier).clearCart();
+      navigator.pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        (r) => false,
+      );
+      return;
+    }
+
+    // Return to the user's configured default screen, validated against the
+    // feature flags so we never land on a disabled (empty) tab — the source
+    // of the post-checkout black screen.
+    final nextIndex = resolveDefaultScreenIndex(appSettings);
+
+    // The checkout dialog was already closed above (navigator.pop()).
+    // Just swap the underlying MainLayout tab reactively — no extra pop (a
+    // second pop would remove MainLayout itself → black screen) and no
+    // MainLayout rebuild, so the startup cash-in hook never re-fires.
+    if (mounted) {
+      ref.read(mainNavigationIndexProvider.notifier).state = nextIndex;
+    }
+  }
+
+  // ── Split bill ────────────────────────────────────────────────────────────
+  /// Opens the split bill over this checkout. It banks the sale itself — one
+  /// document, a payment per guest — and pops `true`, after which this
+  /// checkout closes exactly as after its own Complete.
+  Future<void> _openSplit(BuildContext ctx) async {
+    final bill = splitBillForCart(
+      ref.read(cartProvider.notifier),
+      _cartItems,
+      grandTotal: _grandTotal,
+      pointsDiscount: _pointsDiscount,
+    );
+    final banked = await showDialog<bool>(
+      context: ctx,
+      barrierDismissible: false,
+      builder: (_) => SplitPaymentDialog(
+        bill: bill,
+        loyaltyBaseTotal: _grandTotal,
+        pointsUsed: _pointsUsed,
+        pointsDiscount: _pointsDiscount,
+      ),
+    );
+    if (banked == true && ctx.mounted) {
+      _finishSale(ctx, ref.read(appSettingsProvider));
     }
   }
 
@@ -1072,6 +721,7 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
                 payTypesAsync: payTypesAsync,
                 selectedId: _selectedPaymentTypeId,
                 onSelect: (id) => setState(() => _selectedPaymentTypeId = id),
+                onSplit: _isProcessing ? null : () => _openSplit(context),
               ),
               VerticalDivider(
                 width: 1,
@@ -1544,10 +1194,14 @@ class _PaymentMethodsColumn extends ConsumerWidget {
   final int? selectedId;
   final void Function(int) onSelect;
 
+  /// Opens the split bill. Null while a checkout is being processed.
+  final VoidCallback? onSplit;
+
   const _PaymentMethodsColumn({
     required this.payTypesAsync,
     required this.selectedId,
     required this.onSelect,
+    required this.onSplit,
   });
 
   @override
@@ -1587,8 +1241,7 @@ class _PaymentMethodsColumn extends ConsumerWidget {
                 final splitButton = Padding(
                   padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
                   child: OutlinedButton.icon(
-                    onPressed: () =>
-                        debugPrint('Split payments: to be implemented'),
+                    onPressed: onSplit,
                     icon: const Icon(Icons.call_split, size: 18),
                     label: Text(AppLocalizations.of(context).splitPayments),
                     style: OutlinedButton.styleFrom(
@@ -1646,8 +1299,7 @@ class _PaymentMethodsColumn extends ConsumerWidget {
                       ),
                       const SizedBox(height: 8),
                       OutlinedButton.icon(
-                        onPressed: () =>
-                            debugPrint('Split payments: to be implemented'),
+                        onPressed: onSplit,
                         icon: const Icon(Icons.call_split, size: 18),
                         label: Text(AppLocalizations.of(context).splitPayments),
                         style: OutlinedButton.styleFrom(

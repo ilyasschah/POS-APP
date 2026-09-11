@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
+import 'package:pos_app/core/ilyass_dropdown.dart';
 import 'package:pos_app/core/app_date_format.dart';
 import 'package:pos_app/navigation/main_layout.dart';
 import 'package:pos_app/core/ilyass_screen.dart';
@@ -683,7 +684,7 @@ class _CustomerDropdown extends StatelessWidget {
 
     return _StyledDropdown<int?>(
       value: selectedId,
-      hint: Text(AppLocalizations.of(context).selectCustomerLower, style: const TextStyle(fontSize: 16)),
+      hint: AppLocalizations.of(context).selectCustomerLower,
       items: customers
           .map(
             (c) => DropdownMenuItem<int?>(
@@ -742,7 +743,7 @@ class _PaymentTypeDropdown extends StatelessWidget {
 
 class _StyledDropdown<T> extends StatelessWidget {
   final T value;
-  final Widget? hint;
+  final String? hint;
   final List<DropdownMenuItem<T>> items;
   final void Function(T?) onChanged;
 
@@ -755,32 +756,13 @@ class _StyledDropdown<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final border = OutlineInputBorder(
-      borderRadius: BorderRadius.circular(8),
-      borderSide: BorderSide(color: theme.colorScheme.outline),
-    );
-
-    return InputDecorator(
-      decoration: InputDecoration(
-        isDense: true,
-        border: border,
-        enabledBorder: border,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 10,
-        ), // Taller touch target
-      ),
-      child: DropdownButton<T>(
-        value: value,
-        hint: hint,
-        isExpanded: true,
-        underline: const SizedBox.shrink(),
-        isDense: true,
-        iconSize: 28, // Bigger dropdown arrow
-        items: items,
-        onChanged: onChanged,
-      ),
+    // The house dropdown: opens below the field, rounded, accent-tinted.
+    return IlyassDropdown<T>(
+      value: value,
+      hint: hint,
+      items: IlyassDropdown.fromMenuItems(items),
+      onChanged: onChanged,
+      textStyle: Theme.of(context).textTheme.titleMedium,
     );
   }
 }

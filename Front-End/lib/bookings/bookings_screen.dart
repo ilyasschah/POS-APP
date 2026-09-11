@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:pos_app/core/ilyass_dropdown.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pos_app/api/api_client.dart';
@@ -1298,22 +1299,14 @@ class _AddBookingDialogState extends ConsumerState<_AddBookingDialog> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                DropdownButtonFormField<int?>(
-                  key: ValueKey(_selectedCustomerId),
-                  initialValue: _selectedCustomerId,
-                  decoration: InputDecoration(
-                    labelText: AppLocalizations.of(context).customerLabel,
-                    prefixIcon: const Icon(Icons.account_circle),
-                  ),
-                  items: customers
-                      .where((c) => c.isCustomer)
-                      .map(
-                        (c) => DropdownMenuItem<int?>(
-                          value: c.id,
-                          child: Text(c.name),
-                        ),
-                      )
-                      .toList(),
+                IlyassDropdown<int?>(
+                  value: _selectedCustomerId,
+                  label: AppLocalizations.of(context).customerLabel,
+                  prefixIcon: Icons.account_circle,
+                  items: [
+                    for (final c in customers.where((c) => c.isCustomer))
+                      IlyassDropdownItem<int?>(value: c.id, label: c.name),
+                  ],
                   onChanged: (id) {
                     setState(() => _selectedCustomerId = id);
                     if (id != null) {
@@ -1368,23 +1361,20 @@ class _AddBookingDialogState extends ConsumerState<_AddBookingDialog> {
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: DropdownButtonFormField<User?>(
-                        initialValue: _selectedStaff,
-                        decoration: InputDecoration(
-                          labelText: AppLocalizations.of(context).setStaff,
-                          prefixIcon: const Icon(Icons.badge),
-                        ),
+                      child: IlyassDropdown<User?>(
+                        value: _selectedStaff,
+                        label: AppLocalizations.of(context).setStaff,
+                        prefixIcon: Icons.badge,
                         items: [
-                          DropdownMenuItem<User?>(
+                          IlyassDropdownItem<User?>(
                             value: null,
-                            child: Text(AppLocalizations.of(context).unassigned),
+                            label: AppLocalizations.of(context).unassigned,
                           ),
-                          ...widget.users.map(
-                            (u) => DropdownMenuItem<User?>(
+                          for (final u in widget.users)
+                            IlyassDropdownItem<User?>(
                               value: u,
-                              child: Text(u.displayName),
+                              label: u.displayName,
                             ),
-                          ),
                         ],
                         onChanged: (u) => setState(() => _selectedStaff = u),
                       ),

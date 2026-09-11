@@ -83,36 +83,36 @@ Future<void> verifyProduct(
   if (expectedTax != null) {
     await tapVisible(tester, find.text(ctx.l.pricingTab));
     await pumpFor(tester, const Duration(seconds: 1));
+    // Read off the dropdown's own field — see `dropdownSelection` for why a
+    // text search inside the dropdown can never fail.
     expect(
-      find.descendant(
-        of: findDropdown(ctx.l.primaryTaxRate),
-        matching: find.textContaining(expectedTax),
-      ),
-      findsWidgets,
+      dropdownSelection(tester, ctx.l.primaryTaxRate),
+      contains(expectedTax),
       reason: '"$productName" came back with no tax rate attached.',
     );
   }
 
   // ── Group: as entered ──────────────────────────────────────────────────────
   //
-  // 🚨 Scoped to the DROPDOWN, for the same reason the picker is. The products
-  // table behind this dialog has a Category column showing these very names, so
-  // an unscoped `find.textContaining(groupName)` matches a row belonging to some
-  // OTHER product and passes while this one's dropdown never changed at all.
-  // That is not hypothetical — it is the third of the three bugs in the README,
-  // the verification that was itself wrong.
+  // 🚨 Read off the DROPDOWN'S OWN FIELD, for the same reason the picker is.
+  // The products table behind this dialog has a Category column showing these
+  // very names, so an unscoped `find.textContaining(groupName)` matches a row
+  // belonging to some OTHER product and passes while this one's dropdown never
+  // changed at all. That is not hypothetical — it is the third of the three
+  // bugs in the README, the verification that was itself wrong. (A text search
+  // scoped to the dropdown is no better: every option's label is inside it.)
   if (expectedGroup != null) {
     await tapVisible(tester, find.text(ctx.l.generalLabel));
     await pumpFor(tester, const Duration(seconds: 1));
-    await waitFor(
+    await waitUntil(
       tester,
-      find.descendant(
-        of: findDropdown(ctx.l.categoryGroup),
-        matching: find.textContaining(expectedGroup),
-      ),
+      () async =>
+          dropdownSelection(tester, ctx.l.categoryGroup)
+              ?.contains(expectedGroup) ??
+          false,
       timeout: const Duration(seconds: 30),
-      because: '"$productName" came back in the wrong group '
-          '(expected "$expectedGroup").',
+      describe: '"$productName" shows its group "$expectedGroup" (it came '
+          'back in the wrong group, or none)',
     );
   }
 

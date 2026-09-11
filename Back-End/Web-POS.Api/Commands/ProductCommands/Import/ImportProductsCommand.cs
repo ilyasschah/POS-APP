@@ -52,7 +52,7 @@ namespace Api.Commands.ProductCommands.Import
             var strategy = _db.Database.CreateExecutionStrategy();
 
             // Only rows that were committed feed the document.
-            var processedItems = new List<(Product product, decimal? quantity, decimal? taxRate, bool? isTaxInclusive)>();
+            var processedItems = new List<(Product product, decimal? quantity, decimal? taxRate, bool taxIsFixed, bool? isTaxInclusive, decimal? countedFrom)>();
 
             foreach (var row in req.Rows)
             {
@@ -97,7 +97,7 @@ namespace Api.Commands.ProductCommands.Import
                 if (journal.Outcome == RowOutcome.Created) result.Created++;
                 else result.Updated++;
                 result.Warnings.AddRange(journal.Warnings.Select(w => $"'{Short(label)}': {w}"));
-                processedItems.Add((journal.Product!, row.Quantity, row.TaxRate, row.IsTaxInclusivePrice));
+                processedItems.Add((journal.Product!, row.Quantity, row.TaxRate, row.TaxIsFixed ?? false, row.IsTaxInclusivePrice, journal.CountedFrom));
             }
 
             // ---------------------------------------------------------------
@@ -159,15 +159,27 @@ namespace Api.Commands.ProductCommands.Import
                 _db.Documents.Add(document);
                 await _db.SaveChangesAsync(ct); // flush to get Document.Id
 
-                foreach (var (p, qty, taxRate, isTaxInclusive) in processedItems)
+                foreach (var (p, qty, taxRate, taxIsFixed, isTaxInclusive, countedFrom) in processedItems)
                 {
                     decimal quantity = qty ?? 0;
+
+                    // A count's ExpectedQuantity is the stock the warehouse held
+                    // before this import overwrote it, so Quantity − Expected is
+                    // the variance the Stock Moves history shows. A row that set
+                    // no stock moved nothing: it expects exactly what it counted.
+                    // Every other document type expects what it carries.
+                    decimal expectedQuantity = docTypeId == DocumentTypeConstants.InventoryCount
+                        ? countedFrom ?? quantity
+                        : quantity;
                     decimal usePrice = req.DocumentType == "purchase" ? p.Cost : p.Price;
 
-                    // Back-calculate price before tax when tax is inclusive
+                    // Back-calculate price before tax when tax is inclusive. A fixed
+                    // tax is an amount per unit, so it is subtracted, not divided out.
                     decimal priceBeforeTax = usePrice;
                     if (taxRate is > 0 && isTaxInclusive == true)
-                        priceBeforeTax = Math.Round(usePrice / (1 + taxRate.Value / 100), 4);
+                        priceBeforeTax = taxIsFixed
+                            ? Math.Max(0, usePrice - taxRate.Value)
+                            : Math.Round(usePrice / (1 + taxRate.Value / 100), 4);
 
                     decimal total = Math.Round(quantity * usePrice, 4);
 
@@ -176,7 +188,7 @@ namespace Api.Commands.ProductCommands.Import
                         documentId:                   document.Id,
                         productId:                    p.Id,
                         quantity:                     quantity,
-                        expectedQuantity:             quantity,
+                        expectedQuantity:             expectedQuantity,
                         priceBeforeTax:               priceBeforeTax,
                         price:                        usePrice,
                         discount:                     0,
@@ -294,9 +306,12 @@ namespace Api.Commands.ProductCommands.Import
             // 3. Tax
             if (row.TaxRate.HasValue)
             {
-                if (!cache.TaxesByRate.TryGetValue(row.TaxRate.Value, out var tax))
+                var taxIsFixed = row.TaxIsFixed ?? false;
+                if (!cache.TaxesByRate.TryGetValue((row.TaxRate.Value, taxIsFixed), out var tax))
                 {
-                    j.Warnings.Add($"no tax at {row.TaxRate.Value:0.####}% in this company — imported without a tax");
+                    j.Warnings.Add(taxIsFixed
+                        ? $"no fixed tax of {row.TaxRate.Value:0.####} in this company — imported without a tax"
+                        : $"no tax at {row.TaxRate.Value:0.####}% in this company — imported without a tax");
                 }
                 else if (!cache.ProductTaxes.Contains((p.Id, tax.Id)) && j.NewProductTaxes.Add((p.Id, tax.Id)))
                 {
@@ -364,10 +379,14 @@ namespace Api.Commands.ProductCommands.Import
                 if (cache.Stocks.TryGetValue(p.Id, out var stock))
                 {
                     j.Touch(stock);
+                    // Read BEFORE the overwrite — it is what the count is
+                    // measured against, and the overwrite is about to erase it.
+                    j.CountedFrom = stock.Quantity;
                     stock.UpdateDetails(row.Quantity.Value, cache.FirstWarehouse.Id, p.Id);
                 }
                 else
                 {
+                    j.CountedFrom = 0m;
                     var created = Stock.Create(row.Quantity.Value, cache.FirstWarehouse.Id, p.Id, companyId);
                     _db.Stocks.Add(created);
                     j.Created.Add(created);
@@ -464,7 +483,7 @@ namespace Api.Commands.ProductCommands.Import
         {
             public Dictionary<string, ProductGroup> Groups { get; private init; } = new();
             public Dictionary<string, Product> Products { get; private init; } = new();
-            public Dictionary<decimal, Tax> TaxesByRate { get; private init; } = new();
+            public Dictionary<(decimal Rate, bool IsFixed), Tax> TaxesByRate { get; private init; } = new();
             public Dictionary<string, int> BarcodeOwner { get; } = new(StringComparer.Ordinal);
             public HashSet<(int ProductId, int TaxId)> ProductTaxes { get; private init; } = new();
             public Dictionary<int, StockControl> StockControls { get; private init; } = new();
@@ -495,8 +514,11 @@ namespace Api.Commands.ProductCommands.Import
                             .Where(c => c.CompanyId == companyId && c.IsSupplier && c.Name != null)
                             .ToListAsync(ct),
                         c => c.Name, c => c.Id),
+                    // Keyed on the kind as well as the number: a fixed 5.00 and a 5%
+                    // are different taxes, and matching on the rate alone attached
+                    // whichever had the lower id.
                     TaxesByRate = (await db.Taxes.Where(t => t.CompanyId == companyId).ToListAsync(ct))
-                        .GroupBy(t => t.Rate)
+                        .GroupBy(t => (t.Rate, t.IsFixed))
                         .ToDictionary(g => g.Key, g => g.OrderBy(t => t.Id).First()),
                     ProductTaxes = (await db.ProductsTaxes
                             .Where(pt => pt.CompanyId == companyId)
@@ -567,6 +589,13 @@ namespace Api.Commands.ProductCommands.Import
             public HashSet<(int ProductId, int TaxId)> NewProductTaxes { get; } = [];
             public StockControl? NewStockControl { get; set; }
             public Stock? NewStock { get; set; }
+
+            /// <summary>
+            /// What the first warehouse held of this row's product before the row
+            /// overwrote it — an Inventory Count line's ExpectedQuantity. Null
+            /// when the row wrote no stock at all.
+            /// </summary>
+            public decimal? CountedFrom { get; set; }
             public List<string> Warnings { get; } = [];
             public Product? Product { get; set; }
             public RowOutcome Outcome { get; set; }
@@ -604,6 +633,7 @@ namespace Api.Commands.ProductCommands.Import
                 NewProductTaxes.Clear();
                 NewStockControl = null;
                 NewStock = null;
+                CountedFrom = null;
                 Warnings.Clear();
                 Product = null;
             }

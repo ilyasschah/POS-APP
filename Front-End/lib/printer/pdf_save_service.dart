@@ -19,16 +19,34 @@ Future<String?> savePdfAs({
   required Uint8List bytes,
   required String suggestedName,
   String dialogTitle = 'Save as PDF',
+}) =>
+    saveFileAs(
+      bytes: bytes,
+      // Non-negotiable: file_picker throws IllegalCharacterInFileNameException
+      // on Windows if the name holds a forbidden character, and order names are
+      // operator-typed. `pdfSafeName` is what stops a bad name from becoming a
+      // crash rather than just an ugly file.
+      fileName: '${pdfSafeName(suggestedName)}.pdf',
+      extension: 'pdf',
+      dialogTitle: dialogTitle,
+    );
+
+/// "Save as" for any exported file — a PDF, a spreadsheet.
+///
+/// [fileName] carries its extension and must already be safe for Windows;
+/// [extension] is what the dialog filters on. Returns the written path, or
+/// null if the operator cancelled.
+Future<String?> saveFileAs({
+  required Uint8List bytes,
+  required String fileName,
+  required String extension,
+  required String dialogTitle,
 }) async {
   final path = await FilePicker.platform.saveFile(
     dialogTitle: dialogTitle,
-    // Non-negotiable: file_picker throws IllegalCharacterInFileNameException on
-    // Windows if the name holds a forbidden character, and order names are
-    // operator-typed. `pdfSafeName` is what stops a bad name from becoming a
-    // crash rather than just an ugly file.
-    fileName: '${pdfSafeName(suggestedName)}.pdf',
+    fileName: fileName,
     type: FileType.custom,
-    allowedExtensions: ['pdf'],
+    allowedExtensions: [extension],
     // Required on Android/iOS — file_picker throws ArgumentError without it and
     // writes the file itself there. Desktop ignores this and only returns a
     // path, so the write below is still needed. Passing it always is what makes

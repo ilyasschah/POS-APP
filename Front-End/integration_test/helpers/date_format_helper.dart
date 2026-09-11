@@ -87,9 +87,9 @@ Future<String> setDateFormat(
 
   await openQuickSettings(tester, ctx);
 
-  // The General tab's control is a real `DropdownButtonFormField` carrying the
-  // label, so the ordinary picker works — unlike the search-results variant of
-  // the same setting, which is a bare `DropdownButton` with no label at all.
+  // The General tab's control is a dropdown carrying the label, so the ordinary
+  // picker works — unlike the search-results variant of the same setting,
+  // which is a compact dropdown with no label at all.
   await pickDropdown(tester, ctx.l.dateFormatLabel, pattern);
 
   // 🚨 Wait for the SETTING, not for the dropdown to look right. The write goes

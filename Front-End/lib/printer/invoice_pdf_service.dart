@@ -300,9 +300,7 @@ class InvoicePdfService {
           // The line's own rate. Deriving it from (price - priceBeforeTax) read
           // 0 on every checkout row — both hold the same ex-tax price there — so
           // a taxed invoice printed "---" in the Tax column.
-          (item, idx) => item.taxRate > 0
-              ? '${item.taxRate.toStringAsFixed(item.taxRate % 1 == 0 ? 0 : 1)}%'
-              : '---',
+          (item, idx) => item.taxRateLabel ?? '---',
         ),
       if (showDiscountColumn)
         _InvColumn(

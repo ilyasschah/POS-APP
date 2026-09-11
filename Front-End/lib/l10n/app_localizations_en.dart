@@ -3680,6 +3680,28 @@ class AppLocalizationsEn extends AppLocalizations {
       'No promotions or order-level discounts on this document.';
 
   @override
+  String get posHeaderOrderHint =>
+      'Drag a button by its handle to set the header\'s order on this till. The switches apply to every till.';
+
+  @override
+  String get posOtherButtons => 'Other buttons';
+
+  @override
+  String get dragToReorderButtons => 'Drag to reorder';
+
+  @override
+  String get resetButtonOrder => 'Reset order';
+
+  @override
+  String get posButtonAutomatic => 'Shown automatically when its feature is on';
+
+  @override
+  String get setTablesFloorPlanHeader => 'TABLES & FLOOR PLAN';
+
+  @override
+  String get setServiceStatusHeader => 'SERVICE STATUS';
+
+  @override
   String get productColorMarker => 'Product Color Marker';
 
   @override
@@ -3771,6 +3793,87 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get splitPayments => 'Split Payments';
+
+  @override
+  String get splitBillTitle => 'Split bill';
+
+  @override
+  String get splitUnassigned => 'Unassigned items';
+
+  @override
+  String get splitAllAssigned => 'Every item is assigned';
+
+  @override
+  String get splitSelectHint =>
+      'Select an item, then tap a split — or drag it there';
+
+  @override
+  String get splitAddSplit => 'Add split';
+
+  @override
+  String splitName(int number) {
+    return 'Split $number';
+  }
+
+  @override
+  String get splitDropHere => 'Tap or drag items here';
+
+  @override
+  String get splitReturnItem => 'Return to unassigned';
+
+  @override
+  String get splitRemove => 'Remove split';
+
+  @override
+  String get splitPrintGuestCheck => 'Print guest check';
+
+  @override
+  String splitPayAmount(String amount) {
+    return 'Pay $amount';
+  }
+
+  @override
+  String splitPaidWith(String method, String amount) {
+    return 'Paid · $method $amount';
+  }
+
+  @override
+  String splitOnAccount(String method) {
+    return 'On account · $method';
+  }
+
+  @override
+  String get splitUndoPayment => 'Undo payment';
+
+  @override
+  String splitHowMany(String name) {
+    return 'How many “$name”?';
+  }
+
+  @override
+  String get splitAssign => 'Assign';
+
+  @override
+  String splitAllQuantity(int count) {
+    return 'All ($count)';
+  }
+
+  @override
+  String get splitDiscardTitle => 'Discard the payments taken?';
+
+  @override
+  String splitDiscardBody(int count) {
+    return 'Splits marked paid: $count. Nothing has been saved yet — hand that money back before closing.';
+  }
+
+  @override
+  String get splitDiscardConfirm => 'Discard and close';
+
+  @override
+  String get splitFinish => 'Save sale';
+
+  @override
+  String get splitGuestCheckPrinted => 'Guest check printed';
 
   @override
   String get totalLabel => 'Total';
@@ -7671,4 +7774,110 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get saveExportFileTitle => 'Save export file';
+
+  @override
+  String get stockMoves => 'Stock Moves';
+
+  @override
+  String get colReference => 'REFERENCE';
+
+  @override
+  String get colProduct => 'PRODUCT';
+
+  @override
+  String get colFrom => 'FROM';
+
+  @override
+  String get colTo => 'TO';
+
+  @override
+  String get colQuantity => 'QUANTITY';
+
+  @override
+  String get colDoneBy => 'DONE BY';
+
+  @override
+  String get stockLocationVendors => 'Vendors';
+
+  @override
+  String get stockLocationCustomers => 'Customers';
+
+  @override
+  String get stockLocationInventoryAdjustment => 'Inventory adjustment';
+
+  @override
+  String get stockLocationScrap => 'Scrap';
+
+  @override
+  String stockLocationWarehouse(String warehouse) {
+    return '$warehouse/Stock';
+  }
+
+  @override
+  String get moveStatusDone => 'Done';
+
+  @override
+  String get searchStockMoves => 'Search product, barcode or reference…';
+
+  @override
+  String get noStockMoves => 'No stock moves yet';
+
+  @override
+  String get printPdf => 'Print (PDF)';
+
+  @override
+  String get exportToExcel => 'Export to Excel';
+
+  @override
+  String get noStockMovesToExport => 'No stock moves to export';
+
+  @override
+  String stockMovesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count moves',
+      one: '1 move',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get stockHistoryTab => 'Stock History';
+
+  @override
+  String get stockHistoryHint => 'Every move of this product, newest first';
+
+  @override
+  String get stockOnHand => 'Stock on hand';
+
+  @override
+  String get stockOnHandHint =>
+      'What each warehouse holds, as this terminal last synced it';
+
+  @override
+  String get noStockRuleSet => 'No stock rule is set for this product.';
+
+  @override
+  String get periodAllTime => 'All time';
+
+  @override
+  String printSelectedPdf(int count) {
+    return 'Print selected ($count)';
+  }
+
+  @override
+  String saveSelectedAsPdf(int count) {
+    return 'Save selected as PDF ($count)';
+  }
+
+  @override
+  String exportSelectedToExcel(int count) {
+    return 'Export selected to Excel ($count)';
+  }
+
+  @override
+  String productQuantityUpdated(String user) {
+    return 'Product Quantity Updated ($user)';
+  }
 }

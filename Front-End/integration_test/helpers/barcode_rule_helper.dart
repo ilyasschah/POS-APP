@@ -298,20 +298,15 @@ Future<void> _pickInRow(
   await tester.tap(all.at(index), warnIfMissed: false);
   await pumpFor(tester, const Duration(milliseconds: 700));
 
-  // Confined to the open menu, for the reason `pickDropdown` documents: the
-  // option text is also rendered on the CLOSED dropdowns of every other row.
-  final menu = find.byType(Scrollable).last;
-  final option = find.descendant(of: menu, matching: find.text(optionText));
-  if (option.evaluate().isEmpty) {
-    throw TestFailure(
-      'No option "$optionText" in that dropdown.\n'
-      '  On screen now: ${visibleTexts(tester)}',
-    );
-  }
-  await tester.ensureVisible(option.last);
-  await tester.pump(const Duration(milliseconds: 200));
-  await tester.tap(option.last);
-  await pumpFor(tester, const Duration(milliseconds: 700));
+  // Confined to THIS dropdown's open menu, for the reason `pickDropdown`
+  // documents: the option text is also shown in the CLOSED dropdowns of every
+  // other row.
+  await tapDropdownMenuEntry(
+    tester,
+    all.at(index),
+    optionText,
+    describe: 'Dropdown $which of rule row $row',
+  );
 }
 
 /// The label the editor renders for a rule type.

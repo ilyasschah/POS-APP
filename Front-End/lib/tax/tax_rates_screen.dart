@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pos_app/core/ilyass_dropdown.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:pos_app/core/ilyass_list_scaffold.dart';
 import 'package:pos_app/core/ilyass_table.dart';
@@ -791,47 +792,33 @@ class _SwitchTaxesDialogState extends ConsumerState<_SwitchTaxesDialog> {
             const SizedBox(height: 24),
 
             // Old Tax Dropdown
-            DropdownButtonFormField<int>(
-              initialValue: _oldTaxId,
-              decoration: InputDecoration(
-                labelText: AppLocalizations.of(context).oldTax,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              items: widget.taxes
-                  .map(
-                    (t) => DropdownMenuItem(
-                      value: t.id,
-                      child: Text(
+            IlyassDropdown<int>(
+              value: _oldTaxId,
+              label: AppLocalizations.of(context).oldTax,
+              items: [
+                for (final t in widget.taxes)
+                  IlyassDropdownItem(
+                    value: t.id,
+                    label:
                         "${t.name} (${t.rate.toStringAsFixed(t.rate % 1 == 0 ? 0 : 2)}${t.isFixed ? '' : '%'})",
-                      ),
-                    ),
-                  )
-                  .toList(),
+                  ),
+              ],
               onChanged: (v) => setState(() => _oldTaxId = v),
             ),
             const SizedBox(height: 16),
 
             // New Tax Dropdown
-            DropdownButtonFormField<int>(
-              initialValue: _newTaxId,
-              decoration: InputDecoration(
-                labelText: AppLocalizations.of(context).newTax,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              items: widget.taxes
-                  .map(
-                    (t) => DropdownMenuItem(
-                      value: t.id,
-                      child: Text(
+            IlyassDropdown<int>(
+              value: _newTaxId,
+              label: AppLocalizations.of(context).newTax,
+              items: [
+                for (final t in widget.taxes)
+                  IlyassDropdownItem(
+                    value: t.id,
+                    label:
                         "${t.name} (${t.rate.toStringAsFixed(t.rate % 1 == 0 ? 0 : 2)}${t.isFixed ? '' : '%'})",
-                      ),
-                    ),
-                  )
-                  .toList(),
+                  ),
+              ],
               onChanged: (v) => setState(() => _newTaxId = v),
             ),
 

@@ -21,6 +21,12 @@
         /// number — so the offline receipt number survives sync unchanged.
         public string? ClientDocumentNumber { get; set; }
 
+        /// The tenders that settled this sale, when there is more than one — a
+        /// split bill, where each guest pays their share of the same document.
+        /// Empty means the classic single tender in PaymentTypeId / AmountPaid,
+        /// which every existing caller still sends.
+        public List<CheckoutPaymentDto> Payments { get; set; } = new();
+
         /// The POS session's CLIENT localId — never a server id.
         ///
         /// A sale rung up offline belongs to a session that may itself have been
@@ -28,6 +34,13 @@
         /// write time. Null means "no session": the sale is banked unattached
         /// rather than refused, because the money has already changed hands.
         public string? SessionLocalId { get; set; }
+    }
+
+    /// <summary>One tender on a split bill: what one guest paid, and how.</summary>
+    public class CheckoutPaymentDto
+    {
+        public int PaymentTypeId { get; set; }
+        public decimal Amount { get; set; }
     }
 
     public class CheckoutItemDto

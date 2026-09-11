@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'ilyass_dropdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:pos_app/app_settings/app_settings_model.dart';
@@ -91,7 +92,30 @@ Color _readableOn(Color background) {
 /// Builds the app [ThemeData] for a given [mode] (light/dark/dimmed/night/
 /// gray/high_contrast) seeded from [seed]. This is the single source of truth
 /// for every theme mode in the app.
-ThemeData buildAppTheme(String mode, Color seed) {
+ThemeData buildAppTheme(String mode, Color seed) =>
+    _withHouseMenus(_buildBaseTheme(mode, seed));
+
+/// Rounded, elevated menus in every theme mode — the same surface the house
+/// dropdown (`IlyassDropdown`) opens, so a plain menu or a ⋮ popup matches it
+/// instead of falling back to Material's squarer defaults.
+ThemeData _withHouseMenus(ThemeData theme) {
+  final cs = theme.colorScheme;
+  final menuStyle = ilyassMenuStyle(cs);
+  return theme.copyWith(
+    dropdownMenuTheme: DropdownMenuThemeData(menuStyle: menuStyle),
+    menuTheme: MenuThemeData(style: menuStyle),
+    popupMenuTheme: PopupMenuThemeData(
+      color: cs.surfaceContainerHigh,
+      elevation: 3,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.6)),
+      ),
+    ),
+  );
+}
+
+ThemeData _buildBaseTheme(String mode, Color seed) {
   switch (mode) {
     case 'light':
       return ThemeData(

@@ -1,4 +1,5 @@
-﻿using Api.Domain;
+﻿using Api.DataBase;
+using Api.Domain;
 using Api.Models;
 using Api.Repository;
 using Microsoft.EntityFrameworkCore;
@@ -9,10 +10,17 @@ namespace Api.Services
     public class DocumentService
     {
         private readonly DocumentRepository _documentRepository;
+        private readonly DocumentItemService _itemService;
+        private readonly AppDbContext _db;
 
-        public DocumentService(DocumentRepository documentRepository)
+        public DocumentService(
+            DocumentRepository documentRepository,
+            DocumentItemService itemService,
+            AppDbContext db)
         {
             _documentRepository = documentRepository;
+            _itemService = itemService;
+            _db = db;
         }
 
         public async Task<DocumentDto> CreateAsync(CreateDocumentRequest request, int companyId)
@@ -77,17 +85,50 @@ namespace Api.Services
             return true;
         }
 
+        /// <summary>
+        /// Deletes a document and gives back the stock its lines moved — exactly
+        /// what deleting each line one by one gives back
+        /// (<see cref="DocumentItemService.ReverseStockAsync"/>). A Purchase takes
+        /// back what it received; a Stock Return and a Loss &amp; Damage put back
+        /// what they removed; a sale or a refund is left as deleting its lines
+        /// leaves it. Without this the lines vanished with the document (they
+        /// cascade) while their stock stayed, so stock on hand stopped adding up
+        /// to the moves that are left.
+        /// </summary>
         public async Task<bool> DeleteAsync(int id, int companyId)
         {
-            var document = await _documentRepository.GetByIdAsync(id, companyId);
-            if (document == null)
-            {
-                throw new KeyNotFoundException($"Document with ID {id} not found.");
-            }
-
+            // 🚨 One unit, inside the execution strategy: the API runs with
+            // EnableRetryOnFailure, which refuses a hand-rolled transaction, and a
+            // document gone with its stock still out — or stock back with the
+            // document still there — is exactly the mismatch this exists to stop.
+            var strategy = _db.Database.CreateExecutionStrategy();
+            var attempt = 0;
             try
             {
-                await _documentRepository.DeleteAsync(document);
+                await strategy.ExecuteAsync(async () =>
+                {
+                    // A replay starts from the database, never from what the
+                    // failed attempt left tracked: the stock adjustment reads the
+                    // TRACKED Stock row, so a stale one would be reversed twice.
+                    if (attempt++ > 0) _db.ChangeTracker.Clear();
+
+                    await using var tx = await _db.Database.BeginTransactionAsync();
+
+                    var document = await _db.Documents
+                        .FirstOrDefaultAsync(d => d.Id == id && d.CompanyId == companyId)
+                        ?? throw new KeyNotFoundException($"Document with ID {id} not found.");
+
+                    var items = await _db.DocumentItems
+                        .Where(i => i.DocumentId == id)
+                        .ToListAsync();
+                    foreach (var item in items)
+                        await _itemService.ReverseStockAsync(document, item, companyId);
+
+                    // The lines, their taxes and the payments cascade with it.
+                    _db.Documents.Remove(document);
+                    await _db.SaveChangesAsync();
+                    await tx.CommitAsync();
+                });
                 return true;
             }
             catch (DbUpdateException ex) when (ex.InnerException is SqlException sqlEx && sqlEx.Number == 547)

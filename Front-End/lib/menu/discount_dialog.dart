@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pos_app/app_settings/app_settings_model.dart';
 import 'package:pos_app/app_settings/app_settings_provider.dart';
 import 'package:pos_app/cart/cart_provider.dart';
+import 'package:pos_app/cart/checkout_models.dart';
 import 'package:pos_app/currency/currencies_provider.dart';
 import 'package:pos_app/utils/snackbar_helper.dart';
 
@@ -166,8 +167,9 @@ class _DiscountDialogState extends ConsumerState<DiscountDialog>
     }
 
     final val = double.tryParse(_itemInput) ?? 0;
+    // A percentage never takes from a fixed tax — see [discountableUnitPrice].
     double finalDiscount = _itemDiscountType == 0
-        ? item.price * (val / 100)
+        ? discountableUnitPrice(item) * (val / 100)
         : val;
 
     final settings = ref.read(appSettingsProvider);

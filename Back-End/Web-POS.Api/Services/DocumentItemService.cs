@@ -98,9 +98,22 @@ namespace Api.Services
             decimal calcDisc = request.Discount ?? entity.Discount;
             int calcDiscType = request.DiscountType ?? entity.DiscountType;
 
+            // A percentage never takes from a fixed tax — Rate × quantity whatever
+            // the discount. The editor's price carries the line's fixed taxes, so
+            // they are left out of what the % is taken from, exactly as
+            // DocumentItemTaxService.RecalculateItemAsync and the terminal do.
+            // Summed in memory: SQLite cannot SUM a decimal column.
+            decimal fixedPerUnit = (await _db.DocumentItemTaxes
+                    .Where(t => t.DocumentItemId == entity.Id && t.CompanyId == companyId && t.Tax!.IsFixed)
+                    .Select(t => t.Tax!.Rate)
+                    .ToListAsync())
+                .Sum();
+
             // DiscountType 0 = percentage, 1 = fixed amount
             decimal discountBase = calcDiscType == 0 ? calcPbt * (calcDisc / 100m) : calcDisc;
-            decimal discountTaxed = calcDiscType == 0 ? calcPrice * (calcDisc / 100m) : calcDisc;
+            decimal discountTaxed = calcDiscType == 0
+                ? Math.Max(0m, calcPrice - fixedPerUnit) * (calcDisc / 100m)
+                : calcDisc;
 
             decimal pbtd = calcPbt - discountBase;
             decimal pad = calcPrice - discountTaxed;
@@ -135,16 +148,31 @@ namespace Api.Services
             var entity = await _itemRepository.GetByIdAsync(id, companyId);
             if (entity == null) throw new KeyNotFoundException("Item not found.");
 
-            // Reverse stock when a purchase or stock return item is removed
             var doc = await _documentRepository.GetByIdAsync(entity.DocumentId, companyId);
-            if (doc != null && doc.DocumentTypeId == DocumentTypeConstants.Purchase)
-                await AdjustStockAsync(doc.WarehouseId, entity.ProductId, companyId, -entity.Quantity);
-            else if (doc != null && doc.DocumentTypeId == DocumentTypeConstants.StockReturn)
-                await AdjustStockAsync(doc.WarehouseId, entity.ProductId, companyId, entity.Quantity);
-            else if (doc != null && doc.DocumentTypeId == DocumentTypeConstants.LossAndDamage)
-                await AdjustStockAsync(doc.WarehouseId, entity.ProductId, companyId, entity.Quantity);
+            if (doc != null) await ReverseStockAsync(doc, entity, companyId);
 
             return await _itemRepository.DeleteAsync(entity);
+        }
+
+        /// <summary>
+        /// Gives back the stock one line moved — what removing it must undo. A
+        /// Purchase takes back what it received; a Stock Return and a Loss &amp;
+        /// Damage put back what they removed. No other type moves stock through
+        /// its lines here, so there is nothing to give back.
+        /// </summary>
+        /// <remarks>
+        /// Deleting one line and deleting a whole document
+        /// (<see cref="DocumentService.DeleteAsync"/>) both come through here,
+        /// which is what keeps the two from ever disagreeing.
+        /// </remarks>
+        public async Task ReverseStockAsync(Document doc, DocumentItem item, int companyId)
+        {
+            if (doc.DocumentTypeId == DocumentTypeConstants.Purchase)
+                await AdjustStockAsync(doc.WarehouseId, item.ProductId, companyId, -item.Quantity);
+            else if (doc.DocumentTypeId == DocumentTypeConstants.StockReturn)
+                await AdjustStockAsync(doc.WarehouseId, item.ProductId, companyId, item.Quantity);
+            else if (doc.DocumentTypeId == DocumentTypeConstants.LossAndDamage)
+                await AdjustStockAsync(doc.WarehouseId, item.ProductId, companyId, item.Quantity);
         }
 
         /// <summary>

@@ -6976,6 +6976,48 @@ abstract class AppLocalizations {
   /// **'No promotions or order-level discounts on this document.'**
   String get noDocumentDiscounts;
 
+  /// No description provided for @posHeaderOrderHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag a button by its handle to set the header\'s order on this till. The switches apply to every till.'**
+  String get posHeaderOrderHint;
+
+  /// No description provided for @posOtherButtons.
+  ///
+  /// In en, this message translates to:
+  /// **'Other buttons'**
+  String get posOtherButtons;
+
+  /// No description provided for @dragToReorderButtons.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag to reorder'**
+  String get dragToReorderButtons;
+
+  /// No description provided for @resetButtonOrder.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset order'**
+  String get resetButtonOrder;
+
+  /// No description provided for @posButtonAutomatic.
+  ///
+  /// In en, this message translates to:
+  /// **'Shown automatically when its feature is on'**
+  String get posButtonAutomatic;
+
+  /// No description provided for @setTablesFloorPlanHeader.
+  ///
+  /// In en, this message translates to:
+  /// **'TABLES & FLOOR PLAN'**
+  String get setTablesFloorPlanHeader;
+
+  /// No description provided for @setServiceStatusHeader.
+  ///
+  /// In en, this message translates to:
+  /// **'SERVICE STATUS'**
+  String get setServiceStatusHeader;
+
   /// No description provided for @productColorMarker.
   ///
   /// In en, this message translates to:
@@ -7149,6 +7191,138 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Split Payments'**
   String get splitPayments;
+
+  /// No description provided for @splitBillTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Split bill'**
+  String get splitBillTitle;
+
+  /// No description provided for @splitUnassigned.
+  ///
+  /// In en, this message translates to:
+  /// **'Unassigned items'**
+  String get splitUnassigned;
+
+  /// No description provided for @splitAllAssigned.
+  ///
+  /// In en, this message translates to:
+  /// **'Every item is assigned'**
+  String get splitAllAssigned;
+
+  /// No description provided for @splitSelectHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Select an item, then tap a split — or drag it there'**
+  String get splitSelectHint;
+
+  /// No description provided for @splitAddSplit.
+  ///
+  /// In en, this message translates to:
+  /// **'Add split'**
+  String get splitAddSplit;
+
+  /// No description provided for @splitName.
+  ///
+  /// In en, this message translates to:
+  /// **'Split {number}'**
+  String splitName(int number);
+
+  /// No description provided for @splitDropHere.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap or drag items here'**
+  String get splitDropHere;
+
+  /// No description provided for @splitReturnItem.
+  ///
+  /// In en, this message translates to:
+  /// **'Return to unassigned'**
+  String get splitReturnItem;
+
+  /// No description provided for @splitRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove split'**
+  String get splitRemove;
+
+  /// No description provided for @splitPrintGuestCheck.
+  ///
+  /// In en, this message translates to:
+  /// **'Print guest check'**
+  String get splitPrintGuestCheck;
+
+  /// No description provided for @splitPayAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Pay {amount}'**
+  String splitPayAmount(String amount);
+
+  /// No description provided for @splitPaidWith.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid · {method} {amount}'**
+  String splitPaidWith(String method, String amount);
+
+  /// No description provided for @splitOnAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'On account · {method}'**
+  String splitOnAccount(String method);
+
+  /// No description provided for @splitUndoPayment.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo payment'**
+  String get splitUndoPayment;
+
+  /// No description provided for @splitHowMany.
+  ///
+  /// In en, this message translates to:
+  /// **'How many “{name}”?'**
+  String splitHowMany(String name);
+
+  /// No description provided for @splitAssign.
+  ///
+  /// In en, this message translates to:
+  /// **'Assign'**
+  String get splitAssign;
+
+  /// No description provided for @splitAllQuantity.
+  ///
+  /// In en, this message translates to:
+  /// **'All ({count})'**
+  String splitAllQuantity(int count);
+
+  /// No description provided for @splitDiscardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard the payments taken?'**
+  String get splitDiscardTitle;
+
+  /// No description provided for @splitDiscardBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Splits marked paid: {count}. Nothing has been saved yet — hand that money back before closing.'**
+  String splitDiscardBody(int count);
+
+  /// No description provided for @splitDiscardConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard and close'**
+  String get splitDiscardConfirm;
+
+  /// No description provided for @splitFinish.
+  ///
+  /// In en, this message translates to:
+  /// **'Save sale'**
+  String get splitFinish;
+
+  /// No description provided for @splitGuestCheckPrinted.
+  ///
+  /// In en, this message translates to:
+  /// **'Guest check printed'**
+  String get splitGuestCheckPrinted;
 
   /// No description provided for @totalLabel.
   ///
@@ -13771,6 +13945,180 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Save export file'**
   String get saveExportFileTitle;
+
+  /// No description provided for @stockMoves.
+  ///
+  /// In en, this message translates to:
+  /// **'Stock Moves'**
+  String get stockMoves;
+
+  /// No description provided for @colReference.
+  ///
+  /// In en, this message translates to:
+  /// **'REFERENCE'**
+  String get colReference;
+
+  /// No description provided for @colProduct.
+  ///
+  /// In en, this message translates to:
+  /// **'PRODUCT'**
+  String get colProduct;
+
+  /// No description provided for @colFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'FROM'**
+  String get colFrom;
+
+  /// No description provided for @colTo.
+  ///
+  /// In en, this message translates to:
+  /// **'TO'**
+  String get colTo;
+
+  /// No description provided for @colQuantity.
+  ///
+  /// In en, this message translates to:
+  /// **'QUANTITY'**
+  String get colQuantity;
+
+  /// No description provided for @colDoneBy.
+  ///
+  /// In en, this message translates to:
+  /// **'DONE BY'**
+  String get colDoneBy;
+
+  /// No description provided for @stockLocationVendors.
+  ///
+  /// In en, this message translates to:
+  /// **'Vendors'**
+  String get stockLocationVendors;
+
+  /// No description provided for @stockLocationCustomers.
+  ///
+  /// In en, this message translates to:
+  /// **'Customers'**
+  String get stockLocationCustomers;
+
+  /// No description provided for @stockLocationInventoryAdjustment.
+  ///
+  /// In en, this message translates to:
+  /// **'Inventory adjustment'**
+  String get stockLocationInventoryAdjustment;
+
+  /// No description provided for @stockLocationScrap.
+  ///
+  /// In en, this message translates to:
+  /// **'Scrap'**
+  String get stockLocationScrap;
+
+  /// A warehouse as a stock location in the Stock Moves history, Odoo-style (WH/Stock). The warehouse's own name is inserted.
+  ///
+  /// In en, this message translates to:
+  /// **'{warehouse}/Stock'**
+  String stockLocationWarehouse(String warehouse);
+
+  /// No description provided for @moveStatusDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get moveStatusDone;
+
+  /// No description provided for @searchStockMoves.
+  ///
+  /// In en, this message translates to:
+  /// **'Search product, barcode or reference…'**
+  String get searchStockMoves;
+
+  /// No description provided for @noStockMoves.
+  ///
+  /// In en, this message translates to:
+  /// **'No stock moves yet'**
+  String get noStockMoves;
+
+  /// No description provided for @printPdf.
+  ///
+  /// In en, this message translates to:
+  /// **'Print (PDF)'**
+  String get printPdf;
+
+  /// No description provided for @exportToExcel.
+  ///
+  /// In en, this message translates to:
+  /// **'Export to Excel'**
+  String get exportToExcel;
+
+  /// No description provided for @noStockMovesToExport.
+  ///
+  /// In en, this message translates to:
+  /// **'No stock moves to export'**
+  String get noStockMovesToExport;
+
+  /// No description provided for @stockMovesCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 move} other{{count} moves}}'**
+  String stockMovesCount(int count);
+
+  /// No description provided for @stockHistoryTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Stock History'**
+  String get stockHistoryTab;
+
+  /// No description provided for @stockHistoryHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Every move of this product, newest first'**
+  String get stockHistoryHint;
+
+  /// No description provided for @stockOnHand.
+  ///
+  /// In en, this message translates to:
+  /// **'Stock on hand'**
+  String get stockOnHand;
+
+  /// No description provided for @stockOnHandHint.
+  ///
+  /// In en, this message translates to:
+  /// **'What each warehouse holds, as this terminal last synced it'**
+  String get stockOnHandHint;
+
+  /// No description provided for @noStockRuleSet.
+  ///
+  /// In en, this message translates to:
+  /// **'No stock rule is set for this product.'**
+  String get noStockRuleSet;
+
+  /// No description provided for @periodAllTime.
+  ///
+  /// In en, this message translates to:
+  /// **'All time'**
+  String get periodAllTime;
+
+  /// No description provided for @printSelectedPdf.
+  ///
+  /// In en, this message translates to:
+  /// **'Print selected ({count})'**
+  String printSelectedPdf(int count);
+
+  /// No description provided for @saveSelectedAsPdf.
+  ///
+  /// In en, this message translates to:
+  /// **'Save selected as PDF ({count})'**
+  String saveSelectedAsPdf(int count);
+
+  /// No description provided for @exportSelectedToExcel.
+  ///
+  /// In en, this message translates to:
+  /// **'Export selected to Excel ({count})'**
+  String exportSelectedToExcel(int count);
+
+  /// The Stock Moves reference of an inventory adjustment, Odoo-style: what happened and who did it.
+  ///
+  /// In en, this message translates to:
+  /// **'Product Quantity Updated ({user})'**
+  String productQuantityUpdated(String user);
 }
 
 class _AppLocalizationsDelegate

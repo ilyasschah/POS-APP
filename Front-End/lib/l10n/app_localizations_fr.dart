@@ -3718,6 +3718,29 @@ class AppLocalizationsFr extends AppLocalizations {
       'Aucune promotion ni remise globale sur ce document.';
 
   @override
+  String get posHeaderOrderHint =>
+      'Faites glisser un bouton par sa poignée pour fixer l\'ordre de l\'en-tête sur cette caisse. Les interrupteurs s\'appliquent à toutes les caisses.';
+
+  @override
+  String get posOtherButtons => 'Autres boutons';
+
+  @override
+  String get dragToReorderButtons => 'Faire glisser pour réordonner';
+
+  @override
+  String get resetButtonOrder => 'Réinitialiser l\'ordre';
+
+  @override
+  String get posButtonAutomatic =>
+      'Affiché automatiquement quand sa fonction est activée';
+
+  @override
+  String get setTablesFloorPlanHeader => 'TABLES ET PLAN DE SALLE';
+
+  @override
+  String get setServiceStatusHeader => 'STATUT DE SERVICE';
+
+  @override
   String get productColorMarker => 'Marqueur de couleur du produit';
 
   @override
@@ -3810,6 +3833,87 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get splitPayments => 'Paiements fractionnés';
+
+  @override
+  String get splitBillTitle => 'Diviser l’addition';
+
+  @override
+  String get splitUnassigned => 'Articles non attribués';
+
+  @override
+  String get splitAllAssigned => 'Tous les articles sont attribués';
+
+  @override
+  String get splitSelectHint =>
+      'Choisissez un article, puis touchez une part — ou faites-le glisser dessus';
+
+  @override
+  String get splitAddSplit => 'Ajouter une part';
+
+  @override
+  String splitName(int number) {
+    return 'Part $number';
+  }
+
+  @override
+  String get splitDropHere => 'Touchez ou glissez des articles ici';
+
+  @override
+  String get splitReturnItem => 'Remettre dans les non attribués';
+
+  @override
+  String get splitRemove => 'Supprimer la part';
+
+  @override
+  String get splitPrintGuestCheck => 'Imprimer l’addition';
+
+  @override
+  String splitPayAmount(String amount) {
+    return 'Payer $amount';
+  }
+
+  @override
+  String splitPaidWith(String method, String amount) {
+    return 'Payé · $method $amount';
+  }
+
+  @override
+  String splitOnAccount(String method) {
+    return 'En compte · $method';
+  }
+
+  @override
+  String get splitUndoPayment => 'Annuler le paiement';
+
+  @override
+  String splitHowMany(String name) {
+    return 'Combien de « $name » ?';
+  }
+
+  @override
+  String get splitAssign => 'Attribuer';
+
+  @override
+  String splitAllQuantity(int count) {
+    return 'Tout ($count)';
+  }
+
+  @override
+  String get splitDiscardTitle => 'Abandonner les paiements encaissés ?';
+
+  @override
+  String splitDiscardBody(int count) {
+    return 'Parts marquées payées : $count. Rien n’est encore enregistré — rendez cet argent avant de fermer.';
+  }
+
+  @override
+  String get splitDiscardConfirm => 'Abandonner et fermer';
+
+  @override
+  String get splitFinish => 'Enregistrer la vente';
+
+  @override
+  String get splitGuestCheckPrinted => 'Addition imprimée';
 
   @override
   String get totalLabel => 'Total';
@@ -7758,4 +7862,113 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get saveExportFileTitle => 'Enregistrer le fichier d\'export';
+
+  @override
+  String get stockMoves => 'Mouvements de stock';
+
+  @override
+  String get colReference => 'RÉFÉRENCE';
+
+  @override
+  String get colProduct => 'PRODUIT';
+
+  @override
+  String get colFrom => 'DE';
+
+  @override
+  String get colTo => 'VERS';
+
+  @override
+  String get colQuantity => 'QUANTITÉ';
+
+  @override
+  String get colDoneBy => 'EFFECTUÉ PAR';
+
+  @override
+  String get stockLocationVendors => 'Fournisseurs';
+
+  @override
+  String get stockLocationCustomers => 'Clients';
+
+  @override
+  String get stockLocationInventoryAdjustment => 'Ajustement d\'inventaire';
+
+  @override
+  String get stockLocationScrap => 'Rebut';
+
+  @override
+  String stockLocationWarehouse(String warehouse) {
+    return '$warehouse/Stock';
+  }
+
+  @override
+  String get moveStatusDone => 'Fait';
+
+  @override
+  String get searchStockMoves =>
+      'Rechercher un produit, un code-barres ou une référence…';
+
+  @override
+  String get noStockMoves => 'Aucun mouvement de stock pour l\'instant';
+
+  @override
+  String get printPdf => 'Imprimer (PDF)';
+
+  @override
+  String get exportToExcel => 'Exporter vers Excel';
+
+  @override
+  String get noStockMovesToExport => 'Aucun mouvement de stock à exporter';
+
+  @override
+  String stockMovesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count mouvements',
+      one: '1 mouvement',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get stockHistoryTab => 'Historique du stock';
+
+  @override
+  String get stockHistoryHint =>
+      'Tous les mouvements de ce produit, du plus récent au plus ancien';
+
+  @override
+  String get stockOnHand => 'Stock disponible';
+
+  @override
+  String get stockOnHandHint =>
+      'Ce que contient chaque entrepôt, selon la dernière synchronisation de ce poste';
+
+  @override
+  String get noStockRuleSet =>
+      'Aucune règle de stock n\'est définie pour ce produit.';
+
+  @override
+  String get periodAllTime => 'Toute la période';
+
+  @override
+  String printSelectedPdf(int count) {
+    return 'Imprimer la sélection ($count)';
+  }
+
+  @override
+  String saveSelectedAsPdf(int count) {
+    return 'Enregistrer la sélection en PDF ($count)';
+  }
+
+  @override
+  String exportSelectedToExcel(int count) {
+    return 'Exporter la sélection vers Excel ($count)';
+  }
+
+  @override
+  String productQuantityUpdated(String user) {
+    return 'Quantité de produit mise à jour ($user)';
+  }
 }

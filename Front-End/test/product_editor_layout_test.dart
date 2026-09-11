@@ -23,6 +23,7 @@ import 'package:pos_app/app_settings/app_settings_provider.dart';
 import 'package:pos_app/barcode/barcode_model.dart';
 import 'package:pos_app/barcode/barcode_provider.dart';
 import 'package:pos_app/barcode/nomenclature/barcode_rules_provider.dart';
+import 'package:pos_app/core/ilyass_dropdown.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:pos_app/modifier/modifier_models.dart';
 import 'package:pos_app/modifier/modifier_provider.dart';
@@ -30,6 +31,12 @@ import 'package:pos_app/product/product_group_model.dart';
 import 'package:pos_app/product/product_group_provider.dart';
 import 'package:pos_app/product/product_model.dart';
 import 'package:pos_app/product/products_screen.dart';
+import 'package:pos_app/stock/stock_control_provider.dart';
+import 'package:pos_app/stock/stock_move_line.dart';
+import 'package:pos_app/stock/stock_moves_provider.dart';
+import 'package:pos_app/stock/stock_provider.dart';
+import 'package:pos_app/stock/warehouse_model.dart';
+import 'package:pos_app/stock/warehouse_provider.dart';
 import 'package:pos_app/tax/tax_model.dart';
 import 'package:pos_app/tax/tax_provider.dart';
 import 'package:pos_app/uom/unit_of_measure.dart';
@@ -130,6 +137,15 @@ Future<AppLocalizations> _openEditor(
             .overrideWith((ref) => Stream.value(const [7])),
         allModifierGroupsProvider
             .overrideWith((ref) => Stream.value(const [_toppings, _sauce])),
+        // The Stock and Stock History tabs.
+        allWarehousesProvider.overrideWith(
+            (ref) => Stream.value([Warehouse(id: 10, name: 'Main')])),
+        stockByWarehouseProvider.overrideWith((ref) => Stream.value(const {
+              12: {10: 24.0},
+            })),
+        stockControlByProductIdProvider(12).overrideWith((ref) async => null),
+        productStockMovesProvider
+            .overrideWith((ref, query) => Stream.value(StockMovePage.empty)),
       ],
       child: MaterialApp(
         locale: const Locale('en'),
@@ -188,13 +204,13 @@ Finder _field(String label) => find.widgetWithText(TextFormField, label);
 Finder _switch(String title) => find.widgetWithText(SwitchListTile, title);
 
 final Finder _anyDropdown = find.byWidgetPredicate(
-  (w) => w.runtimeType.toString().startsWith('DropdownButtonFormField'),
+  (w) => w.runtimeType.toString().startsWith('IlyassDropdown<'),
 );
 
 Finder _dropdown(String label) =>
     find.ancestor(of: find.text(label), matching: _anyDropdown).first;
 
-Finder get _groupDropdown => find.byType(DropdownButtonFormField<int?>);
+Finder get _groupDropdown => find.byType(IlyassDropdown<int?>);
 
 /// The card a section header sits on — the header's nearest Container.
 Finder _sectionCard(String title) => find
@@ -205,6 +221,8 @@ Finder _sectionCard(String title) => find
 final _tabs = <String, (String Function(AppLocalizations), String Function(AppLocalizations))>{
   'Pricing': ((l) => l.pricingTab, (l) => l.priceAndCostSection),
   'Barcodes': ((l) => l.barcodesTab, (l) => l.productBarcodes),
+  'Stock': ((l) => l.stock, (l) => l.stockOnHand),
+  'Stock History': ((l) => l.stockHistoryTab, (l) => l.stockHistoryTab),
   'Modifiers': ((l) => l.posModifiers, (l) => l.productModifierGroups),
   'Appearance': ((l) => l.setAppearance, (l) => l.productColorMarker),
 };

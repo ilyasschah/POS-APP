@@ -1,5 +1,6 @@
 using Api.Commands.ProductCommands.Import;
 using Api.Commands.ProductGroupCommands.Import;
+using Api.Constants;
 using Api.DataBase;
 using Api.Domain;
 using Api.Models;
@@ -81,6 +82,43 @@ public class CatalogImportTests : IDisposable
 
     private Task<ImportProductsResult> ImportProducts(params ImportProductRow[] rows) =>
         ImportProducts(merge: false, skip: false, rows);
+
+    /// <summary>An import that writes an Inventory Count, merging into the
+    /// products already there — the shape of a stock-take spreadsheet.</summary>
+    private async Task<ImportProductsResult> ImportCount(params ImportProductRow[] rows)
+    {
+        await using var db = Db();
+        return await new ImportProductsCommandHandler(db).Handle(
+            new ImportProductsCommand(new ImportProductsRequest
+            {
+                CompanyId = _company,
+                MergeDuplicates = true,
+                SkipDuplicates = false,
+                DocumentType = "inventoryCount",
+                Rows = rows.ToList(),
+            }), default);
+    }
+
+    /// <summary>
+    /// A count document points at a user and at its document type. In
+    /// production the seeder provides the type; nothing does in here.
+    /// </summary>
+    private void SeedCountPrerequisites()
+    {
+        using var db = Db();
+        db.DocumentCategories.Add(new DocumentCategory
+        {
+            Id = DocumentCategoryConstants.Inventory,
+            Name = "Inventory",
+        });
+        var countType = DocumentType.Create(
+            "Inventory Count", DocumentTypeConstants.InventoryCountCode,
+            DocumentCategoryConstants.Inventory, stockDirection: 1);
+        countType.Id = DocumentTypeConstants.InventoryCount;
+        db.DocumentTypes.Add(countType);
+        db.Users.Add(User.Create(_company, "Stock", "Taker", "counter", "hash", 1, true, null));
+        db.SaveChanges();
+    }
 
     private async Task<ImportProductGroupsResult> ImportGroups(
         bool merge, bool skip, params ImportProductGroupRow[] rows)
@@ -201,6 +239,47 @@ public class CatalogImportTests : IDisposable
 
         Assert.Equal(1, result.Created);
         Assert.Contains(result.Warnings, w => w.Contains("7"));
+        using var db = Db();
+        Assert.Empty(db.ProductsTaxes);
+    }
+
+    private int AddTax(string name, decimal rate, bool isFixed)
+    {
+        using var db = Db();
+        var tax = Tax.Create(_company, name, rate, null, isFixed, istaxontotal: false, isenabled: true);
+        db.Taxes.Add(tax);
+        db.SaveChanges();
+        return tax.Id;
+    }
+
+    [Fact]
+    public async Task A_tax_rate_picks_the_tax_of_its_own_kind()
+    {
+        // The fixed one is older, so matching on the number alone attached it
+        // to a row that meant 5%.
+        var fixedTax = AddTax("Eco fee", 5m, isFixed: true);
+        var percent = AddTax("VAT 5", 5m, isFixed: false);
+
+        var result = await ImportProducts(
+            new ImportProductRow { Name = "Juice", TaxRate = 5m },
+            new ImportProductRow { Name = "Soda", TaxRate = 5m, TaxIsFixed = true });
+
+        Assert.DoesNotContain(result.Warnings, w => w.Contains("tax"));
+        using var db = Db();
+        var ids = db.Products.ToDictionary(p => p.Name, p => p.Id);
+        Assert.Equal(percent, db.ProductsTaxes.Single(pt => pt.ProductId == ids["Juice"]).TaxId);
+        Assert.Equal(fixedTax, db.ProductsTaxes.Single(pt => pt.ProductId == ids["Soda"]).TaxId);
+    }
+
+    [Fact]
+    public async Task A_fixed_rate_with_no_fixed_tax_is_reported_not_given_the_percentage()
+    {
+        AddTax("VAT 5", 5m, isFixed: false);
+
+        var result = await ImportProducts(new ImportProductRow { Name = "Soda", TaxRate = 5m, TaxIsFixed = true });
+
+        Assert.Equal(1, result.Created);
+        Assert.Contains(result.Warnings, w => w.Contains("fixed"));
         using var db = Db();
         Assert.Empty(db.ProductsTaxes);
     }
@@ -375,6 +454,44 @@ public class CatalogImportTests : IDisposable
 
         using var db = Db();
         Assert.Equal(40m, db.Stocks.Single().Quantity);
+    }
+
+    [Fact]
+    public async Task A_count_records_the_stock_it_was_counted_against()
+    {
+        // Sugar holds 12 before the count. Salt has never been stocked. Rice's
+        // row carries no quantity, so the import leaves its stock alone.
+        await ImportProducts(new ImportProductRow { Name = "Sugar", Quantity = 12m });
+        SeedCountPrerequisites();
+
+        var result = await ImportCount(
+            new ImportProductRow { Name = "Sugar", Quantity = 9m },
+            new ImportProductRow { Name = "Salt", Quantity = 4m },
+            new ImportProductRow { Name = "Rice" });
+
+        Assert.Empty(result.Errors);
+        Assert.NotNull(result.DocumentNumber);
+
+        using var db = Db();
+        var lines = db.DocumentItems.AsNoTracking()
+            .Join(db.Products.AsNoTracking(), i => i.ProductId, p => p.Id,
+                (i, p) => new { p.Name, i.Quantity, i.ExpectedQuantity })
+            .ToList()
+            .ToDictionary(x => x.Name);
+
+        // Counted 9 against 12 — three left stock. It used to say "expected 9",
+        // which made the variance unknowable.
+        Assert.Equal(9m, lines["Sugar"].Quantity);
+        Assert.Equal(12m, lines["Sugar"].ExpectedQuantity);
+        // Nothing was there, so the whole count is an opening balance.
+        Assert.Equal(4m, lines["Salt"].Quantity);
+        Assert.Equal(0m, lines["Salt"].ExpectedQuantity);
+        // No stock written, so no move: it expects exactly what it counted.
+        Assert.Equal(lines["Rice"].Quantity, lines["Rice"].ExpectedQuantity);
+        // And the stock itself is still overwritten with the count.
+        Assert.Equal(9m, db.Stocks.AsNoTracking()
+            .Single(s => s.ProductId == db.Products.Single(p => p.Name == "Sugar").Id)
+            .Quantity);
     }
 
     // ═══ Product groups ═════════════════════════════════════════════════════

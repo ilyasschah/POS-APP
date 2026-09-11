@@ -1032,6 +1032,45 @@ class ReceiptPrinterService {
     await _dispatch(pdf, name, _copies(roleSettings, role), roleSettings, role);
   }
 
+  /// Prints a GUEST CHECK — the bill a table settles against, before any money
+  /// changes hands (the menu's "Addition", one share of a split bill).
+  ///
+  /// Thin on purpose: a guest check IS the receipt, with the banner on and the
+  /// payment rows, points and barcode off — see `isGuestCheck` in
+  /// [buildCartReceipt]. Printed on the Receipt printer, whose hardware keys
+  /// come from [roleSettings] like every other receipt.
+  Future<void> printGuestCheck({
+    required Company company,
+    required User? cashier,
+    Customer? customer,
+    required String orderNumber,
+    required DateTime printTime,
+    required List<CartItem> items,
+    required double subtotal,
+    required double totalDiscount,
+    required double totalTax,
+    required double grandTotal,
+    required String currencySymbol,
+    Uint8List? logoBytes,
+    Map<String, String> roleSettings = const {},
+  }) =>
+      printCartReceipt(
+        company: company,
+        cashier: cashier,
+        customer: customer,
+        orderNumber: orderNumber,
+        printTime: printTime,
+        items: items,
+        subtotal: subtotal,
+        totalDiscount: totalDiscount,
+        totalTax: totalTax,
+        grandTotal: grandTotal,
+        currencySymbol: currencySymbol,
+        logoBytes: logoBytes,
+        roleSettings: roleSettings,
+        isGuestCheck: true,
+      );
+
   // ── Kitchen Ticket ────────────────────────────────────────────────────────
 
   Future<void> printKitchenTicket({

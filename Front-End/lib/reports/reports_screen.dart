@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:pos_app/core/ilyass_dropdown.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:pos_app/uom/unit_of_measure.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7509,24 +7510,15 @@ class _FilterDropdown<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10),
-      decoration: BoxDecoration(
-        border: Border.all(color: cs.outlineVariant),
-        borderRadius: BorderRadius.circular(8),
-        color: cs.surface,
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<T>(
-          value: value,
-          isExpanded: true,
-          isDense: true,
-          items: items,
-          onChanged: onChanged,
-          style: TextStyle(fontSize: 13, color: cs.onSurface),
-          dropdownColor: cs.surface,
-        ),
+    // The house dropdown: opens below the field, rounded, accent-tinted.
+    return IlyassDropdown<T>(
+      value: value,
+      dense: true,
+      items: IlyassDropdown.fromMenuItems(items),
+      onChanged: onChanged,
+      textStyle: TextStyle(
+        fontSize: 13,
+        color: Theme.of(context).colorScheme.onSurface,
       ),
     );
   }

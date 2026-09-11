@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pos_app/core/ilyass_dropdown.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -286,20 +287,15 @@ class _BarcodeDebugPanelState extends ConsumerState<BarcodeDebugPanel> {
                       'nomenclature. Settings → Barcode rules.',
                 )
               else ...[
-                DropdownButtonFormField<BarcodeRule>(
-                  initialValue: rule,
-                  isExpanded: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Rule',
-                    border: OutlineInputBorder(),
-                    isDense: true,
-                  ),
+                IlyassDropdown<BarcodeRule>(
+                  value: rule,
+                  label: 'Rule',
+                  dense: true,
                   items: [
                     for (final r in embeddingRules)
-                      DropdownMenuItem(
+                      IlyassDropdownItem(
                         value: r,
-                        child: Text('${r.name}  ·  ${r.pattern}',
-                            overflow: TextOverflow.ellipsis),
+                        label: '${r.name}  ·  ${r.pattern}',
                       ),
                   ],
                   onChanged: (r) => setState(() {
@@ -318,22 +314,15 @@ class _BarcodeDebugPanelState extends ConsumerState<BarcodeDebugPanel> {
                         '22.....{NNDDD}.',
                   )
                 else
-                  DropdownButtonFormField<String>(
-                    initialValue: selected,
-                    isExpanded: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Product',
-                      border: OutlineInputBorder(),
-                      isDense: true,
-                    ),
+                  IlyassDropdown<String>(
+                    value: selected,
+                    label: 'Product',
+                    dense: true,
                     items: [
                       for (final c in candidates)
-                        DropdownMenuItem(
+                        IlyassDropdownItem(
                           value: c.barcode,
-                          child: Text(
-                            '${c.product.name}  ·  ${c.barcode}',
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                          label: '${c.product.name}  ·  ${c.barcode}',
                         ),
                     ],
                     onChanged: (v) => setState(() => _productBarcode = v),

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart' show debugPrint;
+import 'package:flutter/material.dart' show DateTimeRange;
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:path/path.dart' as p;
@@ -13,6 +14,7 @@ import 'package:pos_app/database/db_location.dart';
 import 'package:pos_app/database/device_key_service.dart';
 import 'package:pos_app/database/restore_service.dart';
 import 'package:pos_app/document/document_type_constants.dart';
+import 'package:pos_app/stock/stock_move_line.dart';
 import 'package:pos_app/uom/unit_of_measure.dart';
 
 part 'app_database.g.dart';
@@ -913,6 +915,13 @@ class PendingVoidsTable extends Table {
 // sync so documents from other devices appear in local history.
 // ============================================================================
 
+// The Stock Moves history walks a company's documents newest-first by the
+// moment the goods moved. 🚨 Indexed on the SAME expression that query sorts by:
+// a plain (company_id, date) index cannot serve ORDER BY COALESCE(...), and on
+// 90k lines it measured slower than no index at all — 365 ms, against 0.8 ms
+// for this one, which lets SQLite read in order and stop at the page limit.
+@TableIndex.sql('CREATE INDEX idx_documents_company_move_date '
+    'ON documents (company_id, COALESCE(stock_date, date))')
 class DocumentsTable extends Table {
   @override
   String get tableName => 'documents';
@@ -972,6 +981,13 @@ class DocumentsTable extends Table {
 
 }
 
+// Every join from a document to its lines. SQLite does not index a foreign key
+// on its own, so without this the Stock Moves history scanned every line.
+@TableIndex(name: 'idx_document_items_document_id', columns: {#documentId})
+// One product's history (the product editor's Stock History tab). Without it
+// the query walks every document of the company looking for the product:
+// 120–240 ms per emission on 90k lines, against 0.1–5 ms with it.
+@TableIndex(name: 'idx_document_items_product_id', columns: {#productId})
 class DocumentItemsTable extends Table {
   @override
   String get tableName => 'document_items';
@@ -1805,7 +1821,7 @@ class AppDatabase extends _$AppDatabase {
   /// Restore validation needs it before Drift is touched: a backup whose
   /// `user_version` is higher came from a newer build, and Drift migrates
   /// forward only, so opening it here would corrupt it.
-  static const int expectedSchemaVersion = 67;
+  static const int expectedSchemaVersion = 69;
 
   @override
   int get schemaVersion => expectedSchemaVersion;
@@ -2721,6 +2737,28 @@ class AppDatabase extends _$AppDatabase {
                 'CREATE INDEX IF NOT EXISTS idx_shifts_company_status'
                 ' ON shifts (company_id, status)');
           }
+
+          // v68: the Stock Moves history. Indexes only — no column is touched,
+          // so nothing is backfilled and nothing an install holds can move.
+          // 🚨 LAST on purpose: the move-date index names documents.stock_date,
+          // which a step above adds, so on an install old enough to lack it
+          // this must run after that step, never before.
+          if (from < 68) {
+            await customStatement(
+                'CREATE INDEX IF NOT EXISTS idx_document_items_document_id'
+                ' ON document_items (document_id)');
+            await customStatement(
+                'CREATE INDEX IF NOT EXISTS idx_documents_company_move_date'
+                ' ON documents (company_id, COALESCE(stock_date, date))');
+          }
+
+          // v69: a product's own Stock History (the product editor tab). An
+          // index only — nothing is backfilled, nothing an install holds moves.
+          if (from < 69) {
+            await customStatement(
+                'CREATE INDEX IF NOT EXISTS idx_document_items_product_id'
+                ' ON document_items (product_id)');
+          }
         },
         beforeOpen: (details) async {
           // Enforce FK constraints (off by default in SQLite).
@@ -2885,6 +2923,9 @@ class AppDatabase extends _$AppDatabase {
     required DocumentsTableCompanion document,
     required List<DocumentItemsTableCompanion> items,
     required PaymentsTableCompanion payment,
+    /// A split bill's other tenders — one payment per guest, all on this same
+    /// document. Empty for every ordinary sale.
+    List<PaymentsTableCompanion> otherPayments = const [],
     List<DocumentItemModifiersTableCompanion> itemModifiers = const [],
   }) {
     return transaction(() async {
@@ -2903,6 +2944,9 @@ class AppDatabase extends _$AppDatabase {
         await batch((b) => b.insertAll(documentItemModifiersTable, itemModifiers));
       }
       await into(paymentsTable).insert(payment);
+      for (final other in otherPayments) {
+        await into(paymentsTable).insert(other);
+      }
     });
   }
 
@@ -3462,20 +3506,100 @@ class AppDatabase extends _$AppDatabase {
   /// Deletes an editor document offline-first. A never-synced document (and its
   /// items, via cascade) is removed outright; a synced one is soft-deleted
   /// ('pending_delete') so the pusher can DELETE it on the next sync.
+  ///
+  /// Gives back the stock its lines moved first, in the same transaction — see
+  /// [_reverseDocumentStock] — so this till's stock is right the moment the
+  /// document goes, offline included.
   Future<void> deleteDocumentLocal(String localId) async {
     final current = await getDocumentByLocalId(localId);
     if (current == null) return;
-    // Drop the document's discount breakdown either way — the document is going
-    // away, and the server cascades its own DiscountLine rows when the delete
-    // syncs (DiscountLine→Document FK is ON DELETE CASCADE).
-    await purgeDiscountLinesFor(localId);
-    if (current.serverId == null && current.syncStatus != 'synced') {
-      await (delete(documentsTable)..where((t) => t.localId.equals(localId)))
-          .go();
-      return;
+    // Already on its way out: its stock was given back when it was deleted, and
+    // must not be given back a second time.
+    if (current.syncStatus == 'pending_delete') return;
+
+    await transaction(() async {
+      await _reverseDocumentStock(current);
+      // Drop the document's discount breakdown either way — the document is
+      // going away, and the server cascades its own DiscountLine rows when the
+      // delete syncs (DiscountLine→Document FK is ON DELETE CASCADE).
+      await purgeDiscountLinesFor(localId);
+      if (current.serverId == null && current.syncStatus != 'synced') {
+        await (delete(documentsTable)..where((t) => t.localId.equals(localId)))
+            .go();
+        return;
+      }
+      await (update(documentsTable)..where((t) => t.localId.equals(localId)))
+          .write(
+              const DocumentsTableCompanion(syncStatus: Value('pending_delete')));
+    });
+  }
+
+  /// Gives back the stock [doc]'s lines moved — this terminal's mirror of
+  /// `DocumentService.DeleteAsync`, which does the same on the server when the
+  /// delete is pushed.
+  ///
+  /// The server's rule for deleting a line (`DocumentItemService.
+  /// ReverseStockAsync`): a Purchase takes back what it received; a Stock
+  /// Return and a Loss & Damage put back what they removed. Any other type is
+  /// left alone — deleting a sale's document does not restock it, here or there.
+  ///
+  /// 🚨 Only lines the SERVER holds (a `serverId`). The server applies a line's
+  /// stock when the line reaches it, and this till's stock only learns of it
+  /// from a pull — so a line added offline and never pushed moved stock
+  /// nowhere, and giving it back would take away stock that was never added. A
+  /// pushed line soft-deleted since still counts: the server still holds it,
+  /// and reverses it along with the document.
+  ///
+  /// The stock row keeps its sync status. This is a mirror of what the server
+  /// is about to do, not an edit to push — pushing it would make the server
+  /// reverse twice. The pull after the delete lands brings the server's figure,
+  /// which this already equals; in the rare window where a line was pushed but
+  /// its stock not pulled yet, that same pull is what corrects it.
+  Future<void> _reverseDocumentStock(DocumentsTableData doc) async {
+    final direction = switch (doc.documentTypeId) {
+      DocumentTypes.purchase => -1.0,
+      DocumentTypes.stockReturn || DocumentTypes.lossAndDamage => 1.0,
+      _ => 0.0,
+    };
+    if (direction == 0) return;
+
+    final lines = await (select(documentItemsTable)
+          ..where((t) => t.documentId.equals(doc.localId))
+          ..where((t) => t.serverId.isNotNull()))
+        .get();
+    if (lines.isEmpty) return;
+
+    final products = {
+      for (final p in await (select(productsTable)
+            ..where((t) => t.id.isIn(lines.map((l) => l.productId).toSet())))
+          .get())
+        p.id: p,
+    };
+
+    for (final line in lines) {
+      final stock = await (select(stocksTable)
+            ..where((t) => t.productId.equals(line.productId))
+            ..where((t) => t.warehouseId.equals(doc.warehouseId))
+            ..where((t) => t.syncStatus.equals('pending_delete').not())
+            ..limit(1))
+          .getSingleOrNull();
+      // Never stocked on this till — nothing here to give back. The server's
+      // own reversal reaches this till with the next pull.
+      if (stock == null) continue;
+
+      // A line is counted in the product's unit, stock in the reference unit —
+      // the same conversion the server's AdjustStockAsync makes.
+      final product = products[line.productId];
+      final delta = direction *
+          uomToReference(line.quantity, product?.uomId,
+              packSize: product?.packSize);
+      await (update(stocksTable)..where((t) => t.id.equals(stock.id))).write(
+        StocksTableCompanion(
+          quantity: Value(snapToStorage(stock.quantity + delta)),
+          lastModified: Value(DateTime.now().toUtc()),
+        ),
+      );
     }
-    await (update(documentsTable)..where((t) => t.localId.equals(localId)))
-        .write(const DocumentsTableCompanion(syncStatus: Value('pending_delete')));
   }
 
   Future<List<DocumentsTableData>> getDocumentsBySyncStatus(
@@ -3614,6 +3738,243 @@ class AppDatabase extends _$AppDatabase {
   Future<void> hardDeleteDocumentItem(String localId) =>
       (delete(documentItemsTable)..where((t) => t.localId.equals(localId)))
           .go();
+
+  // ─── Stock moves (the Odoo-style double-entry history) ─────────────────────
+
+  /// Every stock-moving document line of [companyId], newest first, read as a
+  /// location-to-location move — the read model behind the Stock Moves screen.
+  ///
+  /// A projection rather than a table: the documents ARE the history, so there
+  /// is nothing to keep in step and nothing a sync can leave behind. It sees
+  /// what this terminal holds — every local document, and the window of other
+  /// terminals' documents that `pullDocuments` mirrors.
+  ///
+  /// Service products are left out (they hold no stock), and so are
+  /// soft-deleted documents and lines. The matrix is [StockMoveMatrix], applied
+  /// to each row in Dart so the SQL never grows a second copy of it.
+  ///
+  /// 🚨 [limit] counts document LINES read, not moves returned. A line that
+  /// moves nothing — a zero quantity, a count that agreed — is dropped after the
+  /// matrix runs, so a page can come back shorter than [limit] with more behind
+  /// it. [StockMovePage.hasMore] is measured on the lines read for that reason.
+  ///
+  /// Walks `idx_documents_company_move_date` in order and stops at [limit],
+  /// which is what keeps a deeper page as cheap as the first.
+  ///
+  /// There is no way to delete a move here, and there must not be one: a move
+  /// is a document line, so it leaves the history exactly when its document
+  /// does — at once when deleted on this till (`pending_delete` is filtered
+  /// out, then the push drops the row and its lines cascade), and on the next
+  /// full pull when deleted on another (`_reconcileDeletedDocuments`).
+  ///
+  /// [productId] narrows it to one product (the product editor's Stock History
+  /// tab); [dateRange] to whole calendar days, both ends included.
+  Stream<StockMovePage> watchStockMoves({
+    required int companyId,
+    required int limit,
+    int? warehouseId,
+    int? productId,
+    String? search,
+    DateTimeRange? dateRange,
+  }) =>
+      _stockMovesQuery(
+        companyId: companyId,
+        limit: limit,
+        warehouseId: warehouseId,
+        productId: productId,
+        search: search,
+        dateRange: dateRange,
+      ).watch().map((rows) => StockMovePage(
+            lines: rows.map(_stockMoveFrom).nonNulls.toList(),
+            hasMore: rows.length >= limit,
+          ));
+
+  /// Every move matching the filters, unpaged — what an export writes. An
+  /// export of the rows that happened to be scrolled into view would be a
+  /// report of the operator's scrolling, not of the stock.
+  Future<List<StockMoveLine>> getStockMoves({
+    required int companyId,
+    int? warehouseId,
+    int? productId,
+    String? search,
+    DateTimeRange? dateRange,
+  }) async =>
+      (await _stockMovesQuery(
+        companyId: companyId,
+        warehouseId: warehouseId,
+        productId: productId,
+        search: search,
+        dateRange: dateRange,
+      ).get())
+          .map(_stockMoveFrom)
+          .nonNulls
+          .toList();
+
+  /// The one query behind both [watchStockMoves] and [getStockMoves]. No
+  /// [limit] reads everything.
+  Selectable<QueryRow> _stockMovesQuery({
+    required int companyId,
+    int? limit,
+    int? warehouseId,
+    int? productId,
+    String? search,
+    DateTimeRange? dateRange,
+  }) {
+    final variables = <Variable>[Variable.withInt(companyId)];
+    final filters = StringBuffer();
+    if (warehouseId != null) {
+      filters.write(' AND d.warehouse_id = ?');
+      variables.add(Variable.withInt(warehouseId));
+    }
+    if (productId != null) {
+      // Answered by idx_document_items_product_id: one product's lines are
+      // found directly instead of by walking every document of the company
+      // (measured 0.1–5 ms against 120–240 ms on 90k lines).
+      filters.write(' AND di.product_id = ?');
+      variables.add(Variable.withInt(productId));
+    }
+    if (dateRange != null) {
+      // Whole days, both ends included: from the first day's midnight up to —
+      // not including — the midnight after the last. The same expression the
+      // move-date index is built on, so it is a range scan of that index.
+      final from = DateTime(
+          dateRange.start.year, dateRange.start.month, dateRange.start.day);
+      final until = DateTime(
+          dateRange.end.year, dateRange.end.month, dateRange.end.day + 1);
+      filters.write(' AND COALESCE(d.stock_date, d.date) >= ?'
+          ' AND COALESCE(d.stock_date, d.date) < ?');
+      variables
+          .addAll([Variable.withDateTime(from), Variable.withDateTime(until)]);
+    }
+    final term = search?.trim() ?? '';
+    if (term.isNotEmpty) {
+      // Both barcodes: the product's own and the alternates beside it (§4.8).
+      filters.write(" AND (p.name LIKE ? ESCAPE '\\'"
+          " OR p.barcode LIKE ? ESCAPE '\\'"
+          " OR d.number LIKE ? ESCAPE '\\'"
+          ' OR EXISTS (SELECT 1 FROM barcodes b'
+          ' WHERE b.product_id = di.product_id'
+          " AND b.sync_status <> 'pending_delete'"
+          " AND b.value LIKE ? ESCAPE '\\'))");
+      final like = Variable.withString('%${_escapeLike(term)}%');
+      variables.addAll([like, like, like, like]);
+    }
+    if (limit != null) variables.add(Variable.withInt(limit));
+
+    return customSelect(
+      '''
+      SELECT
+        di.local_id          AS item_local_id,
+        d.local_id           AS document_local_id,
+        d.number             AS document_number,
+        d.document_type_id   AS document_type_id,
+        COALESCE(d.stock_date, d.date) AS move_date,
+        di.product_id        AS product_id,
+        p.name               AS product_name,
+        p.barcode            AS barcode,
+        p.uom_id             AS uom_id,
+        di.quantity          AS quantity,
+        di.expected_quantity AS expected_quantity,
+        d.warehouse_id       AS warehouse_id,
+        w.name               AS warehouse_name,
+        d.user_id            AS user_id,
+        u.name               AS user_name,
+        CASE WHEN d.server_id IS NULL
+               OR d.sync_status IN ('pending', 'pending_create', 'failed')
+               OR di.sync_status IN ('pending_create', 'pending_update')
+             THEN 1 ELSE 0 END AS is_pending
+      FROM documents d
+      JOIN document_items di ON di.document_id = d.local_id
+      LEFT JOIN products p ON p.id = di.product_id
+      LEFT JOIN warehouses w ON w.id = d.warehouse_id
+      LEFT JOIN users u ON u.id = d.user_id
+      WHERE d.company_id = ?
+        AND d.document_type_id IN (${StockMoveMatrix.movingDocumentTypes.join(', ')})
+        AND d.sync_status <> 'pending_delete'
+        AND di.sync_status <> 'pending_delete'
+        AND COALESCE(p.is_service, 0) = 0
+        $filters
+      ORDER BY COALESCE(d.stock_date, d.date) DESC, d.local_id, di.local_id
+      ${limit == null ? '' : 'LIMIT ?'}
+      ''',
+      variables: variables,
+      readsFrom: {
+        documentsTable,
+        documentItemsTable,
+        productsTable,
+        warehousesTable,
+        usersTable,
+        barcodesTable,
+      },
+    );
+  }
+
+  /// One history row, or null when its line moved nothing.
+  StockMoveLine? _stockMoveFrom(QueryRow row) {
+    // Drift hands a stored instant back in local time; the history carries UTC.
+    final date = row.read<DateTime>('move_date').toUtc();
+    final documentTypeId = row.read<int>('document_type_id');
+    final route = StockMoveMatrix.resolve(
+      documentTypeId: documentTypeId,
+      quantity: row.read<double>('quantity'),
+      expectedQuantity: row.readNullable<double>('expected_quantity'),
+      date: date,
+    );
+    if (route == null) return null;
+
+    final barcode = row.readNullable<String>('barcode')?.trim();
+    return StockMoveLine(
+      itemLocalId: row.read<String>('item_local_id'),
+      documentLocalId: row.read<String>('document_local_id'),
+      documentNumber: row.readNullable<String>('document_number'),
+      documentTypeId: documentTypeId,
+      date: date,
+      productId: row.read<int>('product_id'),
+      productName: row.readNullable<String>('product_name'),
+      barcode: (barcode == null || barcode.isEmpty) ? null : barcode,
+      uomId: row.readNullable<int>('uom_id'),
+      warehouseId: row.read<int>('warehouse_id'),
+      warehouseName: row.readNullable<String>('warehouse_name'),
+      from: route.from,
+      to: route.to,
+      quantity: route.quantity,
+      status: row.read<int>('is_pending') == 1
+          ? StockMoveStatus.pendingSync
+          : StockMoveStatus.done,
+      userId: row.read<int>('user_id'),
+      userName: row.readNullable<String>('user_name'),
+    );
+  }
+
+  /// Makes the operator's text literal inside a LIKE pattern — a `%` or `_`
+  /// they typed is a character to find, not a wildcard.
+  static String _escapeLike(String text) =>
+      text.replaceAllMapped(RegExp(r'[\\%_]'), (m) => '\\${m[0]}');
+
+  /// What this terminal holds of [productId] in [warehouseId], in the product's
+  /// OWN unit — the figure an inventory count line is measured against.
+  ///
+  /// Stock is kept in the category's reference unit (kg for a product sold by
+  /// the gram) while a count line is typed in the product's unit, so the two
+  /// can only be subtracted once this converts. No stock row reads as 0: the
+  /// count is then an opening balance.
+  Future<double> stockOnHandInProductUnit({
+    required int productId,
+    required int warehouseId,
+  }) async {
+    final rows = await (select(stocksTable)
+          ..where((t) => t.productId.equals(productId))
+          ..where((t) => t.warehouseId.equals(warehouseId))
+          ..where((t) => t.syncStatus.equals('pending_delete').not()))
+        .get();
+    if (rows.isEmpty) return 0;
+    final held = rows.fold<double>(0, (sum, s) => sum + s.quantity);
+    final product = await (select(productsTable)
+          ..where((t) => t.id.equals(productId))
+          ..limit(1))
+        .getSingleOrNull();
+    return uomFromReference(held, product?.uomId, packSize: product?.packSize);
+  }
 
   // ─── Document types / categories (pull-only master data) ───────────────────
 

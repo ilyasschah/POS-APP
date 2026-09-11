@@ -52,6 +52,11 @@ String documentPdfName(String number) => pdfSafeName(number);
 String stockPdfName(DateTime day) =>
     'INV-${DateFormat('yyyy-MM-dd').format(day)}';
 
+/// `StockMoves-2026-09-11` — the Stock Moves export, PDF or spreadsheet, as it
+/// stood on the day it was taken. No extension, like every name here.
+String stockMovesFileName(DateTime day) =>
+    'StockMoves-${DateFormat('yyyy-MM-dd').format(day)}';
+
 /// `Sales by Product_2026-07-01_2026-07-16` — a report is only meaningful with
 /// the range it covers; without it, re-exporting the same report on a different
 /// range overwrites the previous file.

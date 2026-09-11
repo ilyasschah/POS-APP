@@ -14,6 +14,7 @@ import 'package:pos_app/document/documents_screen.dart';
 import 'package:pos_app/modifier/modifier_groups_screen.dart';
 import 'package:pos_app/product/products_screen.dart';
 import 'package:pos_app/product/product_groups_screen.dart';
+import 'package:pos_app/stock/stock_history_screen.dart';
 import 'package:pos_app/stock/stock_screen.dart';
 import 'package:pos_app/promotions/promotions_list_screen.dart';
 import 'package:pos_app/reports/reports_screen.dart';
@@ -99,6 +100,14 @@ class _ManagementLayoutState extends ConsumerState<ManagementLayout> {
       icon: Icons.inventory_2,
       label: (l) => l.stock,
       screen: (m) => StockScreen(onMenuPressed: m),
+    ),
+    // Same key as Stock on purpose: the moves are how the stock got to where
+    // the stock screen shows it, and whoever may see one may see the other.
+    _ManagementEntry(
+      securityKey: 'Management.Stock',
+      icon: Icons.swap_horiz,
+      label: (l) => l.stockMoves,
+      screen: (m) => StockHistoryScreen(onMenuPressed: m),
     ),
     _ManagementEntry(
       securityKey: 'Management.Reporting',

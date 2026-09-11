@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:pos_app/core/ilyass_dropdown.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:drift/drift.dart' show Value;
@@ -474,12 +475,12 @@ class _AddUserDialogState extends ConsumerState<_AddUserDialog> {
                         : null,
               ),
               const SizedBox(height: 12),
-              DropdownButtonFormField<int>(
-                initialValue: _accessLevel,
-                decoration: InputDecoration(labelText: AppLocalizations.of(context).accessLevel),
+              IlyassDropdown<int>(
+                value: _accessLevel,
+                label: AppLocalizations.of(context).accessLevel,
                 items: [
-                  DropdownMenuItem(value: 0, child: Text(AppLocalizations.of(context).roleAdmin)),
-                  DropdownMenuItem(value: 1, child: Text(AppLocalizations.of(context).roleCashier)),
+                  IlyassDropdownItem(value: 0, label: AppLocalizations.of(context).roleAdmin),
+                  IlyassDropdownItem(value: 1, label: AppLocalizations.of(context).roleCashier),
                 ],
                 onChanged: (v) => setState(() => _accessLevel = v ?? 1),
               ),
@@ -702,12 +703,12 @@ class _EditUserDialogState extends ConsumerState<_EditUserDialog> {
                 keyboardType: TextInputType.emailAddress,
               ),
               const SizedBox(height: 12),
-              DropdownButtonFormField<int>(
-                initialValue: _accessLevel,
-                decoration: InputDecoration(labelText: AppLocalizations.of(context).accessLevel),
+              IlyassDropdown<int>(
+                value: _accessLevel,
+                label: AppLocalizations.of(context).accessLevel,
                 items: [
-                  DropdownMenuItem(value: 0, child: Text(AppLocalizations.of(context).roleAdmin)),
-                  DropdownMenuItem(value: 1, child: Text(AppLocalizations.of(context).roleCashier)),
+                  IlyassDropdownItem(value: 0, label: AppLocalizations.of(context).roleAdmin),
+                  IlyassDropdownItem(value: 1, label: AppLocalizations.of(context).roleCashier),
                 ],
                 onChanged: (v) => setState(() => _accessLevel = v ?? 1),
               ),

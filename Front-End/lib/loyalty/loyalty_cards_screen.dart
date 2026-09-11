@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pos_app/core/ilyass_dropdown.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qr_flutter/qr_flutter.dart';
@@ -467,20 +468,13 @@ class _AddCardDialogState extends ConsumerState<_AddCardDialog> {
                     : retailCustomers
                         .where((c) => c.id == _selectedCustomer!.id)
                         .firstOrNull;
-                return DropdownButtonFormField<Customer>(
-                  initialValue: selected,
-                  isExpanded: true,
-                  decoration: InputDecoration(
-                    labelText: AppLocalizations.of(context).customerRequired,
-                    border: const OutlineInputBorder(),
-                  ),
-                  items: retailCustomers
-                      .map((c) => DropdownMenuItem(
-                            value: c,
-                            child: Text(c.name,
-                                overflow: TextOverflow.ellipsis),
-                          ))
-                      .toList(),
+                return IlyassDropdown<Customer>(
+                  value: selected,
+                  label: AppLocalizations.of(context).customerRequired,
+                  items: [
+                    for (final c in retailCustomers)
+                      IlyassDropdownItem(value: c, label: c.name),
+                  ],
                   onChanged: (v) => setState(() => _selectedCustomer = v),
                 );
               },

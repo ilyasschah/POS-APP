@@ -185,12 +185,40 @@ namespace Api.Services
                             .FirstOrDefaultAsync();
                     }
 
+                    // A split bill settles ONE document with several tenders, one
+                    // per guest. Without a list, the sale has its classic single
+                    // tender — which is what every caller but the split sends.
+                    var isSplit = req.Payments is { Count: > 0 };
+                    var tenders = isSplit
+                        ? req.Payments
+                        : new List<CheckoutPaymentDto>
+                        {
+                            new() { PaymentTypeId = req.PaymentTypeId, Amount = req.AmountPaid },
+                        };
+
                     // Rule 2: respect the PaymentType's MarkAsPaid flag so that
                     // credit/tab payment types leave the document as Unpaid (0).
-                    var paymentType = await _db.PaymentTypes
+                    // A split that put only SOME of its shares on account is paid
+                    // in part — the same Partial the terminal records locally.
+                    var tenderTypeIds = tenders.Select(t => t.PaymentTypeId).Distinct().ToList();
+                    var markAsPaidByType = await _db.PaymentTypes
                         .AsNoTracking()
-                        .FirstOrDefaultAsync(pt => pt.Id == req.PaymentTypeId);
-                    int paidStatus = (paymentType?.MarkAsPaid ?? true) ? 1 : 0;
+                        .Where(pt => tenderTypeIds.Contains(pt.Id))
+                        .ToDictionaryAsync(pt => pt.Id, pt => pt.MarkAsPaid);
+                    int paidStatus;
+                    if (tenders.All(t => markAsPaidByType.GetValueOrDefault(t.PaymentTypeId, true)))
+                        paidStatus = PaidStatusConstants.Paid;
+                    else if (!isSplit)
+                        paidStatus = PaidStatusConstants.Unpaid;
+                    else
+                    {
+                        var collected = tenders.Sum(t => t.Amount);
+                        paidStatus = collected >= documentGrandTotal - 0.005m
+                            ? PaidStatusConstants.Paid
+                            : collected > 0.005m
+                                ? PaidStatusConstants.Partial
+                                : PaidStatusConstants.Unpaid;
+                    }
 
                     // Rule 3: calculate DueDate from the DefaultDueDateDays setting.
                     var dueDateProp = await _db.ApplicationProperties
@@ -350,14 +378,17 @@ namespace Api.Services
                         await _db.SaveChangesAsync();
                     }
 
-                    var payment = Payment.Create(
-                        companyId: companyId,
-                        documentId: document.Id,
-                        paymentTypeId: req.PaymentTypeId,
-                        amount: req.AmountPaid,
-                        userId: userId
-                    );
-                    _db.Payments.Add(payment);
+                    // One payment per tender — a split bill's document lists every
+                    // guest's payment, which is what its Payments tab shows.
+                    var payments = tenders
+                        .Select(t => Payment.Create(
+                            companyId: companyId,
+                            documentId: document.Id,
+                            paymentTypeId: t.PaymentTypeId,
+                            amount: t.Amount,
+                            userId: userId))
+                        .ToList();
+                    _db.Payments.AddRange(payments);
 
                     // ── POS SESSION ────────────────────────────────────────
                     // The sale belongs to the drawer that took it, and the link
@@ -388,7 +419,8 @@ namespace Api.Services
                                 session.Status == PosSessionStatus.Closed;
 
                             document.AttachToSession(session.Id, arrivedAfterClose);
-                            payment.AttachToSession(session.Id);
+                            foreach (var payment in payments)
+                                payment.AttachToSession(session.Id);
                             if (arrivedAfterClose) session.MarkLateArrival();
                         }
                     }

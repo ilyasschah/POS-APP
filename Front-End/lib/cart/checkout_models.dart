@@ -232,6 +232,38 @@ class CartItem {
     double? basePrice,
   }) : basePrice = basePrice ?? price;
 
+  /// A copy of this line carrying [quantity] of it — one guest's share of the
+  /// line on a split bill. Price, discount, promotion, taxes and modifiers are
+  /// all per unit, so the copy prices its share exactly.
+  CartItem withQuantity(double quantity) => CartItem(
+        cartItemId: cartItemId,
+        posOrderId: posOrderId,
+        productId: productId,
+        roundNumber: roundNumber,
+        quantity: quantity,
+        price: price,
+        cost: cost,
+        discount: discount,
+        discountType: discountType,
+        discountInputValue: discountInputValue,
+        discountInputType: discountInputType,
+        promotionalDiscount: promotionalDiscount,
+        promotionId: promotionId,
+        comment: comment,
+        bundle: bundle,
+        isSaved: isSaved,
+        productName: productName,
+        appliedTaxes: appliedTaxes,
+        warehouseId: warehouseId,
+        measurementUnit: measurementUnit,
+        uomId: uomId,
+        isToWeigh: isToWeigh,
+        isService: isService,
+        isTaxInclusive: isTaxInclusive,
+        selectedModifiers: selectedModifiers,
+        basePrice: basePrice,
+      );
+
   Map<String, dynamic> toJson() {
     return {
       'id': 0,
@@ -274,6 +306,21 @@ class CartItem {
   }
 }
 
+/// The flat per-unit money of a line's fixed taxes.
+double fixedTaxPerUnit(CartItem item) => item.appliedTaxes
+    .where((t) => t.isFixed)
+    .fold<double>(0, (s, t) => s + t.rate);
+
+/// What a PERCENTAGE discount (manual or promotion) is taken from, per unit.
+///
+/// 🚨 A fixed tax is rate × quantity whatever the discount — a rule the owner
+/// has locked in. On a tax-inclusive line the shelf price carries that tax, so
+/// it is left out here: 10% off a 52.00 price holding a 2.00 fixed tax is 5.00,
+/// never 5.20. An exclusive line's price never contained it, so it is `price`.
+double discountableUnitPrice(CartItem item) => item.isTaxInclusive
+    ? (item.price - fixedTaxPerUnit(item)).clamp(0.0, double.infinity)
+    : item.price;
+
 /// The ex-tax ("net") view of a cart line — **the** definition of how a
 /// tax-inclusive price is split, shared by the cart totals, the POS line rows
 /// and the receipt renderer.
@@ -312,8 +359,7 @@ class CartItem {
 
   // A fixed tax is a flat per-unit amount, not a share of the price, so it
   // comes off the top before the percentage taxes are divided out.
-  final fixedPerUnit =
-      item.appliedTaxes.where((t) => t.isFixed).fold<double>(0, (s, t) => s + t.rate);
+  final fixedPerUnit = fixedTaxPerUnit(item);
   final pctRate = item.appliedTaxes
       .where((t) => !t.isFixed)
       .fold<double>(0, (s, t) => s + t.rate);

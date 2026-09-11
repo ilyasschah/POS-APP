@@ -81,6 +81,10 @@ namespace Api.Models
         /// client falls back to Discount.
         public decimal? DiscountInputValue { get; set; }
         public int? DiscountInputType { get; set; }
+        /// Whether the line's price already contains its taxes, as the till
+        /// pinned it when the item was rung up. Null (an older client) falls back
+        /// to the product's current flag.
+        public bool? IsTaxInclusive { get; set; }
         public List<int> AppliedTaxIds { get; set; } = new List<int>();
         // Per-item tax amounts from offline checkout. Populated by the Flutter
         // client so BatchSync can pass them to CheckoutItemDto.Taxes and create

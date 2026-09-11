@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
+import 'package:pos_app/core/ilyass_dropdown.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
@@ -1212,27 +1213,18 @@ class _CustomerFormDialogState extends ConsumerState<_CustomerFormDialog> {
                 _sectionLabel(
                     context, AppLocalizations.of(context).customerDiscountLabel),
                 _row([
-                  DropdownButtonFormField<int>(
-                    initialValue: _discountType,
-                    // Fill the field width so a longer label (e.g. "Fixed
-                    // Amount (MAD)") ellipsizes instead of overflowing the Row.
-                    isExpanded: true,
-                    decoration: InputDecoration(
-                      labelText: AppLocalizations.of(context).discountType,
-                      border: const OutlineInputBorder(),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 10,
-                      ),
-                    ),
+                  IlyassDropdown<int>(
+                    value: _discountType,
+                    label: AppLocalizations.of(context).discountType,
+                    dense: true,
                     items: [
-                      DropdownMenuItem(
+                      IlyassDropdownItem(
                         value: 0,
-                        child: Text(AppLocalizations.of(context).percentageSign),
+                        label: AppLocalizations.of(context).percentageSign,
                       ),
-                      DropdownMenuItem(
+                      IlyassDropdownItem(
                         value: 1,
-                        child: Text(AppLocalizations.of(context).fixedAmountSymLabel(sym)),
+                        label: AppLocalizations.of(context).fixedAmountSymLabel(sym),
                       ),
                     ],
                     onChanged: (v) => setState(() => _discountType = v!),
@@ -1254,24 +1246,14 @@ class _CustomerFormDialogState extends ConsumerState<_CustomerFormDialog> {
                         AppLocalizations.of(context).noCountriesAvailable,
                         style: TextStyle(color: cs.error),
                       )
-                    : DropdownButtonFormField<int>(
-                        initialValue: _selectedCountryId,
-                        decoration: InputDecoration(
-                          labelText: AppLocalizations.of(context).country,
-                          border: const OutlineInputBorder(),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 10,
-                          ),
-                        ),
-                        items: _countries
-                            .map(
-                              (c) => DropdownMenuItem(
-                                value: c.id,
-                                child: Text(c.name),
-                              ),
-                            )
-                            .toList(),
+                    : IlyassDropdown<int>(
+                        value: _selectedCountryId,
+                        label: AppLocalizations.of(context).country,
+                        dense: true,
+                        items: [
+                          for (final c in _countries)
+                            IlyassDropdownItem(value: c.id, label: c.name),
+                        ],
                         onChanged: (v) =>
                             setState(() => _selectedCountryId = v),
                       ),

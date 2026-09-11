@@ -1498,6 +1498,13 @@
   "priceAndCostSection": "Price & cost",
   "unitAndStockSection": "Unit & stock",
   "noDocumentDiscounts": "No promotions or order-level discounts on this document.",
+  "posHeaderOrderHint": "Drag a button by its handle to set the header's order on this till. The switches apply to every till.",
+  "posOtherButtons": "Other buttons",
+  "dragToReorderButtons": "Drag to reorder",
+  "resetButtonOrder": "Reset order",
+  "posButtonAutomatic": "Shown automatically when its feature is on",
+  "setTablesFloorPlanHeader": "TABLES & FLOOR PLAN",
+  "setServiceStatusHeader": "SERVICE STATUS",
   "productColorMarker": "Product Color Marker",
   "productImage": "Product Image",
   "productImageHint": "Replaces the placeholder icon on the POS menu tile.",
@@ -1553,6 +1560,80 @@
   "saveAsPdf": "Save as PDF",
   "printReceipt": "Print Receipt",
   "splitPayments": "Split Payments",
+  "splitBillTitle": "Split bill",
+  "splitUnassigned": "Unassigned items",
+  "splitAllAssigned": "Every item is assigned",
+  "splitSelectHint": "Select an item, then tap a split — or drag it there",
+  "splitAddSplit": "Add split",
+  "splitName": "Split {number}",
+  "@splitName": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "splitDropHere": "Tap or drag items here",
+  "splitReturnItem": "Return to unassigned",
+  "splitRemove": "Remove split",
+  "splitPrintGuestCheck": "Print guest check",
+  "splitPayAmount": "Pay {amount}",
+  "@splitPayAmount": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "splitPaidWith": "Paid · {method} {amount}",
+  "@splitPaidWith": {
+    "placeholders": {
+      "method": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "splitOnAccount": "On account · {method}",
+  "@splitOnAccount": {
+    "placeholders": {
+      "method": {
+        "type": "String"
+      }
+    }
+  },
+  "splitUndoPayment": "Undo payment",
+  "splitHowMany": "How many “{name}”?",
+  "@splitHowMany": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "splitAssign": "Assign",
+  "splitAllQuantity": "All ({count})",
+  "@splitAllQuantity": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "splitDiscardTitle": "Discard the payments taken?",
+  "splitDiscardBody": "Splits marked paid: {count}. Nothing has been saved yet — hand that money back before closing.",
+  "@splitDiscardBody": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "splitDiscardConfirm": "Discard and close",
+  "splitFinish": "Save sale",
+  "splitGuestCheckPrinted": "Guest check printed",
   "totalLabel": "Total",
   "paidLabel": "Paid",
   "remainingLabel": "Remaining",
@@ -4029,5 +4110,78 @@
       }
     }
   },
-  "saveExportFileTitle": "Save export file"
+  "saveExportFileTitle": "Save export file",
+  "stockMoves": "Stock Moves",
+  "colReference": "REFERENCE",
+  "colProduct": "PRODUCT",
+  "colFrom": "FROM",
+  "colTo": "TO",
+  "colQuantity": "QUANTITY",
+  "colDoneBy": "DONE BY",
+  "stockLocationVendors": "Vendors",
+  "stockLocationCustomers": "Customers",
+  "stockLocationInventoryAdjustment": "Inventory adjustment",
+  "stockLocationScrap": "Scrap",
+  "stockLocationWarehouse": "{warehouse}/Stock",
+  "@stockLocationWarehouse": {
+    "description": "A warehouse as a stock location in the Stock Moves history, Odoo-style (WH/Stock). The warehouse's own name is inserted.",
+    "placeholders": {
+      "warehouse": {
+        "type": "String"
+      }
+    }
+  },
+  "moveStatusDone": "Done",
+  "searchStockMoves": "Search product, barcode or reference…",
+  "noStockMoves": "No stock moves yet",
+  "printPdf": "Print (PDF)",
+  "exportToExcel": "Export to Excel",
+  "noStockMovesToExport": "No stock moves to export",
+  "stockMovesCount": "{count, plural, =1{1 move} other{{count} moves}}",
+  "@stockMovesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "stockHistoryTab": "Stock History",
+  "stockHistoryHint": "Every move of this product, newest first",
+  "stockOnHand": "Stock on hand",
+  "stockOnHandHint": "What each warehouse holds, as this terminal last synced it",
+  "noStockRuleSet": "No stock rule is set for this product.",
+  "periodAllTime": "All time",
+  "printSelectedPdf": "Print selected ({count})",
+  "@printSelectedPdf": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "saveSelectedAsPdf": "Save selected as PDF ({count})",
+  "@saveSelectedAsPdf": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "exportSelectedToExcel": "Export selected to Excel ({count})",
+  "@exportSelectedToExcel": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "productQuantityUpdated": "Product Quantity Updated ({user})",
+  "@productQuantityUpdated": {
+    "description": "The Stock Moves reference of an inventory adjustment, Odoo-style: what happened and who did it.",
+    "placeholders": {
+      "user": {
+        "type": "String"
+      }
+    }
+  }
 }

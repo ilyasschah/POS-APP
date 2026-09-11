@@ -1746,7 +1746,13 @@ class SyncManager {
       // copy of the sale — the one every report and every other device reads —
       // says a plain burger was sold at the price of one with Extra Cheese.
       final modifiers = await db.orderItemModifiersByLine(o.order.localId);
-      orders.add(_orderToBatchJson(o, discounts, modifiers));
+      // A split bill banks ONE document with a payment per guest. The order row
+      // holds only the first tender, so the rest travel as a list and the server
+      // creates every one of them on that document.
+      final payments = (await db.getPayments(o.order.localId))
+          .where((p) => p.syncStatus != 'pending_delete')
+          .toList();
+      orders.add(_orderToBatchJson(o, discounts, modifiers, payments));
     }
     final payload = {'orders': orders};
 
@@ -1876,6 +1882,7 @@ class SyncManager {
     PosOrderWithItems o,
     List<DiscountLinesTableData> discounts,
     Map<String, List<PosOrderItemModifiersTableData>> modifiersByLine,
+    List<PaymentsTableData> payments,
   ) {
     // Resolve item-level discount lines to their productId via the order items
     // (the local line stores productId only as sourceRefId for manual_item, not
@@ -1886,6 +1893,13 @@ class SyncManager {
       'existingServerId': o.order.serverId,
       'paymentTypeId': o.order.paymentTypeId,
       'amountPaid': o.order.amountPaid,
+      // Only for a split bill. An ordinary sale's single payment is exactly
+      // paymentTypeId/amountPaid above, so it keeps the payload it always had.
+      if (payments.length > 1)
+        'payments': [
+          for (final p in payments)
+            {'paymentTypeId': p.paymentTypeId, 'amount': p.amount},
+        ],
       'orderTotal': o.order.total ?? 0,
       // Device-local document number issued offline at checkout. The server
       // keeps it verbatim instead of generating its own (offline-first).
@@ -1929,6 +1943,10 @@ class SyncManager {
           'discountAppliedType': 0,
           'comment': item.comment,
           'bundle': null,
+          // Pinned at ring-up. The server needs it to take a % item discount
+          // from the price WITHOUT a fixed tax an inclusive price carries —
+          // `discountableUnitPrice` — so the banked line matches the till.
+          'isTaxInclusive': item.isTaxInclusive,
           'appliedTaxIds': appliedTaxIds,
           'taxes': taxes,
           // Snapshots, not ids: the server stores exactly what the cashier saw,
@@ -4877,7 +4895,10 @@ class SyncManager {
             'documentId': docServerId,
             'productId': it.productId,
             'quantity': it.quantity,
-            'expectedQuantity': it.quantity,
+            // An inventory count line carries the stock the editor saw when it
+            // was counted, which is what makes its variance knowable later.
+            // Every other line's expected quantity simply IS its quantity.
+            'expectedQuantity': it.expectedQuantity ?? it.quantity,
             'priceBeforeTax': it.priceBeforeTax,
             'price': it.unitPrice,
             'discount': it.discount,
@@ -4948,7 +4969,9 @@ class SyncManager {
             'documentId': docServerId,
             'productId': it.productId,
             'quantity': it.quantity,
-            'expectedQuantity': it.quantity,
+            // Kept, not recomputed: a count's expected quantity is the stock
+            // seen when it was counted, which an edit to the count must not move.
+            'expectedQuantity': it.expectedQuantity ?? it.quantity,
             'priceBeforeTax': it.priceBeforeTax,
             'price': it.unitPrice,
             'discount': it.discount,
@@ -5297,6 +5320,12 @@ class SyncManager {
                           Value(((m['discount'] as num?) ?? 0).toDouble()),
                       discountType:
                           Value((m['discountType'] as num?)?.toInt() ?? 0),
+                      // What an inventory count was counted against — the
+                      // Stock Moves history's variance. Null from an API that
+                      // predates the field, which the history reads as an
+                      // opening balance, exactly as it reads a legacy count.
+                      expectedQuantity: Value(
+                          (m['expectedQuantity'] as num?)?.toDouble()),
                     ))
                 .toList();
 
@@ -5539,6 +5568,10 @@ class SyncManager {
           ..where((t) => t.date.isBiggerOrEqualValue(windowStart)))
         .get();
 
+    // 🚨 No stock is given back here, unlike `deleteDocumentLocal`. The server
+    // already reversed this document's stock when it deleted it, and that
+    // figure reaches this till through `pullStocks` — reversing it again here
+    // would take the stock out twice.
     var removed = 0;
     for (final doc in local) {
       if (serverIdsInWindow.contains(doc.serverId)) continue;

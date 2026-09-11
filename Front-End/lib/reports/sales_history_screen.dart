@@ -413,6 +413,10 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
       final docRow = await db.getDocumentByLocalId(localId);
       final isCheckoutDoc =
           docRow?.orderNumber != null && docRow!.orderNumber!.isNotEmpty;
+      final fixedTaxIds = {
+        for (final t in await db.select(db.taxesTable).get())
+          if (t.isFixed) t.id,
+      };
       setState(() {
         _items = rows
             .map(
@@ -422,6 +426,7 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
                 companyId: ref.read(selectedCompanyProvider)?.id ?? 0,
                 documentId: doc.id,
                 product: pById[r.productId],
+                fixedTaxIds: fixedTaxIds,
               ),
             )
             .toList();
@@ -1851,12 +1856,7 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
       ),
       'priceBeforeTax': (item) =>
           Text(_numFmt.format(item.priceBeforeTax), style: ts),
-      'tax': (item) => Text(
-        item.taxRate > 0
-            ? '${item.taxRate.toStringAsFixed(item.taxRate % 1 == 0 ? 0 : 1)}%'
-            : '—',
-        style: ts,
-      ),
+      'tax': (item) => Text(item.taxRateLabel ?? '—', style: ts),
       'price': (item) => Text(_numFmt.format(item.price), style: ts),
       'totalBeforeDiscount': (item) =>
           Text(_numFmt.format(item.price * item.quantity), style: ts),

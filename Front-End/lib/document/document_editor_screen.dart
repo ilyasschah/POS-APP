@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:pos_app/core/ilyass_form.dart';
 import 'package:pos_app/core/responsive.dart';
 import 'package:flutter/material.dart';
+import 'package:pos_app/core/ilyass_dropdown.dart';
 import 'package:pos_app/core/app_date_format.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -14,6 +15,7 @@ import 'package:pos_app/company/company_provider.dart';
 import 'package:pos_app/core/app_date_picker.dart';
 import 'package:pos_app/core/status_colors.dart';
 import 'package:pos_app/document/document_model.dart';
+import 'package:pos_app/document/document_type_constants.dart';
 import 'package:pos_app/customer/customer_provider.dart';
 import 'package:pos_app/auth/auth_provider.dart';
 import 'package:pos_app/stock/warehouse_provider.dart';
@@ -62,6 +64,10 @@ final localDocumentItemsProvider = StreamProvider.autoDispose
     final doc = await db.getDocumentByLocalId(args.docLocalId);
     final isCheckoutDoc =
         doc?.orderNumber != null && doc!.orderNumber!.isNotEmpty;
+    final fixedTaxIds = {
+      for (final t in await db.select(db.taxesTable).get())
+        if (t.isFixed) t.id,
+    };
     return rows
         .map((r) => DocumentItem.fromDrift(
               r,
@@ -69,6 +75,7 @@ final localDocumentItemsProvider = StreamProvider.autoDispose
               companyId: args.companyId,
               documentId: args.docServerId,
               product: pById[r.productId],
+              fixedTaxIds: fixedTaxIds,
             ))
         .toList();
   });
@@ -748,6 +755,8 @@ class _DocumentEditorDialogState extends ConsumerState<_DocumentEditorDialog> {
                   documentId: _savedDocumentId ?? 0,
                   documentLocalId: _savedDocumentLocalId!,
                   companyId: companyId,
+                  documentTypeId: _selectedDocTypeId,
+                  warehouseId: _selectedWarehouseId,
                   onItemsChanged: _syncDocumentTotal,
                   isPurchase: _selectedDocTypeName
                           ?.toLowerCase()
@@ -1252,21 +1261,14 @@ class _HeaderForm extends ConsumerWidget {
                   final isValid =
                       selectedCustomerId == null ||
                       filtered.any((c) => c.id == selectedCustomerId);
-                  return DropdownButtonFormField<int>(
-                    initialValue: isValid ? selectedCustomerId : null,
-                    isExpanded: true,
-                    decoration: deco(
-                      isSupplier ? l.supplierRequired : l.customerRequired,
-                      icon: Icons.business,
-                    ),
-                    items: filtered
-                        .map(
-                          (c) => DropdownMenuItem(
-                            value: c.id,
-                            child: Text(c.name, overflow: TextOverflow.ellipsis),
-                          ),
-                        )
-                        .toList(),
+                  return IlyassDropdown<int>(
+                    value: isValid ? selectedCustomerId : null,
+                    label: isSupplier ? l.supplierRequired : l.customerRequired,
+                    prefixIcon: Icons.business,
+                    items: [
+                      for (final c in filtered)
+                        IlyassDropdownItem(value: c.id, label: c.name),
+                    ],
                     onChanged: onCustomerChanged,
                   );
                 },
@@ -1282,21 +1284,14 @@ class _HeaderForm extends ConsumerWidget {
                       final isValidUser =
                           selectedUserId == null ||
                           users.any((u) => u.id == selectedUserId);
-                      return DropdownButtonFormField<int>(
-                        initialValue: isValidUser ? selectedUserId : null,
-                        isExpanded: true,
-                        decoration: deco(l.userRequired, icon: Icons.person),
-                        items: users
-                            .map(
-                              (u) => DropdownMenuItem(
-                                value: u.id,
-                                child: Text(
-                                  u.displayName,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            )
-                            .toList(),
+                      return IlyassDropdown<int>(
+                        value: isValidUser ? selectedUserId : null,
+                        label: l.userRequired,
+                        prefixIcon: Icons.person,
+                        items: [
+                          for (final u in users)
+                            IlyassDropdownItem(value: u.id, label: u.displayName),
+                        ],
                         onChanged: onUserChanged,
                       );
                     },
@@ -1309,24 +1304,14 @@ class _HeaderForm extends ConsumerWidget {
                       final isValidWH =
                           selectedWarehouseId == null ||
                           warehouses.any((w) => w.id == selectedWarehouseId);
-                      return DropdownButtonFormField<int>(
-                        initialValue: isValidWH ? selectedWarehouseId : null,
-                        isExpanded: true,
-                        decoration: deco(
-                          l.warehouseRequired,
-                          icon: Icons.warehouse_outlined,
-                        ),
-                        items: warehouses
-                            .map(
-                              (w) => DropdownMenuItem(
-                                value: w.id,
-                                child: Text(
-                                  w.name,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            )
-                            .toList(),
+                      return IlyassDropdown<int>(
+                        value: isValidWH ? selectedWarehouseId : null,
+                        label: l.warehouseRequired,
+                        prefixIcon: Icons.warehouse_outlined,
+                        items: [
+                          for (final w in warehouses)
+                            IlyassDropdownItem(value: w.id, label: w.name),
+                        ],
                         onChanged: onWarehouseChanged,
                       );
                     },
@@ -1373,13 +1358,12 @@ class _HeaderForm extends ConsumerWidget {
                       const SizedBox(width: 12),
                       Expanded(
                         flex: 2,
-                        child: DropdownButtonFormField<int>(
-                          initialValue: discountType,
-                          isExpanded: true,
-                          decoration: deco(l.typeLabel),
+                        child: IlyassDropdown<int>(
+                          value: discountType,
+                          label: l.typeLabel,
                           items: [
-                            const DropdownMenuItem(value: 0, child: Text("%")),
-                            DropdownMenuItem(value: 1, child: Text(l.fixed)),
+                            const IlyassDropdownItem(value: 0, label: '%'),
+                            IlyassDropdownItem(value: 1, label: l.fixed),
                           ],
                           onChanged: (v) => onDiscountTypeChanged(v ?? 0),
                         ),
@@ -1467,12 +1451,19 @@ class _ItemsView extends ConsumerWidget {
   final ValueChanged<double> onItemsChanged;
   final bool isPurchase;
 
+  /// What a new line is added to — an inventory count records the stock it
+  /// was counted against, and needs both to look that stock up.
+  final int? documentTypeId;
+  final int? warehouseId;
+
   const _ItemsView({
     required this.documentId,
     required this.documentLocalId,
     required this.companyId,
     required this.onItemsChanged,
     this.isPurchase = false,
+    this.documentTypeId,
+    this.warehouseId,
   });
 
   @override
@@ -1522,6 +1513,8 @@ class _ItemsView extends ConsumerWidget {
                 documentLocalId: documentLocalId,
                 companyId: companyId,
                 isPurchase: isPurchase,
+                documentTypeId: documentTypeId,
+                warehouseId: warehouseId,
               ),
             );
           },
@@ -1699,11 +1692,7 @@ class _ItemsTable extends ConsumerWidget {
                           ? '${item.discount.toStringAsFixed(item.discount % 1 == 0 ? 0 : 2)}%'
                           : '${item.discount.toStringAsFixed(2)} $sym',
                 ),
-                figure(
-                  item.taxRate > 0
-                      ? '${item.taxRate.toStringAsFixed(item.taxRate % 1 == 0 ? 0 : 1)}%'
-                      : '—',
-                ),
+                figure(item.taxRateLabel ?? '—'),
                 figure(item.priceBeforeTaxAfterDiscount.toStringAsFixed(2)),
                 figure(
                   item.totalWithTax.toStringAsFixed(2),
@@ -1852,10 +1841,14 @@ class _AddItemDialog extends ConsumerStatefulWidget {
   final String documentLocalId;
   final int companyId;
   final bool isPurchase;
+  final int? documentTypeId;
+  final int? warehouseId;
   const _AddItemDialog({
     required this.documentLocalId,
     required this.companyId,
     this.isPurchase = false,
+    this.documentTypeId,
+    this.warehouseId,
   });
 
   @override
@@ -1871,6 +1864,7 @@ class _AddItemDialogState extends ConsumerState<_AddItemDialog> {
   int _discountType = 0;
   int? _selectedTaxId;
   double _selectedTaxRate = 0;
+  bool _selectedTaxIsFixed = false;
   DateTime? _expirationDate;
   bool _isLoading = false;
   String? _errorMessage;
@@ -1885,12 +1879,20 @@ class _AddItemDialogState extends ConsumerState<_AddItemDialog> {
   }
 
   double get _pbt => double.tryParse(_priceCtrl.text) ?? 0;
-  double get _price => _pbt * (1 + _selectedTaxRate / 100);
   double get _disc => double.tryParse(_discountCtrl.text) ?? 0;
   double get _qty => double.tryParse(_qtyCtrl.text) ?? 1;
-  double get _discountTaxed =>
-      _discountType == 0 ? _price * (_disc / 100) : _disc;
-  double get _total => (_price - _discountTaxed) * _qty;
+  ({double unitPrice, double unitDiscount, double total}) get _money =>
+      editorLineMoney(
+        priceBeforeTax: _pbt,
+        quantity: _qty,
+        discount: _disc,
+        discountType: _discountType,
+        taxRate: _selectedTaxRate,
+        taxIsFixed: _selectedTaxIsFixed,
+      );
+  double get _price => _money.unitPrice;
+  double get _discountTaxed => _money.unitDiscount;
+  double get _total => _money.total;
 
   Future<void> _submit() async {
     final l = AppLocalizations.of(context);
@@ -1905,6 +1907,18 @@ class _AddItemDialogState extends ConsumerState<_AddItemDialog> {
     try {
       final db = ref.read(appDatabaseProvider);
       final itemLocalId = const Uuid().v4();
+      // An inventory count records the stock it was counted against, read NOW
+      // — before anything else moves it — so the Stock Moves history can show
+      // the variance (counted − expected) instead of taking the whole count
+      // for goods received. Every other line leaves it null: it expects exactly
+      // what it carries.
+      final expected = widget.documentTypeId == DocumentTypes.inventoryCount &&
+              widget.warehouseId != null
+          ? await db.stockOnHandInProductUnit(
+              productId: _selectedProductId!,
+              warehouseId: widget.warehouseId!,
+            )
+          : null;
       // Offline-first: write the line item to local SQLite. The selected tax +
       // expiration travel on the row and SyncManager pushes them to
       // /DocumentItems(+Taxes/+ExpirationDates) on the next sync.
@@ -1914,6 +1928,7 @@ class _AddItemDialogState extends ConsumerState<_AddItemDialog> {
               documentId: Value(widget.documentLocalId),
               productId: Value(_selectedProductId!),
               quantity: Value(_qty),
+              expectedQuantity: Value(expected),
               unitPrice: Value(_price),
               priceBeforeTax: Value(_pbt),
               discount: Value(_disc),
@@ -2022,23 +2037,17 @@ class _AddItemDialogState extends ConsumerState<_AddItemDialog> {
               asyncProducts.when(
                 loading: () => const CircularProgressIndicator(),
                 error: (e, _) => Text(AppLocalizations.of(context).errorWithMessage(e.toString())),
-                data: (products) => DropdownButtonFormField<int>(
-                  initialValue: _selectedProductId,
-                  decoration: InputDecoration(
-                    labelText: AppLocalizations.of(context).productRequired,
-                    border: const OutlineInputBorder(),
-                  ),
-                  items: products
-                      .map(
-                        (p) => DropdownMenuItem(
-                          value: p.id,
-                          child: Text(
+                data: (products) => IlyassDropdown<int>(
+                  value: _selectedProductId,
+                  label: AppLocalizations.of(context).productRequired,
+                  items: [
+                    for (final p in products)
+                      IlyassDropdownItem(
+                        value: p.id,
+                        label:
                             "${p.name}${p.code != null ? ' (${p.code})' : ''}",
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      )
-                      .toList(),
+                      ),
+                  ],
                   onChanged: (v) {
                     final p = products.firstWhere((prod) => prod.id == v);
                     setState(() {
@@ -2086,31 +2095,27 @@ class _AddItemDialogState extends ConsumerState<_AddItemDialog> {
                 error: (_, __) => const SizedBox.shrink(),
                 data: (taxes) {
                   final enabled = taxes.where((t) => t.isEnabled).toList();
-                  return DropdownButtonFormField<int>(
-                    initialValue: _selectedTaxId,
-                    decoration: InputDecoration(
-                      labelText: AppLocalizations.of(context).taxOptional,
-                      border: const OutlineInputBorder(),
-                    ),
+                  return IlyassDropdown<int?>(
+                    value: _selectedTaxId,
+                    label: AppLocalizations.of(context).taxOptional,
                     items: [
-                      DropdownMenuItem<int>(
+                      IlyassDropdownItem<int?>(
                         value: null,
-                        child: Text(AppLocalizations.of(context).noneLabel),
+                        label: AppLocalizations.of(context).noneLabel,
                       ),
-                      ...enabled.map(
-                        (t) => DropdownMenuItem(
+                      for (final t in enabled)
+                        IlyassDropdownItem<int?>(
                           value: t.id,
-                          child: Text("${t.name} (${t.rate}%)"),
+                          label: "${t.name} (${t.rate}${t.isFixed ? '' : '%'})",
                         ),
-                      ),
                     ],
                     onChanged: (v) {
-                      final rate = v == null
-                          ? 0.0
-                          : (taxes.firstWhere((t) => t.id == v).rate);
+                      final tax =
+                          v == null ? null : taxes.firstWhere((t) => t.id == v);
                       setState(() {
                         _selectedTaxId = v;
-                        _selectedTaxRate = rate;
+                        _selectedTaxRate = tax?.rate ?? 0.0;
+                        _selectedTaxIsFixed = tax?.isFixed ?? false;
                       });
                     },
                   );
@@ -2134,14 +2139,14 @@ class _AddItemDialogState extends ConsumerState<_AddItemDialog> {
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: DropdownButtonFormField<int>(
-                      initialValue: _discountType,
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
-                      ),
+                    child: IlyassDropdown<int>(
+                      value: _discountType,
                       items: [
-                        const DropdownMenuItem(value: 0, child: Text("%")),
-                        DropdownMenuItem(value: 1, child: Text(AppLocalizations.of(context).fixed)),
+                        const IlyassDropdownItem(value: 0, label: '%'),
+                        IlyassDropdownItem(
+                          value: 1,
+                          label: AppLocalizations.of(context).fixed,
+                        ),
                       ],
                       onChanged: (v) => setState(() => _discountType = v ?? 0),
                     ),
@@ -2271,6 +2276,7 @@ class _EditItemDialogState extends ConsumerState<_EditItemDialog> {
 
   int? _selectedTaxId;
   double _selectedTaxRate = 0;
+  bool _selectedTaxIsFixed = false;
   bool _taxResolved = false; // one-time taxId recovery from rate (older rows)
 
   @override
@@ -2286,6 +2292,7 @@ class _EditItemDialogState extends ConsumerState<_EditItemDialog> {
     _discountType = widget.item.discountType;
     _selectedTaxId = widget.item.taxId;
     _selectedTaxRate = widget.item.taxRate;
+    _selectedTaxIsFixed = widget.item.taxIsFixed;
     _expirationDate = widget.item.expirationDate;
     // Display only — the field is `readOnly` and the real value lives in
     // `_expirationDate`, so this can follow the company's date format without
@@ -2308,12 +2315,21 @@ class _EditItemDialogState extends ConsumerState<_EditItemDialog> {
 
   double get _pbt =>
       double.tryParse(_priceCtrl.text) ?? widget.item.priceBeforeTax;
-  double get _price => _pbt * (1 + _selectedTaxRate / 100);
   double get _qty => double.tryParse(_qtyCtrl.text) ?? widget.item.quantity;
   double get _disc =>
       double.tryParse(_discountCtrl.text) ?? widget.item.discount;
-  double get _discTaxed => _discountType == 0 ? _price * (_disc / 100) : _disc;
-  double get _total => (_price - _discTaxed) * _qty;
+  ({double unitPrice, double unitDiscount, double total}) get _money =>
+      editorLineMoney(
+        priceBeforeTax: _pbt,
+        quantity: _qty,
+        discount: _disc,
+        discountType: _discountType,
+        taxRate: _selectedTaxRate,
+        taxIsFixed: _selectedTaxIsFixed,
+      );
+  double get _price => _money.unitPrice;
+  double get _discTaxed => _money.unitDiscount;
+  double get _total => _money.total;
 
   Future<void> _submit() async {
     final l = AppLocalizations.of(context);
@@ -2438,14 +2454,14 @@ class _EditItemDialogState extends ConsumerState<_EditItemDialog> {
                         ),
                         const SizedBox(width: 12),
                         Expanded(
-                          child: DropdownButtonFormField<int>(
-                            initialValue: _discountType,
-                            decoration: const InputDecoration(
-                              border: OutlineInputBorder(),
-                            ),
+                          child: IlyassDropdown<int>(
+                            value: _discountType,
                             items: [
-                              const DropdownMenuItem(value: 0, child: Text("%")),
-                              DropdownMenuItem(value: 1, child: Text(AppLocalizations.of(context).fixed)),
+                              const IlyassDropdownItem(value: 0, label: '%'),
+                              IlyassDropdownItem(
+                                value: 1,
+                                label: AppLocalizations.of(context).fixed,
+                              ),
                             ],
                             onChanged: (v) =>
                                 setState(() => _discountType = v ?? 0),
@@ -2558,10 +2574,13 @@ class _EditItemDialogState extends ConsumerState<_EditItemDialog> {
                           _selectedTaxId == null &&
                           _selectedTaxRate > 0) {
                         _taxResolved = true;
+                        // Percentage taxes only: the rate these rows carry was
+                        // derived as tax over base, which a fixed tax never is.
                         final match = taxes
                             .where((t) =>
+                                !t.isFixed &&
                                 (t.rate.toDouble() - _selectedTaxRate).abs() <
-                                0.01)
+                                    0.01)
                             .firstOrNull;
                         if (match != null) {
                           WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -2571,37 +2590,28 @@ class _EditItemDialogState extends ConsumerState<_EditItemDialog> {
                           });
                         }
                       }
-                      return DropdownButtonFormField<int?>(
-                      initialValue: _selectedTaxId,
-                      isExpanded: true,
-                      decoration: InputDecoration(
-                        labelText: AppLocalizations.of(context).fieldTax,
-                        border: const OutlineInputBorder(),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
-                        ),
-                      ),
+                      return IlyassDropdown<int?>(
+                      value: _selectedTaxId,
+                      label: AppLocalizations.of(context).fieldTax,
+                      dense: true,
                       items: [
-                        DropdownMenuItem<int?>(
+                        IlyassDropdownItem<int?>(
                           value: null,
-                          child: Text(AppLocalizations.of(context).noTaxShort),
+                          label: AppLocalizations.of(context).noTaxShort,
                         ),
-                        ...taxes.map(
-                          (t) => DropdownMenuItem<int?>(
+                        for (final t in taxes)
+                          IlyassDropdownItem<int?>(
                             value: t.id,
-                            child: Text("${t.name} (${t.rate}%)"),
+                            label: "${t.name} (${t.rate}${t.isFixed ? '' : '%'})",
                           ),
-                        ),
                       ],
                       onChanged: (v) => setState(() {
+                        final tax = v == null
+                            ? null
+                            : taxes.firstWhere((t) => t.id == v);
                         _selectedTaxId = v;
-                        _selectedTaxRate = v == null
-                            ? 0
-                            : taxes
-                                .firstWhere((t) => t.id == v)
-                                .rate
-                                .toDouble();
+                        _selectedTaxRate = tax?.rate.toDouble() ?? 0;
+                        _selectedTaxIsFixed = tax?.isFixed ?? false;
                       }),
                       );
                     },
@@ -3263,18 +3273,13 @@ class _AddPaymentDialogState extends ConsumerState<_AddPaymentDialog> {
                 if (_selectedPaymentTypeId == null && types.isNotEmpty) {
                   _selectedPaymentTypeId = types.first.id;
                 }
-                return DropdownButtonFormField<int>(
-                  initialValue: _selectedPaymentTypeId,
-                  decoration: InputDecoration(
-                    labelText: AppLocalizations.of(context).paymentType,
-                    border: const OutlineInputBorder(),
-                  ),
-                  items: types
-                      .map(
-                        (t) =>
-                            DropdownMenuItem(value: t.id, child: Text(t.name)),
-                      )
-                      .toList(),
+                return IlyassDropdown<int>(
+                  value: _selectedPaymentTypeId,
+                  label: AppLocalizations.of(context).paymentType,
+                  items: [
+                    for (final t in types)
+                      IlyassDropdownItem(value: t.id, label: t.name),
+                  ],
                   onChanged: (v) => setState(() => _selectedPaymentTypeId = v),
                 );
               },

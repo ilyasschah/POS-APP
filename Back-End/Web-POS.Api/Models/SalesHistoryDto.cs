@@ -85,6 +85,14 @@ namespace Api.Models
         public int Id { get; set; }
         public int ProductId { get; set; }
         public decimal Quantity { get; set; }
+
+        /// <summary>
+        /// On an Inventory Count line, the stock the system held when the count
+        /// was taken — so Quantity − ExpectedQuantity is the variance the
+        /// offline Stock Moves history shows. Every other line carries its own
+        /// Quantity here. Before 2026-09-12 count lines carried Quantity too.
+        /// </summary>
+        public decimal ExpectedQuantity { get; set; }
         public decimal UnitPrice { get; set; }
         public decimal Discount { get; set; }
         public int DiscountType { get; set; }

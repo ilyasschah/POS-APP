@@ -141,8 +141,8 @@ by the real rows:
 
 ```dart
 items: [
-  DropdownMenuItem(value: null, child: Text(l10n.noTax)),   // <- index 0
-  ...enabled.map((t) => DropdownMenuItem(value: t.id, ...)),
+  IlyassDropdownItem(value: null, label: l10n.noTax),       // <- index 0
+  for (final t in enabled) IlyassDropdownItem(value: t.id, ...),
 ]
 ```
 
@@ -745,10 +745,13 @@ test that depends on a real customer fails where the problem is.
 Every one of these passed on the first run and failed later, which is the
 expensive kind.
 
-**1 · `find.byType` and generics.** `DropdownButtonFormField` is generic —
-`<int?>` for a group, `<String>` for a setting — and `find.byType` compares the
-*exact* runtime type, so `find.byType(DropdownButtonFormField<Object?>)` matches
-nothing at all. Quietly. Use `anyDropdownField` (a name-based predicate).
+**1 · `find.byType` and generics.** `IlyassDropdown` (the app's one dropdown)
+is generic — `<int?>` for a group, `<String>` for a setting — and `find.byType`
+compares the *exact* runtime type, so `find.byType(IlyassDropdown<Object?>)`
+matches nothing at all. Quietly. Use `anyDropdownField` (a name-based
+predicate). And never check a selection by searching for its text *inside* the
+dropdown: a Material 3 dropdown keeps every option's label in its subtree, so
+that check passes whatever is selected. Read it back with `dropdownSelection`.
 
 **2 · Two shapes of "labelled dropdown".** Tax and settings put the caption in
 the field's own `labelText`, so the Text really is *inside* the dropdown. The

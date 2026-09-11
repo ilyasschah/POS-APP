@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
+import 'package:pos_app/core/ilyass_dropdown.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -1242,15 +1243,14 @@ class _DetailsTab extends StatelessWidget {
                     .where((g) =>
                         existingGroupId == null || g.id != existingGroupId)
                     .toList();
-                return DropdownButtonFormField<int?>(
-                  initialValue: selectedParentId,
-                  decoration: _inputDecoration(context, null),
+                return IlyassDropdown<int?>(
+                  value: selectedParentId,
                   items: [
-                    DropdownMenuItem(
+                    IlyassDropdownItem<int?>(
                         value: null,
-                        child: Text(AppLocalizations.of(context).noneRoot)),
-                    ...validParents.map((g) => DropdownMenuItem(
-                        value: g.id, child: Text(g.name))),
+                        label: AppLocalizations.of(context).noneRoot),
+                    for (final g in validParents)
+                      IlyassDropdownItem<int?>(value: g.id, label: g.name),
                   ],
                   onChanged: onParentChanged,
                 );

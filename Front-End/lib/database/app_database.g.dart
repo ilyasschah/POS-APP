@@ -39746,6 +39746,18 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     'idx_pos_order_item_taxes_order_id',
     'CREATE INDEX idx_pos_order_item_taxes_order_id ON pos_order_item_taxes (order_id)',
   );
+  late final Index idxDocumentsCompanyMoveDate = Index(
+    'idx_documents_company_move_date',
+    'CREATE INDEX idx_documents_company_move_date ON documents (company_id, COALESCE(stock_date, date))',
+  );
+  late final Index idxDocumentItemsDocumentId = Index(
+    'idx_document_items_document_id',
+    'CREATE INDEX idx_document_items_document_id ON document_items (document_id)',
+  );
+  late final Index idxDocumentItemsProductId = Index(
+    'idx_document_items_product_id',
+    'CREATE INDEX idx_document_items_product_id ON document_items (product_id)',
+  );
   late final Index idxCustomerDiscountsCustomerId = Index(
     'idx_customer_discounts_customer_id',
     'CREATE INDEX idx_customer_discounts_customer_id ON customer_discounts (customer_id)',
@@ -39843,6 +39855,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     idxPosOrdersStatus,
     idxPosOrderItemsOrderId,
     idxPosOrderItemTaxesOrderId,
+    idxDocumentsCompanyMoveDate,
+    idxDocumentItemsDocumentId,
+    idxDocumentItemsProductId,
     idxCustomerDiscountsCustomerId,
     idxLoyaltyCardsCustomerId,
     idxLoyaltyCardsSyncStatus,

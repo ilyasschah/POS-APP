@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pos_app/core/ilyass_dropdown.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pos_app/api/promotion_models.dart';
@@ -236,12 +237,12 @@ class _PromotionItemEditDialogState extends State<_PromotionItemEditDialog> {
               decoration: InputDecoration(labelText: AppLocalizations.of(context).discountValue),
               keyboardType: TextInputType.number,
             ),
-            DropdownButtonFormField<int>(
-              initialValue: _discountType,
-              decoration: InputDecoration(labelText: AppLocalizations.of(context).discountType),
+            IlyassDropdown<int>(
+              value: _discountType,
+              label: AppLocalizations.of(context).discountType,
               items: [
-                DropdownMenuItem(value: 0, child: Text(AppLocalizations.of(context).percentageSign)),
-                DropdownMenuItem(value: 1, child: Text(AppLocalizations.of(context).fixedAmountSymLabel('\$'))),
+                IlyassDropdownItem(value: 0, label: AppLocalizations.of(context).percentageSign),
+                IlyassDropdownItem(value: 1, label: AppLocalizations.of(context).fixedAmountSymLabel('\$')),
               ],
               onChanged: (v) => setState(() => _discountType = v!),
             ),

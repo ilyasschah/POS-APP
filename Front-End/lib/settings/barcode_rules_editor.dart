@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pos_app/core/ilyass_dropdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pos_app/api/api_client.dart';
 import 'package:pos_app/barcode/nomenclature/barcode_matcher.dart';
@@ -272,17 +273,13 @@ class _RuleRow extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             flex: 3,
-            child: DropdownButtonFormField<BarcodeRuleType>(
-              initialValue: rule.type,
-              isExpanded: true,
-              decoration: const InputDecoration(isDense: true),
-              items: BarcodeRuleType.values
-                  .map((t) => DropdownMenuItem(
-                        value: t,
-                        child: Text(_typeLabel(t, l10n),
-                            overflow: TextOverflow.ellipsis),
-                      ))
-                  .toList(),
+            child: IlyassDropdown<BarcodeRuleType>(
+              value: rule.type,
+              dense: true,
+              items: [
+                for (final t in BarcodeRuleType.values)
+                  IlyassDropdownItem(value: t, label: _typeLabel(t, l10n)),
+              ],
               onChanged: (v) =>
                   v == null ? null : onChanged(rule.copyWith(type: v)),
             ),
@@ -290,17 +287,13 @@ class _RuleRow extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             flex: 2,
-            child: DropdownButtonFormField<BarcodeEncoding>(
-              initialValue: rule.encoding,
-              isExpanded: true,
-              decoration: const InputDecoration(isDense: true),
-              items: BarcodeEncoding.values
-                  .map((e) => DropdownMenuItem(
-                        value: e,
-                        child: Text(encodingLabel(e),
-                            overflow: TextOverflow.ellipsis),
-                      ))
-                  .toList(),
+            child: IlyassDropdown<BarcodeEncoding>(
+              value: rule.encoding,
+              dense: true,
+              items: [
+                for (final e in BarcodeEncoding.values)
+                  IlyassDropdownItem(value: e, label: encodingLabel(e)),
+              ],
               onChanged: (v) =>
                   v == null ? null : onChanged(rule.copyWith(encoding: v)),
             ),
