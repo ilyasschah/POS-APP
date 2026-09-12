@@ -343,7 +343,7 @@ class _EndOfDayScreenState extends ConsumerState<EndOfDayScreen> {
               // the default tag is a shared constant.
               heroTag: 'eod-close-register',
               backgroundColor: context.dangerColor,
-              foregroundColor: context.onStatusColor,
+              foregroundColor: context.onDangerColor,
               onPressed:
                   _isGenerating ? null : () => _closeRegister(unreported),
               icon: _isGenerating
@@ -352,7 +352,7 @@ class _EndOfDayScreenState extends ConsumerState<EndOfDayScreen> {
                       height: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: context.onStatusColor,
+                        color: context.onDangerColor,
                       ),
                     )
                   : const Icon(Icons.lock_clock),
@@ -654,7 +654,7 @@ class _CloseRegisterSheet extends ConsumerWidget {
         ElevatedButton.icon(
           style: ElevatedButton.styleFrom(
             backgroundColor: context.dangerColor,
-            foregroundColor: context.onStatusColor,
+            foregroundColor: context.onDangerColor,
           ),
           icon: const Icon(Icons.lock_clock, size: 18),
           label: Text(l.closeRegister),

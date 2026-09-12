@@ -164,7 +164,7 @@ class WarehousesScreen extends ConsumerWidget {
               style: ElevatedButton.styleFrom(backgroundColor: ctx.dangerColor),
               onPressed: () => Navigator.pop(ctx, true),
               child:
-                  Text(AppLocalizations.of(context).actionDelete, style: TextStyle(color: ctx.onStatusColor)),
+                  Text(AppLocalizations.of(context).actionDelete, style: TextStyle(color: ctx.onDangerColor)),
             ),
           ],
         ),

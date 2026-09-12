@@ -27,6 +27,7 @@ import 'package:pos_app/product/product_group_service.dart';
 import 'package:pos_app/product/product_import_screen.dart';
 import 'package:pos_app/product/product_model.dart';
 import 'package:pos_app/product/product_provider.dart';
+import 'package:pos_app/product/product_visuals.dart';
 import 'package:pos_app/utils/api_error_parser.dart';
 import 'package:pos_app/utils/snackbar_helper.dart';
 
@@ -392,7 +393,7 @@ class _ProductGroupsScreenState extends ConsumerState<ProductGroupsScreen> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: c.dangerColor,
-              foregroundColor: c.onStatusColor,
+              foregroundColor: c.onDangerColor,
             ),
             onPressed: () => Navigator.pop(c, true),
             child: Text(l10n.actionDelete),
@@ -1418,6 +1419,40 @@ class _DetailsTab extends StatelessWidget {
 // ---------------------------------------------------------------------------
 // Products assignment tab
 // ---------------------------------------------------------------------------
+
+/// A product's glyph in the assignment list — food or service, as everywhere
+/// else — tinted by whether the product is enabled.
+class _ProductGlyph extends StatelessWidget {
+  const _ProductGlyph({required this.isService, required this.enabled});
+
+  final bool isService;
+  final bool enabled;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tint = enabled ? cs.primary : cs.outline;
+    return Tooltip(
+      message: enabled
+          ? AppLocalizations.of(context).statusEnabled
+          : AppLocalizations.of(context).statusDisabled,
+      child: Container(
+        width: 32,
+        height: 32,
+        decoration: BoxDecoration(
+          color: tint.withValues(alpha: enabled ? 0.14 : 0.10),
+          borderRadius: BorderRadius.circular(9),
+        ),
+        child: Icon(
+          productPlaceholderIcon(isService: isService),
+          size: 17,
+          color: enabled ? tint : tint.withValues(alpha: 0.6),
+        ),
+      ),
+    );
+  }
+}
+
 class _ProductsTab extends StatelessWidget {
   final int groupId;
   final AsyncValue allProductsAsync;
@@ -1499,15 +1534,13 @@ class _ProductsTab extends StatelessWidget {
                         ? Text(product.code as String,
                             style: theme.textTheme.bodySmall)
                         : null,
-                    secondary: Container(
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: (product.isEnabled as bool)
-                            ? context.successColor
-                            : theme.colorScheme.outline,
-                        shape: BoxShape.circle,
-                      ),
+                    // The food / service glyph every product list uses, in
+                    // place of a bare dot. It keeps the dot's one job: an
+                    // enabled product is tinted in the accent, a disabled one
+                    // is faded.
+                    secondary: _ProductGlyph(
+                      isService: product.isService as bool? ?? false,
+                      enabled: product.isEnabled as bool? ?? true,
                     ),
                     onChanged: (val) =>
                         onToggle(product.id as int, val ?? false),
@@ -1535,11 +1568,13 @@ class _ProductsTab extends StatelessWidget {
             child: FilledButton.icon(
               onPressed: isLoading ? null : onSave,
               icon: isLoading
-                  ? const SizedBox(
+                  // Disabled while saving: the neutral fill, not the accent.
+                  ? SizedBox(
                       width: 16,
                       height: 16,
                       child: CircularProgressIndicator(
-                          strokeWidth: 2, color: Colors.white))
+                          strokeWidth: 2,
+                          color: theme.colorScheme.onSurfaceVariant))
                   : const Icon(Icons.save),
               label: Text(AppLocalizations.of(context)
                   .saveAssignmentsCount(assignedIds.length)),

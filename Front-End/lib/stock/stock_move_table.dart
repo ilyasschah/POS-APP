@@ -6,6 +6,7 @@ import 'package:pos_app/core/status_colors.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:pos_app/stock/stock_move_labels.dart';
 import 'package:pos_app/stock/stock_move_line.dart';
+import 'package:pos_app/product/product_visuals.dart';
 import 'package:pos_app/stock/stock_moves_columns.dart';
 import 'package:pos_app/uom/unit_of_measure.dart';
 
@@ -45,8 +46,26 @@ List<IlyassColumn<StockMoveLine>> stockMoveTableColumns(
       label: stockMoveColumnLabel(l, 'product'),
       width: 220,
       flexible: true,
-      cell: (context, m) => Text(stockMoveProductLabel(m),
-          maxLines: 1, overflow: TextOverflow.ellipsis),
+      cell: (context, m) => Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // The glyph, never the photo — moves are read by name. And always
+          // the PRODUCT glyph: the history query leaves services out, since
+          // they move no goods (`COALESCE(p.is_service, 0) = 0`).
+          CircleAvatar(
+            radius: 12,
+            child: Icon(productPlaceholderIcon(isService: false), size: 13),
+          ),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              stockMoveProductLabel(m),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
     ),
     IlyassColumn<StockMoveLine>(
       key: 'from',

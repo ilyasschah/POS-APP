@@ -19,11 +19,37 @@ import 'package:pos_app/core/device_theme_mode_provider.dart';
 ///
 /// It measures **3.06:1** on white. That is over the WCAG bar for a large
 /// graphic shape and UNDER it for text, which is the opposite of the red it
-/// replaced, and it is why [buildAppTheme] never paints with this value raw:
-/// every mode here hands it to `ColorScheme.fromSeed`, which generates the
-/// darker `primary` that small text and filled buttons actually use. The one
-/// mode that does paint raw — `gray` — runs it through [_liftOnto] first.
+/// replaced, and it is why [buildAppTheme] never paints with this value raw on
+/// a light ground: [_solidAccent] darkens it (same hue) until small text in it
+/// clears 4.5:1. On the dark grounds it already clears, and paints as-is.
 const Color kBrandAccent = Color(0xFF389DCB);
+
+/// The accent swatches — ONE list, read by both the Settings picker and the
+/// onboarding picker, so the two cannot drift apart again.
+///
+/// Brand first, on purpose: it is what the client defaults and the server seed
+/// a new company with. It was once missing from the onboarding list, so anyone
+/// who touched that picker moved the app AWAY from its own branding with no
+/// way back. The rest are spread round the colour wheel, and in lightness, so
+/// no two read as the same colour once applied (see [_solidAccent]). `name` is
+/// a stable key the pickers translate — never shown raw.
+const List<({String name, Color color})> kAccentPalette = [
+  (name: 'Sky', color: kBrandAccent),
+  (name: 'Blue', color: Color(0xFF2563EB)),
+  (name: 'Teal', color: Color(0xFF00897B)),
+  (name: 'Green', color: Color(0xFF43A047)),
+  (name: 'Gold', color: Color(0xFFF9A825)),
+  (name: 'Orange', color: Color(0xFFEF6C00)),
+  (name: 'Red', color: Color(0xFFD32F2F)),
+  (name: 'Pink', color: Color(0xFFD81B60)),
+  (name: 'Purple', color: Color(0xFF8E24AA)),
+  (name: 'Brown', color: Color(0xFF6D4C41)),
+  (name: 'Slate', color: Color(0xFF546E7A)),
+];
+
+/// `#RRGGBB` for [color] — the form the accent settings store.
+String accentHex(Color color) =>
+    '#${(color.toARGB32() & 0xFFFFFF).toRadixString(16).padLeft(6, '0').toUpperCase()}';
 
 /// Matches exactly six hex digits — a full `RRGGBB`, nothing shorter.
 final RegExp _sixHexDigits = RegExp(r'^[0-9a-fA-F]{6}$');
@@ -60,29 +86,49 @@ double _contrastBetween(Color a, Color b) {
   return (hi + 0.05) / (lo + 0.05);
 }
 
-/// Lightens [colour] until it is actually VISIBLE on [background].
+/// The operator's accent kept SOLID: their hue and saturation, with only the
+/// lightness moved — darker on a light ground, lighter on a dark one — until it
+/// clears [target] against every one of [grounds].
 ///
-/// The gray theme paints with the accent raw, which is its whole character —
-/// grey everything, one colour showing through undiluted. That works for a
-/// light accent and fails silently for a dark one: the brand blue measures
-/// 5.69:1 on the gray ground and needs no help, while the blood red it
-/// replaced measured **2.25:1** and all but vanished. An operator can still
-/// pick a dark accent of their own, so the lift stays.
+/// Every mode used to hand the accent to `ColorScheme.fromSeed`, whose tonal
+/// palette caps the primary's chroma at 36. That is what made a picked red come
+/// out brick in the light theme and pastel pink in the dark ones — the same
+/// pink the Pink swatch became — so the warm accents all looked alike and none
+/// looked like its swatch. Hue is what the operator picked; lightness is what
+/// the theme has to be able to move.
 ///
-/// Lifting the lightness keeps the operator's hue and saturation — it is still
-/// recognisably their colour — while making it something you can see. Hue is
-/// what they picked; luminance is what the theme has to be able to move.
-Color _liftOnto(Color colour, Color background, double target) {
-  if (_contrastBetween(colour, background) >= target) return colour;
-  final hsl = HSLColor.fromColor(colour);
-  for (var l = hsl.lightness; l <= 1.0; l += 0.02) {
+/// The gray theme has always painted this way (grey everything, one colour
+/// showing through undiluted): the blood red the brand once used measured
+/// **2.25:1** on the gray ground and all but vanished until it was lifted.
+Color _solidAccent(Color seed, List<Color> grounds, double target) {
+  bool clears(Color c) =>
+      grounds.every((g) => _contrastBetween(c, g) >= target);
+  if (clears(seed)) return seed;
+  final hsl = HSLColor.fromColor(seed);
+  final step = grounds.first.computeLuminance() > 0.18 ? -0.02 : 0.02;
+  for (var l = hsl.lightness + step; l >= 0 && l <= 1; l += step) {
     final candidate = hsl.withLightness(l).toColor();
-    if (_contrastBetween(candidate, background) >= target) return candidate;
+    if (clears(candidate)) return candidate;
   }
-  return Colors.white;
+  return step < 0 ? Colors.black : Colors.white;
 }
 
-Color _readableOn(Color background) {
+/// [cs] with its primary replaced by the solid accent. 4.5 so the accent can
+/// carry small text (links, text buttons) on the grounds it sits on, not just
+/// shapes. `copyWith(primary:)` does not move `onPrimary`, so it is re-derived
+/// here, and `surfaceTint` follows so elevated surfaces tint to the same hue.
+ColorScheme _withSolidAccent(ColorScheme cs, Color seed, List<Color> grounds) {
+  final accent = _solidAccent(seed, grounds, 4.5);
+  return cs.copyWith(
+    primary: accent,
+    onPrimary: readableOn(accent),
+    surfaceTint: accent,
+  );
+}
+
+/// Black or white, whichever contrasts more with [background] (WCAG). The
+/// better of the two always clears 4.5:1, whatever the background.
+Color readableOn(Color background) {
   final l = background.computeLuminance();
   final whiteRatio = 1.05 / (l + 0.05);
   final blackRatio = (l + 0.05) / 0.05;
@@ -118,30 +164,33 @@ ThemeData _withHouseMenus(ThemeData theme) {
 ThemeData _buildBaseTheme(String mode, Color seed) {
   switch (mode) {
     case 'light':
+      final cs = ColorScheme.fromSeed(
+        seedColor: seed,
+        brightness: Brightness.light,
+      );
+      // No scaffold override: Material 3 grounds the page on `surface`.
       return ThemeData(
         useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: seed,
-          brightness: Brightness.light,
-        ),
+        colorScheme: _withSolidAccent(cs, seed, [cs.surface]),
       );
 
     case 'dimmed':
+      const ground = Color(0xFF15202B);
       final cs = ColorScheme.fromSeed(
         seedColor: seed,
         brightness: Brightness.dark,
+      ).copyWith(
+        surface: const Color(0xFF1C2333),
+        surfaceContainerLowest: const Color(0xFF111927),
+        surfaceContainerLow: const Color(0xFF1A2030),
+        surfaceContainer: const Color(0xFF202736),
+        surfaceContainerHigh: const Color(0xFF263040),
+        surfaceContainerHighest: const Color(0xFF283045),
       );
       return ThemeData(
         useMaterial3: true,
-        colorScheme: cs.copyWith(
-          surface: const Color(0xFF1C2333),
-          surfaceContainerLowest: const Color(0xFF111927),
-          surfaceContainerLow: const Color(0xFF1A2030),
-          surfaceContainer: const Color(0xFF202736),
-          surfaceContainerHigh: const Color(0xFF263040),
-          surfaceContainerHighest: const Color(0xFF283045),
-        ),
-        scaffoldBackgroundColor: const Color(0xFF15202B),
+        colorScheme: _withSolidAccent(cs, seed, [cs.surface, ground]),
+        scaffoldBackgroundColor: ground,
         cardColor: const Color(0xFF1C2333),
       );
 
@@ -149,39 +198,35 @@ ThemeData _buildBaseTheme(String mode, Color seed) {
       final cs = ColorScheme.fromSeed(
         seedColor: seed,
         brightness: Brightness.dark,
+      ).copyWith(
+        surface: const Color(0xFF080808),
+        surfaceContainerLowest: Colors.black,
+        surfaceContainerLow: const Color(0xFF0D0D0D),
+        surfaceContainer: const Color(0xFF111111),
+        surfaceContainerHigh: const Color(0xFF161616),
+        surfaceContainerHighest: const Color(0xFF1C1C1C),
+        onSurface: Colors.white,
+        onSurfaceVariant: const Color(0xFFCCCCCC),
       );
       return ThemeData(
         useMaterial3: true,
-        colorScheme: cs.copyWith(
-          surface: const Color(0xFF080808),
-          surfaceContainerLowest: Colors.black,
-          surfaceContainerLow: const Color(0xFF0D0D0D),
-          surfaceContainer: const Color(0xFF111111),
-          surfaceContainerHigh: const Color(0xFF161616),
-          surfaceContainerHighest: const Color(0xFF1C1C1C),
-          onSurface: Colors.white,
-          onSurfaceVariant: const Color(0xFFCCCCCC),
-        ),
+        colorScheme: _withSolidAccent(cs, seed, [cs.surface, Colors.black]),
         scaffoldBackgroundColor: Colors.black,
         cardColor: const Color(0xFF0D0D0D),
       );
 
     case 'gray':
-      // Grey neutrals with the accent showing through RAW — that is the whole
-      // point of this mode, so `primary` stays the seed rather than the tone
-      // Material would generate from it.
-      //
-      // But `copyWith(primary:)` does not update `onPrimary`, so the label on
-      // an accent-filled button kept the GREY scheme's partner: a dark teal
-      // that measured 3.90:1 against the coral shipped at the time, under the
-      // 4.5:1 AA bar. The partner has to be derived from the accent in force.
+      // Grey neutrals with the accent showing through — the one mode that
+      // paints secondary and tertiary with it too. `copyWith(primary:)` does
+      // not update `onPrimary`: the grey scheme's partner once labelled a
+      // coral button at 3.90:1, under AA, so every partner is re-derived.
       const grayGround = Color(0xFF1A1A1A);
       // Lifted against the SCAFFOLD, not the surface: the scaffold is the
       // lighter of the two grounds and therefore the harder test for a dark
       // accent, so clearing it clears the surface as well. 3.5 rather than a
       // bare 3.0 leaves margin for the accent used as a hairline.
-      final accent = _liftOnto(seed, grayGround, 3.5);
-      final onAccent = _readableOn(accent);
+      final accent = _solidAccent(seed, [grayGround], 3.5);
+      final onAccent = readableOn(accent);
       final cs = ColorScheme.fromSeed(
         seedColor: const Color(0xFF808080),
         brightness: Brightness.dark,
@@ -204,32 +249,33 @@ ThemeData _buildBaseTheme(String mode, Color seed) {
       final cs = ColorScheme.fromSeed(
         seedColor: seed,
         brightness: Brightness.dark,
+      ).copyWith(
+        surface: Colors.black,
+        surfaceContainerLowest: Colors.black,
+        surfaceContainerLow: const Color(0xFF0A0A0A),
+        surfaceContainer: const Color(0xFF0F0F0F),
+        surfaceContainerHigh: const Color(0xFF1A1A1A),
+        surfaceContainerHighest: const Color(0xFF222222),
+        onSurface: Colors.white,
+        onSurfaceVariant: const Color(0xFFE0E0E0),
+        outline: const Color(0xFF777777),
+        outlineVariant: const Color(0xFF444444),
       );
       return ThemeData(
         useMaterial3: true,
-        colorScheme: cs.copyWith(
-          surface: Colors.black,
-          surfaceContainerLowest: Colors.black,
-          surfaceContainerLow: const Color(0xFF0A0A0A),
-          surfaceContainer: const Color(0xFF0F0F0F),
-          surfaceContainerHigh: const Color(0xFF1A1A1A),
-          surfaceContainerHighest: const Color(0xFF222222),
-          onSurface: Colors.white,
-          onSurfaceVariant: const Color(0xFFE0E0E0),
-          outline: const Color(0xFF777777),
-          outlineVariant: const Color(0xFF444444),
-        ),
+        colorScheme: _withSolidAccent(cs, seed, [cs.surface]),
         scaffoldBackgroundColor: Colors.black,
         cardColor: const Color(0xFF111111),
       );
 
     default: // 'dark'
+      final cs = ColorScheme.fromSeed(
+        seedColor: seed,
+        brightness: Brightness.dark,
+      );
       return ThemeData(
         useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: seed,
-          brightness: Brightness.dark,
-        ),
+        colorScheme: _withSolidAccent(cs, seed, [cs.surface]),
       );
   }
 }

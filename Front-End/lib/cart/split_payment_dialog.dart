@@ -770,7 +770,7 @@ class _SplitPaymentDialogState extends ConsumerState<SplitPaymentDialog> {
         style: FilledButton.styleFrom(
           minimumSize: const Size.fromHeight(48),
           backgroundColor: context.successColor,
-          foregroundColor: context.onStatusColor,
+          foregroundColor: context.onSuccessColor,
         ),
         onPressed: split.isEmpty || type == null || _banking
             ? null

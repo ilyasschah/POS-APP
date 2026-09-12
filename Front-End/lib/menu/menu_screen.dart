@@ -19,6 +19,7 @@ import 'package:pos_app/navigation/main_layout.dart';
 import 'package:pos_app/product/product_provider.dart';
 import 'package:pos_app/product/product_model.dart';
 import 'package:pos_app/product/product_sort.dart';
+import 'package:pos_app/product/product_visuals.dart';
 import 'package:pos_app/session/session_gate.dart';
 import 'package:pos_app/product/product_search.dart';
 import 'package:pos_app/product/product_search_bar.dart';
@@ -1968,50 +1969,11 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
 
         // ── Breadcrumb ──────────────────────────────────────────────────────
         if (!isSearching && currentGroup != null)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            color: cs.surfaceContainerHighest,
-            child: Row(
-              children: [
-                IconButton(
-                  icon: const PhosphorIcon(
-                    PhosphorIconsRegular.arrowLeft,
-                    size: 20,
-                  ),
-                  onPressed: () {
-                    if (currentGroup.parentGroupId == null) {
-                      ref.read(currentGroupProvider.notifier).state = null;
-                    } else {
-                      try {
-                        final parent = allGroups.firstWhere(
-                          (g) => g.id == currentGroup.parentGroupId,
-                        );
-                        ref.read(currentGroupProvider.notifier).state = parent;
-                      } catch (_) {
-                        ref.read(currentGroupProvider.notifier).state = null;
-                      }
-                    }
-                  },
-                ),
-                const Gap(4),
-                PhosphorIcon(
-                  PhosphorIconsRegular.folder,
-                  size: 18,
-                  color: cs.primary,
-                ),
-                const Gap(8),
-                Expanded(
-                  child: Text(
-                    currentGroup.name,
-                    style: tt.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
+          Padding(
+            // The search bar already leaves 8 below itself; without it the
+            // trail needs its own top inset.
+            padding: EdgeInsets.fromLTRB(12, showSearchBtn ? 0 : 12, 12, 0),
+            child: _buildFolderTrail(context, currentGroup, allGroups),
           ),
 
         // ── Product / group grid ────────────────────────────────────────────
@@ -2097,6 +2059,7 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
             onPrevious: () => setState(() => _currentPage = safePage - 1),
             onNext: () => setState(() => _currentPage = safePage + 1),
             onLast: () => setState(() => _currentPage = totalPages - 1),
+            onJump: (page) => setState(() => _currentPage = page),
           ),
       ],
     );
@@ -2104,6 +2067,176 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
 
   /// Builds a single browser tile — a group folder or a product card — shared
   /// by both the paged Grid and the scrollable List layouts.
+  /// The folder trail above the grid: back button + a tappable path from the
+  /// catalogue root down to [current].
+  ///
+  /// Painted from the accent (`cs.primary`), not a neutral surface token — on
+  /// the black and gray themes `surfaceContainerHighest` is a fixed grey, so
+  /// the old flat strip never picked up the accent at all.
+  Widget _buildFolderTrail(
+    BuildContext context,
+    ProductGroup current,
+    List<ProductGroup> allGroups,
+  ) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+    final l = AppLocalizations.of(context);
+
+    // Root-first chain of folders, walked up `parentGroupId`. A parent that is
+    // missing from the catalogue ends the walk there (back then goes to root,
+    // as before); the depth cap stops a parent cycle in bad data.
+    final trail = <ProductGroup>[];
+    for (ProductGroup? g = current; g != null && trail.length < 32;) {
+      trail.insert(0, g);
+      final parentId = g.parentGroupId;
+      g = parentId == null
+          ? null
+          : allGroups.where((p) => p.id == parentId).firstOrNull;
+    }
+
+    void open(ProductGroup? g) =>
+        ref.read(currentGroupProvider.notifier).state = g;
+
+    Widget separator() => Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 2),
+      child: PhosphorIcon(
+        PhosphorIconsBold.caretRight,
+        size: 14,
+        color: cs.onSurfaceVariant.withValues(alpha: 0.6),
+      ),
+    );
+
+    // An ancestor (or the root) — plain text, tap to jump straight to it.
+    Widget crumb(String label, VoidCallback onTap, {IconData? icon}) =>
+        InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(8),
+          child: Container(
+            constraints: const BoxConstraints(minHeight: 40, maxWidth: 180),
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (icon != null) ...[
+                  PhosphorIcon(icon, size: 18, color: cs.onSurfaceVariant),
+                  const Gap(6),
+                ],
+                Flexible(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: tt.labelLarge?.copyWith(
+                      color: cs.onSurfaceVariant,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: Color.alphaBlend(
+          cs.primary.withValues(alpha: 0.08),
+          cs.surfaceContainer,
+        ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: cs.primary.withValues(alpha: 0.28)),
+      ),
+      child: Row(
+        children: [
+          Tooltip(
+            message: l.back,
+            child: Material(
+              color: cs.primary.withValues(alpha: 0.16),
+              borderRadius: BorderRadius.circular(10),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(10),
+                onTap: () =>
+                    open(trail.length > 1 ? trail[trail.length - 2] : null),
+                child: SizedBox(
+                  // 44×44: finger-sized on a 10" tablet.
+                  width: 44,
+                  height: 44,
+                  child: Center(
+                    child: PhosphorIcon(
+                      PhosphorIconsBold.arrowLeft,
+                      size: 20,
+                      color: cs.primary,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const Gap(6),
+          Expanded(
+            child: LayoutBuilder(
+              builder: (context, constraints) => SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                // Anchored at the end: a deep path scrolls its root away,
+                // never the folder you are standing in.
+                reverse: true,
+                child: Row(
+                  children: [
+                    crumb(
+                      l.allProducts,
+                      () => open(null),
+                      icon: PhosphorIconsBold.house,
+                    ),
+                    for (final g in trail.take(trail.length - 1)) ...[
+                      separator(),
+                      crumb(g.name, () => open(g)),
+                    ],
+                    separator(),
+                    // The folder you are in: accent pill, solid open folder.
+                    Container(
+                      constraints: BoxConstraints(
+                        minHeight: 40,
+                        maxWidth: constraints.maxWidth * 0.75,
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: cs.primary.withValues(alpha: 0.18),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          PhosphorIcon(
+                            PhosphorIconsFill.folderOpen,
+                            size: 20,
+                            color: cs.primary,
+                          ),
+                          const Gap(8),
+                          Flexible(
+                            child: Text(
+                              current.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: tt.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w800,
+                                color: cs.onSurface,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _browserCard(BuildContext context, Object item) {
     if (item is ProductGroup) return _buildGroupCard(context, ref, item);
     if (item is Product) return _buildProductCard(context, ref, item);
@@ -2460,7 +2593,9 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
                           : cs.surfaceContainerHighest,
                       child: Center(
                         child: PhosphorIcon(
-                          PhosphorIconsRegular.forkKnife,
+                          productPlaceholderIcon(
+                            isService: product.isService,
+                          ),
                           size: 44,
                           color: marker != null
                               ? marker.withValues(alpha: 0.85)
@@ -2518,6 +2653,16 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
 // PAGINATION BAR
 // ─────────────────────────────────────────────────────────────────────────────
 
+/// The paged Grid's page control: an inset, rounded card rather than a
+/// full-bleed strip, so it reads as part of the grid it drives.
+///
+///  * Prev / Next are the everyday keys, so they carry the accent fill;
+///    First / Last are quieter.
+///  * Every key is 44×44 — finger-sized on a 10" tablet.
+///  * Up to [_maxDots] pages the middle is a row of dots, each one a jump to
+///    its page, with the current page drawn as a stretched accent pill. Past
+///    that, dots stop being countable at a glance and it falls back to
+///    "3 / 12".
 class _PaginationBar extends StatelessWidget {
   final int currentPage;
   final int totalPages;
@@ -2525,6 +2670,7 @@ class _PaginationBar extends StatelessWidget {
   final VoidCallback onPrevious;
   final VoidCallback onNext;
   final VoidCallback onLast;
+  final ValueChanged<int> onJump;
 
   const _PaginationBar({
     required this.currentPage,
@@ -2533,65 +2679,124 @@ class _PaginationBar extends StatelessWidget {
     required this.onPrevious,
     required this.onNext,
     required this.onLast,
+    required this.onJump,
   });
+
+  static const _maxDots = 7;
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final l = AppLocalizations.of(context);
     final isFirst = currentPage == 0;
     final isLast = currentPage >= totalPages - 1;
 
-    return Container(
-      height: 52,
-      decoration: BoxDecoration(
-        color: cs.surfaceContainerHighest,
-        border: Border(
-          top: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.3)),
+    return Padding(
+      // 12 on three sides: the same gutter the grid's own padding leaves, so
+      // the card lines up with the tiles above it.
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+      child: Container(
+        height: 56,
+        padding: const EdgeInsets.symmetric(horizontal: 6),
+        decoration: BoxDecoration(
+          color: cs.surfaceContainerHigh,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.5)),
+        ),
+        child: Row(
+          children: [
+            _NavButton(
+              icon: PhosphorIconsRegular.skipBack,
+              tooltip: l.paginationFirst,
+              onTap: isFirst ? null : onFirst,
+            ),
+            const Gap(4),
+            _NavButton(
+              icon: PhosphorIconsRegular.caretLeft,
+              tooltip: l.paginationPrevious,
+              onTap: isFirst ? null : onPrevious,
+              emphasized: true,
+            ),
+            Expanded(
+              child: Center(
+                // Never an overflow stripe on a narrow cart-side split.
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: totalPages <= _maxDots
+                      ? _dots(cs)
+                      : _counter(context, cs),
+                ),
+              ),
+            ),
+            _NavButton(
+              icon: PhosphorIconsRegular.caretRight,
+              tooltip: l.paginationNext,
+              onTap: isLast ? null : onNext,
+              emphasized: true,
+            ),
+            const Gap(4),
+            _NavButton(
+              icon: PhosphorIconsRegular.skipForward,
+              tooltip: l.paginationLast,
+              onTap: isLast ? null : onLast,
+            ),
+          ],
         ),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          _NavButton(
-            icon: PhosphorIconsRegular.skipBack,
-            tooltip: AppLocalizations.of(context).paginationFirst,
-            onTap: isFirst ? null : onFirst,
-          ),
-          _NavButton(
-            icon: PhosphorIconsRegular.caretLeft,
-            tooltip: AppLocalizations.of(context).paginationPrevious,
-            onTap: isFirst ? null : onPrevious,
-          ),
-          const Gap(12),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-            decoration: BoxDecoration(
-              color: cs.surface,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: cs.outlineVariant.withValues(alpha: 0.5),
+    );
+  }
+
+  Widget _dots(ColorScheme cs) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (var i = 0; i < totalPages; i++)
+          Semantics(
+            button: true,
+            selected: i == currentPage,
+            label: '${i + 1} / $totalPages',
+            child: InkWell(
+              onTap: i == currentPage ? null : () => onJump(i),
+              borderRadius: BorderRadius.circular(12),
+              child: SizedBox(
+                // The dot is small; the target is not.
+                width: 28,
+                height: 44,
+                child: Center(
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.easeOut,
+                    width: i == currentPage ? 22 : 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: i == currentPage
+                          ? cs.primary
+                          : cs.onSurfaceVariant.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                ),
               ),
             ),
-            child: Text(
-              '${currentPage + 1} / $totalPages',
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: cs.onSurface,
-              ),
-            ),
           ),
-          const Gap(12),
-          _NavButton(
-            icon: PhosphorIconsRegular.caretRight,
-            tooltip: AppLocalizations.of(context).paginationNext,
-            onTap: isLast ? null : onNext,
-          ),
-          _NavButton(
-            icon: PhosphorIconsRegular.skipForward,
-            tooltip: AppLocalizations.of(context).paginationLast,
-            onTap: isLast ? null : onLast,
-          ),
-        ],
+      ],
+    );
+  }
+
+  Widget _counter(BuildContext context, ColorScheme cs) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+      decoration: BoxDecoration(
+        color: cs.primary.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        '${currentPage + 1} / $totalPages',
+        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+          fontWeight: FontWeight.w800,
+          color: cs.primary,
+          fontFeatures: const [FontFeature.tabularFigures()],
+        ),
       ),
     );
   }
@@ -2602,10 +2807,15 @@ class _NavButton extends StatelessWidget {
   final String tooltip;
   final VoidCallback? onTap;
 
+  /// Prev / Next: an accent-tinted fill, because they are the keys a cashier
+  /// actually reaches for. First / Last stay flat.
+  final bool emphasized;
+
   const _NavButton({
     required this.icon,
     required this.tooltip,
     required this.onTap,
+    this.emphasized = false,
   });
 
   @override
@@ -2613,17 +2823,33 @@ class _NavButton extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final enabled = onTap != null;
 
+    final Color fill = !enabled || !emphasized
+        ? Colors.transparent
+        : cs.primary.withValues(alpha: 0.14);
+    final Color fg = !enabled
+        ? cs.onSurface.withValues(alpha: 0.25)
+        : emphasized
+        ? cs.primary
+        : cs.onSurfaceVariant;
+
     return Tooltip(
       message: tooltip,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-          child: PhosphorIcon(
-            icon,
-            size: 18,
-            color: enabled ? cs.primary : cs.onSurface.withValues(alpha: 0.25),
+      child: Material(
+        color: fill,
+        borderRadius: BorderRadius.circular(12),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: SizedBox(
+            width: 44,
+            height: 44,
+            child: Center(
+              child: PhosphorIcon(
+                icon,
+                size: emphasized ? 20 : 18,
+                color: fg,
+              ),
+            ),
           ),
         ),
       ),
@@ -3368,13 +3594,30 @@ class _CartSectionState extends ConsumerState<CartSection> {
           width: double.infinity,
           child: LayoutBuilder(
             builder: (context, constraints) {
-              const saveWithLabel = 104.0;
               const saveIconOnly = 48.0;
               const labelMin = 120.0;
+              const savePadding = 12.0;
+              const saveIcon = 18.0;
+              const saveIconGap = 8.0;
+
+              // The label is measured, not assumed: "ENREGISTRER" is ~3x
+              // "SAVE", and a fixed box ellipsized it to "ENREG...".
+              final saveText = AppLocalizations.of(context).saveUpper;
+              final saveTextStyle =
+                  (Theme.of(context).textTheme.labelLarge ??
+                          const TextStyle())
+                      .copyWith(fontWeight: FontWeight.bold);
+              final saveWithLabel =
+                  _labelWidth(context, saveText, saveTextStyle) +
+                  savePadding * 2 +
+                  saveIcon +
+                  saveIconGap +
+                  4;
 
               final showSaveLabel =
                   constraints.maxWidth >= labelMin + saveWithLabel;
               final canSave = cartItems.isNotEmpty;
+              final cs = Theme.of(context).colorScheme;
 
               return Row(
                 children: [
@@ -3397,23 +3640,19 @@ class _CartSectionState extends ConsumerState<CartSection> {
                             onPressed: canSave
                                 ? () => _handleSave(context, ref)
                                 : null,
-                            icon: const Icon(Icons.save, size: 18),
+                            icon: const Icon(Icons.save, size: saveIcon),
                             label: Text(
-                              AppLocalizations.of(context).saveUpper,
+                              saveText,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                              ),
+                              style: saveTextStyle,
                             ),
                             style: ElevatedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
+                                horizontal: savePadding,
                               ),
-                              backgroundColor: Theme.of(
-                                context,
-                              ).colorScheme.primary,
-                              foregroundColor: Colors.white,
+                              backgroundColor: cs.primary,
+                              foregroundColor: cs.onPrimary,
                             ),
                           )
                         : ElevatedButton(
@@ -3422,14 +3661,12 @@ class _CartSectionState extends ConsumerState<CartSection> {
                                 : null,
                             style: ElevatedButton.styleFrom(
                               padding: EdgeInsets.zero,
-                              backgroundColor: Theme.of(
-                                context,
-                              ).colorScheme.primary,
-                              foregroundColor: Colors.white,
+                              backgroundColor: cs.primary,
+                              foregroundColor: cs.onPrimary,
                             ),
                             child: Tooltip(
-                              message: AppLocalizations.of(context).saveUpper,
-                              child: const Icon(Icons.save, size: 18),
+                              message: saveText,
+                              child: const Icon(Icons.save, size: saveIcon),
                             ),
                           ),
                   ),
@@ -4198,43 +4435,65 @@ class _CartToolButton extends StatelessWidget {
   final VoidCallback onTap;
   final bool active;
 
+  /// Below this much room for the label it goes and the icon stays: "Wa…"
+  /// tells the cashier nothing the person icon doesn't. A label that is merely
+  /// long still shows, ellipsized — customer names rarely fit in full.
+  static const double _minReadableLabel = 72;
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final color = active ? cs.primary : cs.onSurface;
+    final labelStyle = TextStyle(
+      fontSize: 14,
+      fontWeight: FontWeight.w600,
+      color: color,
+    );
 
-    return Material(
-      color: active
-          ? cs.primary.withValues(alpha: 0.12)
-          : cs.surfaceContainerHighest.withValues(alpha: 0.6),
-      borderRadius: BorderRadius.circular(10),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Container(
-          height: 44,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 18, color: color),
-              const SizedBox(width: 8),
-              Flexible(
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: color,
-                  ),
-                ),
-              ),
-            ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // 12 + 12 padding, 18 icon, 8 gap.
+        final labelRoom = constraints.maxWidth - 12 * 2 - 18 - 8;
+        final labelWidth = _labelWidth(context, label, labelStyle);
+        final showLabel =
+            labelRoom >=
+            (labelWidth < _minReadableLabel ? labelWidth : _minReadableLabel);
+
+        final button = Material(
+          color: active
+              ? cs.primary.withValues(alpha: 0.12)
+              : cs.surfaceContainerHighest.withValues(alpha: 0.6),
+          borderRadius: BorderRadius.circular(10),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: onTap,
+            child: Container(
+              height: 44,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: showLabel
+                  ? Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(icon, size: 18, color: color),
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: Text(
+                            label,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: labelStyle,
+                          ),
+                        ),
+                      ],
+                    )
+                  // Icon alone, sized like the ⋮ and keypad toggles beside it.
+                  : Center(child: Icon(icon, size: 20, color: color)),
+            ),
           ),
-        ),
-      ),
+        );
+
+        return showLabel ? button : Tooltip(message: label, child: button);
+      },
     );
   }
 }
@@ -4343,8 +4602,9 @@ class _CartActionsMenu extends StatelessWidget {
 
 // ── Cart footer button (VOID / PAY) ────────────────────────────────────────
 // Flat, touch-sized primary action. Matches the app's flat style (no shadow,
-// consistent 56px height + rounded corners); the fill colour is passed in and
-// kept hard-coded (red for VOID, green for PAY). Disabled → neutral grey.
+// consistent 56px height + rounded corners). The fill is a status colour passed
+// in; the label is black or white, whichever reads on that fill, and disabled
+// uses the theme's own disabled tones — nothing hardcoded.
 class _CartFooterButton extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -4357,41 +4617,93 @@ class _CartFooterButton extends StatelessWidget {
     required this.onTap,
   });
 
+  static const double _padding = 16;
+  static const double _iconSize = 22;
+  // No colour here: the label takes the button's foreground, so it follows
+  // the fill and the disabled state instead of being white on everything.
+  static const TextStyle _labelStyle = TextStyle(
+    fontSize: 17,
+    fontWeight: FontWeight.bold,
+    letterSpacing: 0.5,
+  );
+
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cs = Theme.of(context).colorScheme;
+    final fg = context.onStatus(color);
+    final disabledFg = cs.onSurface.withValues(alpha: 0.38);
+    final style = ElevatedButton.styleFrom(
+      backgroundColor: color,
+      foregroundColor: fg,
+      iconColor: fg,
+      disabledBackgroundColor: cs.onSurface.withValues(alpha: 0.12),
+      disabledForegroundColor: disabledFg,
+      disabledIconColor: disabledFg,
+      elevation: 0,
+      padding: const EdgeInsets.symmetric(horizontal: _padding),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    );
+
     return SizedBox(
       height: 56,
-      child: ElevatedButton.icon(
-        onPressed: onTap,
-        icon: Icon(icon, color: Colors.white, size: 22),
-        // Scale the label to one line so a longer word (e.g. French "ANNULER")
-        // shrinks to fit a narrow cart panel instead of wrapping.
-        label: FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Text(
-            label,
-            maxLines: 1,
-            softWrap: false,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 17,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 0.5,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // Measured, like SAVE: the label shows at full size or not at all.
+          // It used to scale down to fit, and a squeezed label read worse
+          // than the icon alone. 8 is the icon/label gap, 4 a rounding margin.
+          final withLabel =
+              _padding * 2 +
+              _iconSize +
+              8 +
+              _labelWidth(context, label, _labelStyle) +
+              4;
+
+          if (constraints.maxWidth < withLabel) {
+            return Tooltip(
+              message: label,
+              child: ElevatedButton(
+                onPressed: onTap,
+                style: style,
+                child: Icon(icon, size: 26),
+              ),
+            );
+          }
+          return ElevatedButton.icon(
+            onPressed: onTap,
+            style: style,
+            icon: Icon(icon, size: _iconSize),
+            label: Text(
+              label,
+              maxLines: 1,
+              softWrap: false,
+              style: _labelStyle,
             ),
-          ),
-        ),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: color,
-          disabledBackgroundColor: isDark ? Colors.grey[800] : Colors.grey[300],
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
+}
+
+// ── Label measuring ───────────────────────────────────────────────────────
+// Width [text] takes on one line in [style] (over the ambient text style, at
+// the device's text scale). The cart's buttons measure their label rather than
+// assume it: French "ENREGISTRER" is ~3× "SAVE", so a width that fits one
+// language ellipsizes another. Each shows its label only while it fits, and
+// drops to its icon — label as tooltip — when the cart is dragged narrower.
+double _labelWidth(BuildContext context, String text, TextStyle? style) {
+  final painter = TextPainter(
+    text: TextSpan(
+      text: text,
+      style: DefaultTextStyle.of(context).style.merge(style),
+    ),
+    textDirection: Directionality.of(context),
+    textScaler: MediaQuery.textScalerOf(context),
+    maxLines: 1,
+  )..layout();
+  final width = painter.width.ceilToDouble();
+  painter.dispose();
+  return width;
 }
 
 // ── Cart totals row ───────────────────────────────────────────────────────

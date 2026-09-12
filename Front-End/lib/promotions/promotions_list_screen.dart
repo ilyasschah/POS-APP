@@ -206,7 +206,7 @@ class _PromotionsListScreenState extends ConsumerState<PromotionsListScreen> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: ctx.dangerColor,
-              foregroundColor: ctx.onStatusColor,
+              foregroundColor: ctx.onDangerColor,
             ),
             onPressed: () => Navigator.pop(ctx, true),
             child: Text(l.actionDelete),

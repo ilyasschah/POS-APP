@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:pos_app/core/app_theme.dart';
 import 'package:pos_app/core/device_theme_mode_provider.dart';
 import 'package:pos_app/onboarding/onboarding_seed.dart';
 import 'package:pos_app/onboarding/widgets/onboarding_scaffold.dart';
@@ -16,24 +17,8 @@ import 'package:pos_app/settings/local_ui_prefs.dart';
 class SetupSlide extends ConsumerWidget {
   const SetupSlide({super.key});
 
-  /// First entry is the BRAND accent, and it is first on purpose: it matches
-  /// kBrandAccent, the octopus in assets/icon.svg and the marketing site, and it
-  /// is what both the client defaults and the server seed a new company with. It
-  /// was missing from this list entirely, so anyone who touched the picker
-  /// during onboarding necessarily moved the app AWAY from its own branding —
-  /// there was no way back to it short of editing the setting by hand.
-  static const _accents = <String>[
-    '#389DCB', // brand — octopus blue
-    '#3B82F6', // blue
-    '#8B5CF6', // violet
-    '#EF4444', // red
-    '#F59E0B', // amber
-    '#10B981', // green
-    '#EC4899', // pink
-  ];
-
-  static Color _hex(String h) =>
-      Color(int.parse('FF${h.replaceAll('#', '')}', radix: 16));
+  // Accent swatches come from kAccentPalette (core/app_theme.dart) — the same
+  // list Settings offers, brand first. See its doc comment for why.
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -113,13 +98,13 @@ class SetupSlide extends ConsumerWidget {
                   spacing: 12,
                   runSpacing: 8,
                   children: [
-                    for (final hex in _accents)
+                    for (final swatch in kAccentPalette)
                       _Swatch(
-                        color: _hex(hex),
-                        selected: accent == hex.toUpperCase(),
+                        color: swatch.color,
+                        selected: accent == accentHex(swatch.color),
                         onTap: () => ref
                             .read(deviceAccentColorProvider.notifier)
-                            .set(hex),
+                            .set(accentHex(swatch.color)),
                       ),
                   ],
                 ),

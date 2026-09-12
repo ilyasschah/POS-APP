@@ -1771,7 +1771,9 @@ class _CompleteButton extends StatelessWidget {
         child: Center(
           child: isProcessing
               ? CircularProgressIndicator(
-                  color: context.onStatusColor,
+                  color: canPay
+                      ? context.onSuccessColor
+                      : theme.colorScheme.onSurfaceVariant,
                   strokeWidth: 3,
                 )
               : Column(
@@ -1781,7 +1783,7 @@ class _CompleteButton extends StatelessWidget {
                       Icons.check_circle_outline,
                       size: 36,
                       color: canPay
-                          ? context.onStatusColor
+                          ? context.onSuccessColor
                           : theme.colorScheme.onSurface.withAlpha(80),
                     ),
                     const SizedBox(height: 8),
@@ -1790,7 +1792,7 @@ class _CompleteButton extends StatelessWidget {
                       textAlign: TextAlign.center,
                       style: theme.textTheme.titleMedium?.copyWith(
                         color: canPay
-                            ? context.onStatusColor
+                            ? context.onSuccessColor
                             : theme.colorScheme.onSurface.withAlpha(80),
                         fontWeight: FontWeight.bold,
                       ),

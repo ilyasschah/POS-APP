@@ -204,6 +204,12 @@ class _MainLayoutState extends ConsumerState<MainLayout> with WindowListener {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
+      // …and on the cash tab's ENTRY FORM, not its ledger: the after-login
+      // step is for recording the float. Raised before the switch, so the tab
+      // already knows when it first builds.
+      if (showCashOnStart && landingIndex == PosTab.cashInOut) {
+        ref.read(cashEntryOnStartProvider.notifier).state = true;
+      }
       ref.read(mainNavigationIndexProvider.notifier).state = landingIndex;
       // Apply any feature choices made during pre-login onboarding (virtual
       // keyboard / tables / booking) now that a company + its settings exist.

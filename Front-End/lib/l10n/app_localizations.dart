@@ -4708,6 +4708,120 @@ abstract class AppLocalizations {
   /// **'Red'**
   String get colorRed;
 
+  /// No description provided for @colorSky.
+  ///
+  /// In en, this message translates to:
+  /// **'Sky'**
+  String get colorSky;
+
+  /// No description provided for @colorTeal.
+  ///
+  /// In en, this message translates to:
+  /// **'Teal'**
+  String get colorTeal;
+
+  /// No description provided for @colorGold.
+  ///
+  /// In en, this message translates to:
+  /// **'Gold'**
+  String get colorGold;
+
+  /// No description provided for @colorBrown.
+  ///
+  /// In en, this message translates to:
+  /// **'Brown'**
+  String get colorBrown;
+
+  /// No description provided for @colorSlate.
+  ///
+  /// In en, this message translates to:
+  /// **'Slate'**
+  String get colorSlate;
+
+  /// No description provided for @scaleReadingOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off — the scale port is closed'**
+  String get scaleReadingOff;
+
+  /// No description provided for @scaleListening.
+  ///
+  /// In en, this message translates to:
+  /// **'{port} is open — waiting for the scale to send a weight…'**
+  String scaleListening(String port);
+
+  /// No description provided for @newCustomerSupplier.
+  ///
+  /// In en, this message translates to:
+  /// **'New Customer / Supplier'**
+  String get newCustomerSupplier;
+
+  /// No description provided for @newCashMovement.
+  ///
+  /// In en, this message translates to:
+  /// **'New Cash Movement'**
+  String get newCashMovement;
+
+  /// No description provided for @sessionNoMatches.
+  ///
+  /// In en, this message translates to:
+  /// **'No sessions match these filters.'**
+  String get sessionNoMatches;
+
+  /// No description provided for @changePasswordHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Change the password you sign in with'**
+  String get changePasswordHint;
+
+  /// No description provided for @devicePinHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The 4-digit PIN that unlocks this terminal'**
+  String get devicePinHint;
+
+  /// No description provided for @activeDevicesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Terminals where your account is signed in'**
+  String get activeDevicesHint;
+
+  /// No description provided for @revokeDeviceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Revoke this device?'**
+  String get revokeDeviceTitle;
+
+  /// No description provided for @revokeDeviceConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'{device} will be signed out of your account.'**
+  String revokeDeviceConfirm(String device);
+
+  /// No description provided for @actionRevoke.
+  ///
+  /// In en, this message translates to:
+  /// **'Revoke'**
+  String get actionRevoke;
+
+  /// No description provided for @shiftSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search employee…'**
+  String get shiftSearchHint;
+
+  /// No description provided for @exportCsvAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Export CSV'**
+  String get exportCsvAction;
+
+  /// No description provided for @endShiftWithElapsed.
+  ///
+  /// In en, this message translates to:
+  /// **'End shift · {elapsed}'**
+  String endShiftWithElapsed(String elapsed);
+
   /// No description provided for @allFields.
   ///
   /// In en, this message translates to:

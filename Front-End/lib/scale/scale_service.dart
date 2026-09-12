@@ -174,3 +174,54 @@ final scaleReadingProvider = StreamProvider.autoDispose<ScaleReading>((ref) {
   service.start();
   return service.readings;
 });
+
+/// What the scale link is actually doing — see [scaleStatusProvider].
+sealed class ScaleStatus {
+  const ScaleStatus();
+}
+
+/// Serial scales are Windows-only here ([kScaleSupported]).
+class ScaleUnsupported extends ScaleStatus {
+  const ScaleUnsupported();
+}
+
+/// Switched off in settings. No port is held.
+class ScaleOff extends ScaleStatus {
+  const ScaleOff();
+}
+
+/// [port] is open and nothing parseable has arrived from it yet.
+class ScaleListening extends ScaleStatus {
+  const ScaleListening(this.port);
+  final String port;
+}
+
+/// A weight is streaming in.
+class ScaleLive extends ScaleStatus {
+  const ScaleLive(this.reading);
+  final ScaleReading reading;
+}
+
+/// The port would not open, or the stream failed.
+class ScaleFailed extends ScaleStatus {
+  const ScaleFailed(this.error);
+  final Object error;
+}
+
+/// The scale link's REAL state, for status lines.
+///
+/// When the scale is off this does not watch [scaleReadingProvider] at all —
+/// and that stream is autoDispose, so having no listener is exactly what
+/// closes the port. Status lines used to read the stream directly: a disabled
+/// scale's stream never emits, so it sat in `loading` forever and the settings
+/// screen said "Waiting for the scale…" with the toggle off.
+final scaleStatusProvider = Provider.autoDispose<ScaleStatus>((ref) {
+  if (!kScaleSupported) return const ScaleUnsupported();
+  final config = ref.watch(scaleConfigProvider);
+  if (!config.enabled) return const ScaleOff();
+  return switch (ref.watch(scaleReadingProvider)) {
+    AsyncData(:final value) => ScaleLive(value),
+    AsyncError(:final error) => ScaleFailed(error),
+    _ => ScaleListening(config.port),
+  };
+});

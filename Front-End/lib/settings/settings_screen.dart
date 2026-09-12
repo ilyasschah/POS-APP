@@ -19,6 +19,7 @@ import 'package:pos_app/utils/windows_ports.dart';
 import 'package:pos_app/customer_display/customer_display_web_server.dart';
 import 'package:pos_app/customer_display/customer_display_screen.dart';
 import 'package:pos_app/core/app_theme.dart';
+import 'package:pos_app/core/device_theme_mode_provider.dart';
 import 'package:pos_app/core/app_version.dart';
 import 'package:pos_app/sync/pending_count_provider.dart';
 import 'package:pos_app/update/app_release.dart';
@@ -571,7 +572,7 @@ class _EntryTile extends StatelessWidget {
                 child: Text(
                   avatarText,
                   style: TextStyle(
-                    color: context.onStatusColor,
+                    color: context.onStatus(avatarColor),
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
                   ),
@@ -3138,6 +3139,16 @@ String _accentColorLabel(BuildContext context, String name) {
       return l.colorOrange;
     case 'Red':
       return l.colorRed;
+    case 'Sky':
+      return l.colorSky;
+    case 'Teal':
+      return l.colorTeal;
+    case 'Gold':
+      return l.colorGold;
+    case 'Brown':
+      return l.colorBrown;
+    case 'Slate':
+      return l.colorSlate;
     default:
       return name;
   }
@@ -3216,32 +3227,15 @@ String _settingOptionLabel(BuildContext context, String value) {
 class _AccentColorPicker extends ConsumerWidget {
   const _AccentColorPicker();
 
-  // Replace the old list with these 6 main colors
-  static const _colors = [
-    ('Blue', Color(0xFF2196F3)),
-    ('Green', Color(0xFF4CAF50)),
-    ('Pink', Color(0xFFE91E63)),
-    ('Purple', Color(0xFF9C27B0)),
-    ('Orange', Color(0xFFFF9800)),
-    ('Red', Color(0xFFF44336)),
-  ];
-
-  static String _toHex(Color c) =>
-      '#${c.toARGB32().toRadixString(16).substring(2).toUpperCase()}';
-  static Color? _fromHex(String? hex) {
-    if (hex == null) return null;
-    try {
-      final clean = hex.replaceAll('#', '');
-      return Color(int.parse('FF$clean', radix: 16));
-    } catch (_) {
-      return null;
-    }
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(appSettingsProvider);
-    final current = _fromHex(settings[SettingKeys.themeAccentColor]);
+    // The EFFECTIVE accent — device override first, exactly as MyApp paints —
+    // so the tick sits on the colour this terminal is actually showing.
+    final current = parseAccentColor(
+      ref.watch(deviceAccentColorProvider) ??
+          settings[SettingKeys.themeAccentColor],
+    );
     final theme = Theme.of(context);
 
     return Padding(
@@ -3257,14 +3251,14 @@ class _AccentColorPicker extends ConsumerWidget {
           Wrap(
             spacing: 10,
             runSpacing: 10,
-            children: _colors.map<Widget>((entry) {
-              final (name, color) = entry;
-              final isSelected =
-                  current != null && color.toARGB32() == current.toARGB32();
+            children: kAccentPalette.map<Widget>((swatch) {
+              final name = swatch.name;
+              final color = swatch.color;
+              final isSelected = color.toARGB32() == current.toARGB32();
               return GestureDetector(
                 onTap: () => ref
                     .read(appSettingsProvider.notifier)
-                    .set(SettingKeys.themeAccentColor, _toHex(color)),
+                    .set(SettingKeys.themeAccentColor, accentHex(color)),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -3289,9 +3283,10 @@ class _AccentColorPicker extends ConsumerWidget {
                         ],
                       ),
                       child: isSelected
-                          ? const Icon(
+                          ? Icon(
                               Icons.check,
-                              color: Colors.white,
+                              // White vanishes on the Gold swatch.
+                              color: readableOn(color),
                               size: 20,
                             )
                           : null,
@@ -3395,69 +3390,39 @@ class _ThemeOpt {
   final String key;
   final String label;
   final IconData icon;
-  final Color previewBg;
-  final Color previewAccent;
-  const _ThemeOpt(
-    this.key,
-    this.label,
-    this.icon,
-    this.previewBg,
-    this.previewAccent,
-  );
+  const _ThemeOpt(this.key, this.label, this.icon);
 }
 
 class _ThemeModePicker extends ConsumerWidget {
   const _ThemeModePicker();
 
-  static final _options = <_ThemeOpt>[
-    const _ThemeOpt(
-      'light',
-      'Light',
-      PhosphorIconsRegular.sun,
-      Color(0xFFF5F7FA),
-      Color(0xFF2196F3),
-    ),
-    const _ThemeOpt(
-      'dark',
-      'Dark',
-      PhosphorIconsRegular.moon,
-      Color(0xFF1E2530),
-      Color(0xFF90CAF9),
-    ),
-    const _ThemeOpt(
-      'dimmed',
-      'Dimmed',
-      PhosphorIconsRegular.moonStars,
-      Color(0xFF15202B),
-      Color(0xFF64B5F6),
-    ),
-    const _ThemeOpt(
-      'night',
-      'Night',
-      PhosphorIconsRegular.eye,
-      Color(0xFF000000),
-      Color(0xFF82B1FF),
-    ),
-    const _ThemeOpt(
-      'gray',
-      'Gray',
-      PhosphorIconsRegular.circleHalf,
-      Color(0xFF1E1E1E),
-      Color(0xFFBDBDBD),
-    ),
-    const _ThemeOpt(
+  // No preview colours here: each preview is built from the real theme with
+  // the terminal's own accent (see _MiniPreview.of), so it cannot go stale.
+  static const _options = <_ThemeOpt>[
+    _ThemeOpt('light', 'Light', PhosphorIconsRegular.sun),
+    _ThemeOpt('dark', 'Dark', PhosphorIconsRegular.moon),
+    _ThemeOpt('dimmed', 'Dimmed', PhosphorIconsRegular.moonStars),
+    _ThemeOpt('night', 'Night', PhosphorIconsRegular.eye),
+    _ThemeOpt('gray', 'Gray', PhosphorIconsRegular.circleHalf),
+    _ThemeOpt(
       'high_contrast',
       'High Contrast',
       PhosphorIconsRegular.circleHalfTilt,
-      Color(0xFF000000),
-      Color(0xFFFFFFFF),
     ),
   ];
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(appSettingsProvider);
-    final current = settings[SettingKeys.themeMode] ?? 'light';
+    // The EFFECTIVE mode and accent — device override first, as MyApp paints.
+    final current =
+        ref.watch(deviceThemeModeProvider) ??
+        settings[SettingKeys.themeMode] ??
+        'light';
+    final seed = parseAccentColor(
+      ref.watch(deviceAccentColorProvider) ??
+          settings[SettingKeys.themeAccentColor],
+    );
     final opt = _options.firstWhere(
       (o) => o.key == current,
       orElse: () => _options[0],
@@ -3476,7 +3441,7 @@ class _ThemeModePicker extends ConsumerWidget {
           ),
           const SizedBox(height: 8),
           InkWell(
-            onTap: () => _show(context, ref, current),
+            onTap: () => _show(context, ref, current, seed),
             borderRadius: BorderRadius.circular(10),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
@@ -3497,7 +3462,7 @@ class _ThemeModePicker extends ConsumerWidget {
                     ),
                   ),
                   const Spacer(),
-                  _MiniPreview(bg: opt.previewBg, accent: opt.previewAccent),
+                  _MiniPreview.of(buildAppTheme(opt.key, seed)),
                   const SizedBox(width: 10),
                   Icon(
                     PhosphorIconsRegular.caretDown,
@@ -3513,13 +3478,14 @@ class _ThemeModePicker extends ConsumerWidget {
     );
   }
 
-  void _show(BuildContext context, WidgetRef ref, String current) {
+  void _show(BuildContext context, WidgetRef ref, String current, Color seed) {
     showDialog(
       context: context,
-      barrierColor: Colors.black54,
+      barrierColor: Theme.of(context).colorScheme.scrim.withValues(alpha: 0.5),
       builder: (_) => _ThemePickerDialog(
         options: _options,
         current: current,
+        seed: seed,
         onSelect: (key) {
           ref
               .read(appSettingsProvider.notifier)
@@ -3533,8 +3499,21 @@ class _ThemeModePicker extends ConsumerWidget {
 
 class _MiniPreview extends StatelessWidget {
   final Color bg;
+  final Color bar;
   final Color accent;
-  const _MiniPreview({required this.bg, required this.accent});
+  const _MiniPreview({
+    required this.bg,
+    required this.bar,
+    required this.accent,
+  });
+
+  /// A thumbnail of [theme]. Callers build it with the terminal's own accent,
+  /// so each preview shows what picking that mode will really look like.
+  factory _MiniPreview.of(ThemeData theme) => _MiniPreview(
+    bg: theme.scaffoldBackgroundColor,
+    bar: theme.colorScheme.surfaceContainerHighest,
+    accent: theme.colorScheme.primary,
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -3544,16 +3523,15 @@ class _MiniPreview extends StatelessWidget {
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(5),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+        // Sits on the CURRENT theme's surface, so it takes that theme's line.
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
       child: Column(
         children: [
           Container(
             height: 8,
             decoration: BoxDecoration(
-              color: bg == const Color(0xFFF5F7FA)
-                  ? const Color(0xFFE0E0E0)
-                  : Colors.black.withValues(alpha: 0.35),
+              color: bar,
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(4),
               ),
@@ -3608,75 +3586,87 @@ class _MiniPreview extends StatelessWidget {
   }
 }
 
+/// Painted from the CURRENT theme and accent. It used to be a fixed navy card
+/// with white text: dark on the light theme, navy-blue on every dark one, and
+/// blind to the accent in both.
 class _ThemePickerDialog extends StatelessWidget {
   final List<_ThemeOpt> options;
   final String current;
+
+  /// The terminal's accent, so every preview shows its mode in that accent.
+  final Color seed;
   final void Function(String) onSelect;
 
   const _ThemePickerDialog({
     required this.options,
     required this.current,
+    required this.seed,
     required this.onSelect,
   });
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     return Dialog(
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-      child: Container(
+      backgroundColor: cs.surfaceContainerHigh,
+      surfaceTintColor: Colors.transparent,
+      elevation: 6,
+      shadowColor: cs.shadow,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.6)),
+      ),
+      child: SizedBox(
         width: 300,
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        decoration: BoxDecoration(
-          color: const Color(0xFF16202E),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.55),
-              blurRadius: 48,
-              offset: const Offset(0, 16),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 6),
-              child: Row(
-                children: [
-                  const Icon(
-                    PhosphorIconsRegular.palette,
-                    size: 14,
-                    color: Colors.white38,
-                  ),
-                  const SizedBox(width: 7),
-                  Text(
-                    AppLocalizations.of(context).chooseTheme,
-                    style: const TextStyle(
-                      color: Colors.white38,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.9,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 6),
+                child: Row(
+                  children: [
+                    Icon(
+                      PhosphorIconsRegular.palette,
+                      size: 14,
+                      color: cs.primary,
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 7),
+                    Flexible(
+                      child: Text(
+                        AppLocalizations.of(context).chooseTheme,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: cs.onSurfaceVariant,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.9,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            Container(height: 1, color: Colors.white.withValues(alpha: 0.06)),
-            const SizedBox(height: 4),
-            ...options.map((opt) {
-              final selected = opt.key == current;
-              return _OptionTile(
-                opt: opt,
-                selected: selected,
-                onTap: () => onSelect(opt.key),
-              );
-            }),
-            const SizedBox(height: 4),
-          ],
+              Divider(
+                height: 1,
+                thickness: 1,
+                color: cs.outlineVariant.withValues(alpha: 0.5),
+              ),
+              const SizedBox(height: 4),
+              for (final opt in options)
+                _OptionTile(
+                  opt: opt,
+                  selected: opt.key == current,
+                  preview: _MiniPreview.of(buildAppTheme(opt.key, seed)),
+                  onTap: () => onSelect(opt.key),
+                ),
+              const SizedBox(height: 4),
+            ],
+          ),
         ),
       ),
     );
@@ -3686,56 +3676,59 @@ class _ThemePickerDialog extends StatelessWidget {
 class _OptionTile extends StatelessWidget {
   final _ThemeOpt opt;
   final bool selected;
+  final Widget preview;
   final VoidCallback onTap;
   const _OptionTile({
     required this.opt,
     required this.selected,
+    required this.preview,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
       child: Material(
         color: selected
-            ? Colors.white.withValues(alpha: 0.08)
+            ? cs.primary.withValues(alpha: 0.12)
             : Colors.transparent,
         borderRadius: BorderRadius.circular(9),
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(9),
-          highlightColor: Colors.white.withValues(alpha: 0.05),
-          splashColor: Colors.white.withValues(alpha: 0.07),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            // 12 + 20 + 12: a 44px row, finger-sized on a 10" tablet.
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             child: Row(
               children: [
                 Icon(
                   opt.icon,
                   size: 17,
-                  color: selected ? Colors.white : Colors.white54,
+                  color: selected ? cs.primary : cs.onSurfaceVariant,
                 ),
                 const SizedBox(width: 12),
-                Text(
-                  _themeModeLabel(context, opt.key),
-                  style: TextStyle(
-                    color: selected ? Colors.white : Colors.white70,
-                    fontSize: 14,
-                    fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                Expanded(
+                  child: Text(
+                    _themeModeLabel(context, opt.key),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: cs.onSurface,
+                      fontSize: 14,
+                      fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                    ),
                   ),
                 ),
-                const Spacer(),
-                _MiniPreview(bg: opt.previewBg, accent: opt.previewAccent),
+                const SizedBox(width: 8),
+                preview,
                 const SizedBox(width: 10),
                 SizedBox(
                   width: 16,
                   child: selected
-                      ? const Icon(
-                          Icons.check_rounded,
-                          size: 16,
-                          color: Colors.white,
-                        )
+                      ? Icon(Icons.check_rounded, size: 16, color: cs.primary)
                       : null,
                 ),
               ],
@@ -5270,11 +5263,13 @@ class _WeighingScaleTab extends ConsumerWidget {
                         label: AppLocalizations.of(context).setBaudRate,
                         options: _kBaudRates,
                       ),
-                      const _ScaleLiveTest(),
                     ],
                   ),
                 ),
               ),
+              // Outside the dimming: it reports what the port is really doing,
+              // and "off" is a status to read, not a disabled control.
+              const _ScaleLiveTest(),
             ],
           ],
         ),
@@ -5373,34 +5368,42 @@ class _ScalePortDropdown extends ConsumerWidget {
 
 /// Live read from the configured port, so the operator can confirm the wiring
 /// and baud rate here rather than discovering it mid-sale at the till.
+///
+/// Reports the link's REAL state via [scaleStatusProvider]: off (no port
+/// held), port open and waiting, a live weight, or the error that stopped it.
 class _ScaleLiveTest extends ConsumerWidget {
   const _ScaleLiveTest();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final reading = ref.watch(scaleReadingProvider);
+    final l = AppLocalizations.of(context);
+    final muted = theme.colorScheme.onSurfaceVariant;
 
-    final (Color color, IconData icon, String text) = switch (reading) {
-      AsyncError(:final error) => (
+    final (Color color, IconData icon, String text) =
+        switch (ref.watch(scaleStatusProvider)) {
+      ScaleUnsupported() || ScaleOff() => (
+        muted,
+        Icons.power_settings_new,
+        l.scaleReadingOff,
+      ),
+      ScaleListening(:final port) => (
+        muted,
+        Icons.hourglass_empty,
+        l.scaleListening(port),
+      ),
+      ScaleLive(:final reading) => (
+        reading.stable ? context.successColor : context.warningColor,
+        reading.stable ? Icons.check_circle_outline : Icons.hourglass_empty,
+        '${reading.weight}${reading.unit ?? ''}'
+            '${reading.stable ? '' : '  (settling…)'}',
+      ),
+      ScaleFailed(:final error) => (
         context.dangerColor,
         Icons.error_outline,
         error is ScaleException
             ? error.message
-            : AppLocalizations.of(
-                context,
-              ).scaleErrorWithMessage(error.toString()),
-      ),
-      AsyncData(:final value) => (
-        value.stable ? context.successColor : context.warningColor,
-        value.stable ? Icons.check_circle_outline : Icons.hourglass_empty,
-        '${value.weight}${value.unit ?? ''}'
-            '${value.stable ? '' : '  (settling…)'}',
-      ),
-      _ => (
-        theme.colorScheme.onSurfaceVariant,
-        Icons.hourglass_empty,
-        AppLocalizations.of(context).waitingForScale,
+            : l.scaleErrorWithMessage(error.toString()),
       ),
     };
 

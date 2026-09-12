@@ -33,6 +33,7 @@ import 'package:pos_app/stock/stock_model.dart';
 import 'package:pos_app/stock/stock_control_model.dart';
 import 'package:pos_app/stock/stock_control_provider.dart';
 import 'package:pos_app/product/product_model.dart';
+import 'package:pos_app/product/product_visuals.dart';
 import 'package:pos_app/currency/currencies_provider.dart';
 import 'package:pos_app/security/security_guard.dart';
 import 'package:pos_app/security/security_keys.dart';
@@ -945,17 +946,16 @@ class _StockScreenState extends ConsumerState<StockScreen> {
   Widget _productCell(BuildContext context, Product product) => Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // FileImage → MemoryImage → placeholder. FileImage is cached by path
-          // so the avatar decodes once per product per session.
-          product.imageFile != null
-              ? CircleAvatar(
-                  radius: 14, backgroundImage: FileImage(product.imageFile!))
-              : product.imageBytes != null
-                  ? CircleAvatar(
-                      radius: 14,
-                      backgroundImage: MemoryImage(product.imageBytes!))
-                  : const CircleAvatar(
-                      radius: 14, child: Icon(Icons.inventory_2, size: 14)),
+          // Never the photo here: stock is read by NAME, and decoding an image
+          // per row is disk I/O a long stock list does not need. The food /
+          // service glyph still says at a glance which rows are services.
+          CircleAvatar(
+            radius: 14,
+            child: Icon(
+              productPlaceholderIcon(isService: product.isService),
+              size: 15,
+            ),
+          ),
           const SizedBox(width: 8),
           Flexible(
             child: Text(
@@ -1581,25 +1581,16 @@ class _ProductDetailPanelState
             color: theme.colorScheme.surfaceContainerHighest,
             child: Row(
               children: [
-                product.imageFile != null
-                    ? CircleAvatar(
-                        radius: 24,
-                        backgroundImage: FileImage(product.imageFile!),
-                      )
-                    : product.imageBytes != null
-                        ? CircleAvatar(
-                            radius: 24,
-                            backgroundImage:
-                                MemoryImage(product.imageBytes!),
-                          )
-                        : CircleAvatar(
-                            radius: 24,
-                            backgroundColor:
-                                theme.colorScheme.primaryContainer,
-                            child: Icon(Icons.inventory_2,
-                                color: theme.colorScheme.primary,
-                                size: 22),
-                          ),
+                // The glyph, never the photo — same rule as the stock table.
+                CircleAvatar(
+                  radius: 24,
+                  backgroundColor: theme.colorScheme.primaryContainer,
+                  child: Icon(
+                    productPlaceholderIcon(isService: product.isService),
+                    color: theme.colorScheme.primary,
+                    size: 22,
+                  ),
+                ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(

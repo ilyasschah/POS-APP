@@ -384,7 +384,7 @@ class _ScaleWeightBar extends ConsumerWidget {
               onPressed: stable ? () => onUse(weight) : null,
               style: FilledButton.styleFrom(
                 backgroundColor: color,
-                foregroundColor: context.onStatusColor,
+                foregroundColor: context.onStatus(color),
                 minimumSize: const Size(0, 44),
                 padding: const EdgeInsets.symmetric(horizontal: 16),
               ),

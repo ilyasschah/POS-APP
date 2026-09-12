@@ -143,7 +143,9 @@ class _CashMovementDialogState extends ConsumerState<_CashMovementDialog> {
                 }),
                 foregroundColor: WidgetStateProperty.resolveWith((states) {
                   if (states.contains(WidgetState.selected)) {
-                    return context.onStatusColor;
+                    return context.onStatus(
+                      isCashIn ? context.successColor : theme.colorScheme.error,
+                    );
                   }
                   return null;
                 }),
@@ -201,13 +203,19 @@ class _CashMovementDialogState extends ConsumerState<_CashMovementDialog> {
           style: FilledButton.styleFrom(
             backgroundColor:
                 isCashIn ? context.successColor : theme.colorScheme.error,
+            foregroundColor: context.onStatus(
+              isCashIn ? context.successColor : theme.colorScheme.error,
+            ),
           ),
           child: _saving
-              ? const SizedBox(
+              ? SizedBox(
                   width: 18,
                   height: 18,
+                  // Disabled while saving: the spinner sits on the neutral
+                  // disabled fill, not on the green or the red.
                   child: CircularProgressIndicator(
-                      strokeWidth: 2, color: Colors.white),
+                      strokeWidth: 2,
+                      color: theme.colorScheme.onSurfaceVariant),
                 )
               : Text(isCashIn
                 ? AppLocalizations.of(context).saveCashIn

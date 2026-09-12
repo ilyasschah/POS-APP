@@ -2457,6 +2457,69 @@ class AppLocalizationsEn extends AppLocalizations {
   String get colorRed => 'Red';
 
   @override
+  String get colorSky => 'Sky';
+
+  @override
+  String get colorTeal => 'Teal';
+
+  @override
+  String get colorGold => 'Gold';
+
+  @override
+  String get colorBrown => 'Brown';
+
+  @override
+  String get colorSlate => 'Slate';
+
+  @override
+  String get scaleReadingOff => 'Off — the scale port is closed';
+
+  @override
+  String scaleListening(String port) {
+    return '$port is open — waiting for the scale to send a weight…';
+  }
+
+  @override
+  String get newCustomerSupplier => 'New Customer / Supplier';
+
+  @override
+  String get newCashMovement => 'New Cash Movement';
+
+  @override
+  String get sessionNoMatches => 'No sessions match these filters.';
+
+  @override
+  String get changePasswordHint => 'Change the password you sign in with';
+
+  @override
+  String get devicePinHint => 'The 4-digit PIN that unlocks this terminal';
+
+  @override
+  String get activeDevicesHint => 'Terminals where your account is signed in';
+
+  @override
+  String get revokeDeviceTitle => 'Revoke this device?';
+
+  @override
+  String revokeDeviceConfirm(String device) {
+    return '$device will be signed out of your account.';
+  }
+
+  @override
+  String get actionRevoke => 'Revoke';
+
+  @override
+  String get shiftSearchHint => 'Search employee…';
+
+  @override
+  String get exportCsvAction => 'Export CSV';
+
+  @override
+  String endShiftWithElapsed(String elapsed) {
+    return 'End shift · $elapsed';
+  }
+
+  @override
   String get allFields => 'All fields';
 
   @override

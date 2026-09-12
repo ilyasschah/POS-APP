@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pos_app/core/ilyass_dropdown.dart';
+import 'package:pos_app/core/ilyass_screen.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qr_flutter/qr_flutter.dart';
@@ -31,40 +32,25 @@ class _LoyaltyCardsScreenState extends ConsumerState<LoyaltyCardsScreen> {
     final guard = ref.watch(securityGuardProvider);
     final theme = Theme.of(context);
 
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        backgroundColor: theme.colorScheme.surface,
-        leading: widget.onMenuPressed != null
-            ? IconButton(
-                icon: const Icon(Icons.menu),
-                onPressed: widget.onMenuPressed,
-              )
-            : null,
-        title: Text(AppLocalizations.of(context).loyaltyCards),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings_outlined),
-            tooltip: AppLocalizations.of(context).loyaltySettings,
-            onPressed: () => _showSettingsDialog(context),
-          ),
-          const SizedBox(width: 4),
-          ElevatedButton.icon(
-            icon: const Icon(Icons.add),
-            label: Text(AppLocalizations.of(context).addCard),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: theme.colorScheme.primary,
-              foregroundColor: theme.colorScheme.onPrimary,
-            ),
-            onPressed: () => guard.guard(
-              context,
-              SecurityKeys.loyaltyCards,
-              () => _showAddDialog(context),
-            ),
-          ),
-          const SizedBox(width: 16),
-        ],
+    final l = AppLocalizations.of(context);
+
+    return IlyassScreen(
+      title: l.loyaltyCards,
+      onMenuPressed: widget.onMenuPressed,
+      actions: [
+        IlyassMenuAction(
+          icon: Icons.settings_outlined,
+          label: l.loyaltySettings,
+          onSelected: () => _showSettingsDialog(context),
+        ),
+      ],
+      // Behind the same permission the header button was: moving a control
+      // must not move it out from behind its guard.
+      fabLabel: l.addCard,
+      onFabPressed: () => guard.guard(
+        context,
+        SecurityKeys.loyaltyCards,
+        () => _showAddDialog(context),
       ),
       body: cardsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -92,7 +78,8 @@ class _LoyaltyCardsScreenState extends ConsumerState<LoyaltyCardsScreen> {
           }
 
           return ListView.separated(
-            padding: const EdgeInsets.all(16),
+            // 88 at the bottom: the last card scrolls clear of the FAB.
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 88),
             itemCount: cards.length,
             separatorBuilder: (_, __) => const SizedBox(height: 8),
             itemBuilder: (context, i) => _CardTile(
@@ -195,7 +182,10 @@ class _LoyaltyCardsScreenState extends ConsumerState<LoyaltyCardsScreen> {
                 style: TextStyle(color: cs.onSurface.withValues(alpha: 0.6))),
           ),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: cs.error),
+            style: FilledButton.styleFrom(
+              backgroundColor: cs.error,
+              foregroundColor: cs.onError,
+            ),
             onPressed: () async {
               Navigator.pop(ctx);
               try {

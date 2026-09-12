@@ -71,6 +71,21 @@ void main() {
     expect(await db.recomputePaidStatus(docId), 1);
   });
 
+  test('two guests paying the same way stay two payments', () async {
+    // The field report of 2026-09-11: 184.60 + 198.00, both Espèces. Two
+    // rows, never one 382.60 — nothing groups tenders by their method.
+    await bank(total: 382.60, payments: [
+      pay('guest-1', 69, 184.60, 0),
+      pay('guest-2', 69, 198.00, 1),
+    ]);
+
+    final rows = await db.watchPayments(docId).first;
+    expect(rows, hasLength(2));
+    expect(rows.map((r) => r.paymentTypeId), [69, 69]);
+    expect(rows.map((r) => r.amount), [184.60, 198.00]);
+    expect(await db.recomputePaidStatus(docId), 1);
+  });
+
   test('a share put on account leaves the document partly paid', () async {
     await bank(total: 100, payments: [
       pay('guest-1', 1, 40, 0),

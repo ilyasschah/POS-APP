@@ -11,83 +11,136 @@ import 'package:pos_app/currency/currencies_provider.dart';
 import 'package:pos_app/customer/customer_model.dart';
 import 'package:pos_app/api/customer_discount_models.dart';
 import 'package:pos_app/customer/customer_provider.dart';
+import 'package:pos_app/core/ilyass_screen.dart';
+import 'package:pos_app/core/unified_search_bar.dart';
 import 'package:pos_app/database/app_database.dart';
 import 'package:pos_app/database/database_provider.dart';
 import 'package:pos_app/utils/snackbar_helper.dart';
 
-class CustomersScreen extends ConsumerWidget {
-  /// Passed by ManagementLayout when the sidebar is hidden so the AppBar can
-  /// show a menu icon rather than the default back arrow.
+/// Customers & Suppliers — an Ilyass Screen: search + Status filter in the
+/// header, the two lists as tabs, and "New" as the floating button.
+class CustomersScreen extends ConsumerStatefulWidget {
+  /// Supplied by ManagementLayout; [IlyassLeading] turns it into the hamburger.
   final VoidCallback? onMenuPressed;
 
   const CustomersScreen({super.key, this.onMenuPressed});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<CustomersScreen> createState() => _CustomersScreenState();
+}
+
+class _CustomersScreenState extends ConsumerState<CustomersScreen> {
+  final _searchCtrl = TextEditingController();
+  String _query = '';
+
+  /// The Status filter on `isEnabled`: true = active only, false = inactive
+  /// only, null = everyone. Applies to both tabs.
+  bool? _active;
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  bool _matches(Customer c) {
+    if (_active != null && c.isEnabled != _active) return false;
+    final q = _query.trim().toLowerCase();
+    if (q.isEmpty) return true;
+    return [c.name, c.code, c.phoneNumber, c.email, c.city, c.taxNumber]
+        .any((f) => f != null && f.toLowerCase().contains(q));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final asyncCustomers = ref.watch(allCustomersProvider);
     final company = ref.watch(selectedCompanyProvider);
 
     return DefaultTabController(
       length: 2,
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(AppLocalizations.of(context).customersSuppliers),
-          // Suppress the auto back-arrow — ManagementLayout controls navigation.
-          automaticallyImplyLeading: false,
-          leading: onMenuPressed != null
-              ? IconButton(
-                  icon: const Icon(Icons.menu),
-                  tooltip: AppLocalizations.of(context).showNavigation,
-                  onPressed: onMenuPressed,
-                )
-              : null,
-          bottom: TabBar(
-            tabs: [
-              Tab(
-                  icon: const Icon(Icons.people),
-                  text: AppLocalizations.of(context).customersLabel),
-              Tab(
-                  icon: const Icon(Icons.store),
-                  text: AppLocalizations.of(context).rptSuppliers),
-            ],
-          ),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.person_add),
-              tooltip: AppLocalizations.of(context).actionAdd,
-              onPressed: company == null
-                  ? null
-                  : () => showDialog(
-                        context: context,
-                        builder: (_) =>
-                            _CustomerFormDialog(companyId: company.id),
-                      ),
+      child: IlyassScreen(
+        title: l.customersSuppliers,
+        onMenuPressed: widget.onMenuPressed,
+        searchBar: UnifiedSearchBar(
+          controller: _searchCtrl,
+          singleLine: true,
+          hintText: l.searchCustomer,
+          chips: [
+            if (_active != null)
+              SearchBarChip(
+                id: 'status',
+                label: _active! ? l.statusActive : l.statusInactive,
+                icon: _active! ? Icons.check_circle_outline : Icons.block,
+                onRemove: () => setState(() => _active = null),
+              ),
+          ],
+          sectionsBuilder: (_) => [
+            FilterMenuSection(
+              title: l.statusLabel,
+              icon: Icons.toggle_on_outlined,
+              options: [
+                for (final (value, label, icon) in [
+                  (null, l.filterAll, Icons.people_outline),
+                  (true, l.statusActive, Icons.check_circle_outline),
+                  (false, l.statusInactive, Icons.block),
+                ])
+                  FilterMenuOption(
+                    label: label,
+                    icon: icon,
+                    selected: _active == value,
+                    onSelected: () => setState(() => _active = value),
+                  ),
+              ],
             ),
           ],
+          onQueryChanged: (v) => setState(() => _query = v),
+          onClearAll: () {
+            _searchCtrl.clear();
+            setState(() {
+              _query = '';
+              _active = null;
+            });
+          },
         ),
+        bottom: TabBar(
+          tabs: [
+            Tab(icon: const Icon(Icons.people), text: l.customersLabel),
+            Tab(icon: const Icon(Icons.store), text: l.rptSuppliers),
+          ],
+        ),
+        // Not "Add Customer / Supplier": that is the form's title, and the E2E
+        // helper waits for the title to appear and then to go away.
+        fabLabel: company == null ? null : l.newCustomerSupplier,
+        onFabPressed: company == null
+            ? null
+            : () => showDialog(
+                  context: context,
+                  builder: (_) => _CustomerFormDialog(companyId: company.id),
+                ),
         body: asyncCustomers.when(
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => Center(child: Text(AppLocalizations.of(context).errorLoadingCustomers(e.toString()))),
+          error: (e, _) => Center(
+            child: Text(l.errorLoadingCustomers(e.toString())),
+          ),
           data: (all) {
             if (company == null) {
-              return Center(child: Text(AppLocalizations.of(context).noCompanySelectedShort));
+              return Center(child: Text(l.noCompanySelectedShort));
             }
             final int companyId = company.id;
-
-            final customers = all.where((c) => c.isCustomer).toList();
-            final suppliers = all.where((c) => c.isSupplier).toList();
+            final shown = all.where(_matches);
 
             return TabBarView(
               children: [
                 _CustomerList(
-                  items: customers,
+                  items: shown.where((c) => c.isCustomer).toList(),
                   companyId: companyId,
-                  emptyMessage: AppLocalizations.of(context).noCustomersFound,
+                  emptyMessage: l.noCustomersFound,
                 ),
                 _CustomerList(
-                  items: suppliers,
+                  items: shown.where((c) => c.isSupplier).toList(),
                   companyId: companyId,
-                  emptyMessage: AppLocalizations.of(context).noSuppliersFound,
+                  emptyMessage: l.noSuppliersFound,
                 ),
               ],
             );
@@ -124,7 +177,8 @@ class _CustomerList extends ConsumerWidget {
     }
 
     return ListView.separated(
-      padding: const EdgeInsets.all(16),
+      // 88 at the bottom: the last row scrolls clear of the floating button.
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 88),
       itemCount: items.length,
       separatorBuilder: (_, __) => const Divider(),
       itemBuilder: (context, i) {

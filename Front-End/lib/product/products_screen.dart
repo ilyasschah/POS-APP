@@ -28,6 +28,7 @@ import 'package:pos_app/product/catalog_export.dart';
 import 'package:pos_app/product/product_group_model.dart';
 import 'package:pos_app/product/product_provider.dart';
 import 'package:pos_app/product/product_sort.dart';
+import 'package:pos_app/product/product_visuals.dart';
 import 'package:pos_app/tax/tax_model.dart';
 import 'package:pos_app/tax/tax_provider.dart';
 import 'package:pos_app/core/responsive.dart';
@@ -161,7 +162,7 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
             onPressed: () => Navigator.pop(ctx, true),
             child: Text(
               AppLocalizations.of(context).actionDelete,
-              style: TextStyle(color: ctx.onStatusColor),
+              style: TextStyle(color: ctx.onDangerColor),
             ),
           ),
         ],
@@ -739,7 +740,7 @@ class _ProductListContent extends ConsumerWidget {
           ),
           child: provider == null
               ? PhosphorIcon(
-                  PhosphorIconsRegular.forkKnife,
+                  productPlaceholderIcon(isService: p.isService),
                   color: marker != null
                       ? marker.withValues(alpha: 0.9)
                       : theme.hintColor,
@@ -2327,8 +2328,10 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                     base64Decode(_selectedImageBase64!),
                     fit: BoxFit.cover,
                   )
+                // Follows the live "Is Service" switch, so the preview changes
+                // the moment it is flipped.
                 : PhosphorIcon(
-                    PhosphorIconsRegular.forkKnife,
+                    productPlaceholderIcon(isService: _isService),
                     color: theme.hintColor,
                     size: 44,
                   ),

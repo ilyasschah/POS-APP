@@ -161,7 +161,7 @@ class _PaymentTypesScreenState extends ConsumerState<PaymentTypesScreen> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: ctx.dangerColor,
-              foregroundColor: ctx.onStatusColor,
+              foregroundColor: ctx.onDangerColor,
             ),
             onPressed: () => Navigator.pop(ctx, true),
             child: Text(l.actionDelete),

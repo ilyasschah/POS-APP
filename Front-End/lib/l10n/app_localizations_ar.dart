@@ -2444,6 +2444,69 @@ class AppLocalizationsAr extends AppLocalizations {
   String get colorRed => 'أحمر';
 
   @override
+  String get colorSky => 'سماوي';
+
+  @override
+  String get colorTeal => 'أزرق مخضر';
+
+  @override
+  String get colorGold => 'ذهبي';
+
+  @override
+  String get colorBrown => 'بني';
+
+  @override
+  String get colorSlate => 'رمادي أردوازي';
+
+  @override
+  String get scaleReadingOff => 'متوقف — منفذ الميزان مغلق';
+
+  @override
+  String scaleListening(String port) {
+    return 'المنفذ $port مفتوح — في انتظار إرسال الوزن من الميزان…';
+  }
+
+  @override
+  String get newCustomerSupplier => 'عميل / مورد جديد';
+
+  @override
+  String get newCashMovement => 'حركة نقدية جديدة';
+
+  @override
+  String get sessionNoMatches => 'لا توجد جلسات تطابق عوامل التصفية هذه.';
+
+  @override
+  String get changePasswordHint => 'غيّر كلمة المرور التي تسجّل بها الدخول';
+
+  @override
+  String get devicePinHint => 'رمز PIN المكوّن من 4 أرقام لفتح هذا الجهاز';
+
+  @override
+  String get activeDevicesHint => 'الأجهزة التي سُجّل فيها دخول حسابك';
+
+  @override
+  String get revokeDeviceTitle => 'إلغاء ربط هذا الجهاز؟';
+
+  @override
+  String revokeDeviceConfirm(String device) {
+    return 'سيتم تسجيل خروج $device من حسابك.';
+  }
+
+  @override
+  String get actionRevoke => 'إلغاء الربط';
+
+  @override
+  String get shiftSearchHint => 'ابحث عن موظف…';
+
+  @override
+  String get exportCsvAction => 'تصدير CSV';
+
+  @override
+  String endShiftWithElapsed(String elapsed) {
+    return 'إنهاء الوردية · $elapsed';
+  }
+
+  @override
   String get allFields => 'كل الحقول';
 
   @override

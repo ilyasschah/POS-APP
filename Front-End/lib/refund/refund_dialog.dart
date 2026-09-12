@@ -798,12 +798,15 @@ class _RefundDialogState extends ConsumerState<RefundDialog> {
                             width: 14,
                             height: 14,
                             child: CircularProgressIndicator(
-                                strokeWidth: 2, color: context.onStatusColor))
+                                // Shown while submitting, i.e. on the
+                                // DISABLED fill — not on the green.
+                                strokeWidth: 2, color: cs.onSurfaceVariant))
                         : const Icon(Icons.check, size: 16),
                     label: Text(AppLocalizations.of(context).actionOk),
                     onPressed: _submitting ? null : _submit,
                     style: FilledButton.styleFrom(
-                        backgroundColor: context.successColor),
+                        backgroundColor: context.successColor,
+                        foregroundColor: context.onSuccessColor),
                   ),
                 ],
               ),

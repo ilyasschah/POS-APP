@@ -116,9 +116,12 @@ public class SplitBillCheckoutTests : IDisposable
 
     /// <summary>Banks a one-line order worth 100.00 with these tenders; an
     /// empty list is the ordinary sale, paid in cash.</summary>
-    private async Task<CheckoutResult> Checkout(params CheckoutPaymentDto[] tenders)
+    private Task<CheckoutResult> Checkout(params CheckoutPaymentDto[] tenders) =>
+        Checkout(100m, tenders);
+
+    /// <summary>Banks a one-line order worth <paramref name="total"/>.</summary>
+    private async Task<CheckoutResult> Checkout(decimal total, params CheckoutPaymentDto[] tenders)
     {
-        const decimal total = 100m;
         await using var db = Db();
         var order = PosOrder.Create(_company, _user, $"ORD-{Guid.NewGuid():N}", 0, 0, total, null, 0, 0);
         db.PosOrders.Add(order);
@@ -171,6 +174,22 @@ public class SplitBillCheckoutTests : IDisposable
         var (payments, paidStatus) = Banked(result.DocumentId);
         Assert.Equal([_cash, _card], payments.Select(p => p.PaymentTypeId));
         Assert.Equal([40m, 60m], payments.Select(p => p.Amount));
+        Assert.Equal(PaidStatusConstants.Paid, paidStatus);
+    }
+
+    [Fact]
+    public async Task Two_guests_paying_the_same_way_stay_two_payments()
+    {
+        // The field report of 2026-09-11: two guests, both in cash, banked as
+        // ONE 382.60 payment. That was a server still running the build from
+        // before the payment list existed — it read only PaymentTypeId and the
+        // summed AmountPaid. Nothing may group tenders by their method.
+        var result = await Checkout(382.60m, Pay(_cash, 184.60m), Pay(_cash, 198.00m));
+
+        var (payments, paidStatus) = Banked(result.DocumentId);
+        Assert.Equal(2, payments.Count);
+        Assert.All(payments, p => Assert.Equal(_cash, p.PaymentTypeId));
+        Assert.Equal([184.60m, 198.00m], payments.Select(p => p.Amount));
         Assert.Equal(PaidStatusConstants.Paid, paidStatus);
     }
 

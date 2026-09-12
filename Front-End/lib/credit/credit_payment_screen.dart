@@ -1263,14 +1263,15 @@ class _ActionBar extends StatelessWidget {
                     height: 24,
                     child: CircularProgressIndicator(
                       strokeWidth: 3,
-                      color: context.onStatusColor,
+                      // Disabled while submitting: neutral fill, not green.
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   )
                 : const Icon(Icons.check, size: 24),
             label: Text(AppLocalizations.of(context).actionOk, style: const TextStyle(fontSize: 16)),
             style: FilledButton.styleFrom(
               backgroundColor: context.successColor,
-              foregroundColor: context.onStatusColor,
+              foregroundColor: context.onSuccessColor,
               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
             ),
           ),
@@ -1281,7 +1282,7 @@ class _ActionBar extends StatelessWidget {
             label: Text(AppLocalizations.of(context).actionCancel, style: const TextStyle(fontSize: 16)),
             style: FilledButton.styleFrom(
               backgroundColor: context.dangerColor,
-              foregroundColor: context.onStatusColor,
+              foregroundColor: context.onDangerColor,
               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
             ),
           ),

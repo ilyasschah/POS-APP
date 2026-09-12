@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'package:pos_app/core/app_theme.dart';
+
 /// Semantic status colours (success / warning / danger / info) that adapt to the
 /// active theme's brightness, so they stay legible across every theme mode
 /// (light, dimmed, dark, night, gray, high-contrast) instead of the hardcoded
@@ -29,7 +31,19 @@ extension StatusColors on BuildContext {
   Color get infoColor =>
       _isDark ? const Color(0xFF64B5F6) : const Color(0xFF1565C0);
 
-  /// Foreground (text/icon) that reads on top of a filled status colour — e.g.
-  /// white on the green "Pay" button. Centralised so it's one deliberate choice.
-  Color get onStatusColor => Colors.white;
+  /// Foreground (text/icons) ON a filled status colour — black or white,
+  /// whichever actually reads (WCAG).
+  ///
+  /// There used to be one blanket white `onStatusColor` for every fill. On the
+  /// dark themes' success green (#66BB6A) that is ~2.4:1, and on their pastel
+  /// error red ~1.8:1 — labels nobody can read. Pair the foreground with the
+  /// fill it sits on, always.
+  Color onStatus(Color fill) => readableOn(fill);
+
+  Color get onSuccessColor => onStatus(successColor);
+  Color get onWarningColor => onStatus(warningColor);
+  Color get onInfoColor => onStatus(infoColor);
+
+  /// The theme's own partner for its error role, which [dangerColor] reuses.
+  Color get onDangerColor => Theme.of(this).colorScheme.onError;
 }

@@ -61,15 +61,22 @@ Future<E2ECustomer> createCustomer(
   final customerPhone = phone ?? '+2126$kRunDigits';
 
   await ensureManagementSection(tester, ctx.l, ctx.l.customersSuppliersLower);
+  // The floating "New Customer / Supplier" button, by its own label. Its text
+  // differs from the form's title on purpose, so the title waits below cannot
+  // be satisfied by the button itself.
+  final newButton = find.widgetWithText(
+    FloatingActionButton,
+    ctx.l.newCustomerSupplier,
+  );
   await waitFor(
     tester,
-    find.byIcon(Icons.person_add),
+    newButton,
     timeout: const Duration(seconds: 30),
     because: 'Management did not land on Customers & Suppliers.',
   );
   step('Customers & Suppliers opened');
 
-  await tapVisible(tester, find.byIcon(Icons.person_add));
+  await tapVisible(tester, newButton);
   await waitFor(
     tester,
     find.text(ctx.l.addCustomerSupplier),

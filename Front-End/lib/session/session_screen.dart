@@ -198,7 +198,7 @@ class SessionScreen extends ConsumerWidget {
                     FloatingActionButton.extended(
                       heroTag: 'session-continue',
                       backgroundColor: context.successColor,
-                      foregroundColor: Colors.white,
+                      foregroundColor: context.onSuccessColor,
                       icon: const Icon(Icons.point_of_sale),
                       label: Text(l.continueSelling),
                       onPressed: () => _continueSelling(context, ref),
@@ -214,7 +214,9 @@ class SessionScreen extends ConsumerWidget {
                       backgroundColor: blockers.isEmpty
                           ? context.dangerColor
                           : theme.disabledColor,
-                      foregroundColor: Colors.white,
+                      foregroundColor: blockers.isEmpty
+                          ? context.onDangerColor
+                          : theme.colorScheme.onSurface,
                       icon: const Icon(Icons.lock_outline),
                       label: Text(blockers.isEmpty
                           ? l.closeRegister

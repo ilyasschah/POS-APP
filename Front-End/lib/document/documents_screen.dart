@@ -644,7 +644,7 @@ class _DocumentsScreenState extends ConsumerState<DocumentsScreen> {
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: ctx.dangerColor,
-                      foregroundColor: ctx.onStatusColor,
+                      foregroundColor: ctx.onDangerColor,
                     ),
                     onPressed: () => Navigator.of(ctx).pop(true),
                     child: Text(l.actionDelete),

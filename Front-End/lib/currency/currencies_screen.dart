@@ -47,7 +47,7 @@ class CurrenciesScreen extends ConsumerWidget {
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: ctx.dangerColor),
             onPressed: () => Navigator.pop(ctx, true),
-            child: Text(AppLocalizations.of(context).actionDelete, style: TextStyle(color: ctx.onStatusColor)),
+            child: Text(AppLocalizations.of(context).actionDelete, style: TextStyle(color: ctx.onDangerColor)),
           ),
         ],
       ),

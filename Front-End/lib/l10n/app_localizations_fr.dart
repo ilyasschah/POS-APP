@@ -2475,6 +2475,70 @@ class AppLocalizationsFr extends AppLocalizations {
   String get colorRed => 'Rouge';
 
   @override
+  String get colorSky => 'Ciel';
+
+  @override
+  String get colorTeal => 'Bleu canard';
+
+  @override
+  String get colorGold => 'Or';
+
+  @override
+  String get colorBrown => 'Marron';
+
+  @override
+  String get colorSlate => 'Ardoise';
+
+  @override
+  String get scaleReadingOff => 'Désactivé — le port de la balance est fermé';
+
+  @override
+  String scaleListening(String port) {
+    return '$port est ouvert — en attente d\'un poids de la balance…';
+  }
+
+  @override
+  String get newCustomerSupplier => 'Nouveau client / fournisseur';
+
+  @override
+  String get newCashMovement => 'Nouveau mouvement de caisse';
+
+  @override
+  String get sessionNoMatches => 'Aucune session ne correspond à ces filtres.';
+
+  @override
+  String get changePasswordHint => 'Modifier le mot de passe de connexion';
+
+  @override
+  String get devicePinHint =>
+      'Le code PIN à 4 chiffres qui déverrouille ce terminal';
+
+  @override
+  String get activeDevicesHint => 'Terminaux où votre compte est connecté';
+
+  @override
+  String get revokeDeviceTitle => 'Révoquer cet appareil ?';
+
+  @override
+  String revokeDeviceConfirm(String device) {
+    return '$device sera déconnecté de votre compte.';
+  }
+
+  @override
+  String get actionRevoke => 'Révoquer';
+
+  @override
+  String get shiftSearchHint => 'Rechercher un employé…';
+
+  @override
+  String get exportCsvAction => 'Exporter en CSV';
+
+  @override
+  String endShiftWithElapsed(String elapsed) {
+    return 'Terminer le service · $elapsed';
+  }
+
+  @override
   String get allFields => 'Tous les champs';
 
   @override

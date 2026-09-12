@@ -309,7 +309,7 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
                   label: Text(AppLocalizations.of(context).addBooking),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: context.successColor,
-                    foregroundColor: context.onStatusColor,
+                    foregroundColor: context.onSuccessColor,
                   ),
                   onPressed: isLoading
                       ? null
@@ -1423,7 +1423,7 @@ class _AddBookingDialogState extends ConsumerState<_AddBookingDialog> {
           onPressed: _saving ? null : _save,
           style: ElevatedButton.styleFrom(
             backgroundColor: context.successColor,
-            foregroundColor: context.onStatusColor,
+            foregroundColor: context.onSuccessColor,
           ),
           child: _saving
               ? SizedBox(
@@ -1431,7 +1431,9 @@ class _AddBookingDialogState extends ConsumerState<_AddBookingDialog> {
                   height: 16,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: context.onStatusColor,
+                    // The button is disabled while saving: the spinner sits
+                    // on the neutral disabled fill, not on the green.
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 )
               : Text(AppLocalizations.of(context).actionSave),
@@ -1870,7 +1872,7 @@ class _BookingDetailDialogState extends ConsumerState<_BookingDetailDialog> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: ctx.dangerColor,
-              foregroundColor: ctx.onStatusColor,
+              foregroundColor: ctx.onDangerColor,
             ),
             onPressed: () => Navigator.pop(ctx, true),
             child: Text(AppLocalizations.of(context).actionDelete),

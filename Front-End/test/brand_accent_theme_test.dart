@@ -76,6 +76,25 @@ void main() {
       expect(parseAccentColor('2196F3'), const Color(0xFF2196F3));
       expect(parseAccentColor('  #2196f3  '), const Color(0xFF2196F3));
     });
+
+    test('the palette offers the brand first', () {
+      // Both pickers read kAccentPalette; the first swatch is the default.
+      expect(kAccentPalette.first.color, kBrandAccent);
+    });
+
+    test('palette names and colours are all distinct', () {
+      final names = kAccentPalette.map((s) => s.name).toList();
+      final colours = kAccentPalette.map((s) => accentHex(s.color)).toList();
+      expect(names.toSet().length, names.length, reason: 'duplicate name');
+      expect(colours.toSet().length, colours.length, reason: 'duplicate hex');
+    });
+
+    test('accentHex writes the stored #RRGGBB form, round-tripping', () {
+      for (final s in kAccentPalette) {
+        expect(accentHex(s.color), matches(RegExp(r'^#[0-9A-F]{6}$')));
+        expect(parseAccentColor(accentHex(s.color)), s.color);
+      }
+    });
   });
 
   group('every theme mode stays legible on the brand accent', () {
@@ -149,6 +168,57 @@ void main() {
                 '${_hex(cs.onPrimary)} on ${_hex(cs.primary)}',
           );
         }
+      }
+    });
+
+    test('every palette swatch clears the same bar, in every mode', () {
+      for (final swatch in kAccentPalette) {
+        for (final mode in _modes) {
+          final theme = buildAppTheme(mode, swatch.color);
+          final cs = theme.colorScheme;
+          final at = '$mode / ${swatch.name} → ${_hex(cs.primary)}';
+          expect(_ratio(cs.onPrimary, cs.primary), greaterThanOrEqualTo(4.5),
+              reason: '$at: label on the accent fill');
+          expect(_ratio(cs.primary, cs.surface), greaterThanOrEqualTo(3.0),
+              reason: '$at: accent on surface');
+          expect(
+              _ratio(cs.primary, theme.scaffoldBackgroundColor),
+              greaterThanOrEqualTo(3.0),
+              reason: '$at: accent on the page ground');
+        }
+      }
+    });
+  });
+
+  group('the accent stays SOLID — the swatch the operator picked', () {
+    // fromSeed's tonal palette capped the primary's chroma at 36: red came out
+    // brick in light and pastel pink in dark — the same pink as Pink. The
+    // primary now keeps the swatch's hue and only moves lightness for contrast.
+    double hueGap(Color a, Color b) {
+      final d = (HSLColor.fromColor(a).hue - HSLColor.fromColor(b).hue).abs();
+      return d > 180 ? 360 - d : d;
+    }
+
+    test('every swatch keeps its hue in every mode', () {
+      for (final swatch in kAccentPalette) {
+        for (final mode in _modes) {
+          final primary = buildAppTheme(mode, swatch.color).colorScheme.primary;
+          expect(hueGap(primary, swatch.color), lessThan(4),
+              reason: '$mode / ${swatch.name}: '
+                  '${_hex(primary)} drifted from ${_hex(swatch.color)}');
+        }
+      }
+    });
+
+    test('a swatch that already reads is painted exactly as picked', () {
+      // Red clears 4.5:1 on the light surface untouched — so it IS the red.
+      final red = kAccentPalette.firstWhere((s) => s.name == 'Red').color;
+      expect(buildAppTheme('light', red).colorScheme.primary, red);
+      // And the brand clears it on every dark ground.
+      for (final mode in const ['dark', 'night', 'high_contrast']) {
+        expect(buildAppTheme(mode, kBrandAccent).colorScheme.primary,
+            kBrandAccent,
+            reason: mode);
       }
     });
   });
