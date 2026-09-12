@@ -104,6 +104,20 @@ namespace Api.Services
             var taxToDelete = await _repository.GetTaxByIdAsync(id, companyId);
             if (taxToDelete == null) return false;
 
+            // Checked up front rather than left to the FK constraints. The
+            // constraint did refuse — but as a DbUpdateException, logged as an EF
+            // failure with a full stack trace, and answered with a generic "still
+            // referenced by other data" that named neither the tax nor the cause.
+            // History blocks the delete for good; product links only until the
+            // products are moved to another tax.
+            var (products, saleLines) = await _repository.GetUsageAsync(taxToDelete.Id);
+            if (saleLines > 0)
+                throw new InvalidOperationException(
+                    $"Tax '{taxToDelete.Name}' can't be deleted: it appears in {saleLines} sale or document line(s), which must keep the tax they were issued with. Disable it instead.");
+            if (products > 0)
+                throw new InvalidOperationException(
+                    $"Tax '{taxToDelete.Name}' can't be deleted: {products} product(s) use it. Move them to another tax first (Switch Taxes), or disable this tax instead.");
+
             await _repository.DeleteTaxAsync(taxToDelete.Id, companyId);
             return true;
         }

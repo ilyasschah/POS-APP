@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:pos_app/api/api_client.dart';
 import 'package:pos_app/auth/auth_storage.dart';
 import 'package:pos_app/auth/auth_token_cache.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 
 /// This terminal's POS name + the prefix used in offline document numbers
 /// (`<DeviceName>-<DocTypeCode>-<Seq>`).
@@ -93,6 +94,68 @@ Future<void> pushDeviceNameToServer(String name) async {
   }
 }
 
+/// What the server said about a POS name (`GET /Master/CheckDeviceName`).
+enum DeviceNameCheck {
+  /// No other terminal of this account carries it.
+  available,
+
+  /// Another terminal of this account already carries it.
+  taken,
+
+  /// The server could not be asked — offline, unlinked, or an error. Treated
+  /// as a refusal: an unverified name could duplicate another till's
+  /// document-number prefix, and nothing would notice until two receipts
+  /// shared a number.
+  unverified,
+}
+
+/// Asks the control plane whether [name] is free for THIS terminal. Its own
+/// current name is always free to it. Never throws.
+Future<DeviceNameCheck> checkDeviceNameAvailability(String name) async {
+  final clean = _stripDeviceName(name);
+  if (clean.isEmpty) return DeviceNameCheck.unverified;
+  try {
+    // The endpoint takes companyId from the token, never from us.
+    final jwt = await AuthTokenCache.get();
+    if (jwt == null || jwt.isEmpty) return DeviceNameCheck.unverified;
+
+    final deviceId = await AuthStorage().getOrCreateDeviceId();
+    final res = await createDio().get(
+      '/Master/CheckDeviceName',
+      queryParameters: {'deviceId': deviceId, 'deviceName': clean},
+    );
+    final data = res.data;
+    if (data is Map && data['available'] is bool) {
+      return data['available'] == true
+          ? DeviceNameCheck.available
+          : DeviceNameCheck.taken;
+    }
+    return DeviceNameCheck.unverified;
+  } catch (e) {
+    debugPrint('Device name check failed: $e');
+    return DeviceNameCheck.unverified;
+  }
+}
+
+/// The name checker, as a provider so widget tests can answer without a server.
+final deviceNameCheckerProvider =
+    Provider<Future<DeviceNameCheck> Function(String name)>(
+  (ref) => checkDeviceNameAvailability,
+);
+
+/// The message shown for a name that was not accepted, or null when it was.
+/// Shared by onboarding and Settings so the two never word it differently.
+String? deviceNameRejection(
+  AppLocalizations l,
+  String name,
+  DeviceNameCheck result,
+) =>
+    switch (result) {
+      DeviceNameCheck.available => null,
+      DeviceNameCheck.taken => l.deviceNameTaken(name),
+      DeviceNameCheck.unverified => l.deviceNameCheckFailed,
+    };
+
 /// Reactive device name for the Settings UI. Empty until loaded / set.
 class DeviceNameNotifier extends Notifier<String> {
   @override
@@ -106,6 +169,10 @@ class DeviceNameNotifier extends Notifier<String> {
   }
 
   /// Persists the sanitized name and updates the UI.
+  ///
+  /// Does NOT check uniqueness — callers that take a name from the operator
+  /// (onboarding, Settings) confirm it with [checkDeviceNameAvailability]
+  /// first, and only then call this.
   Future<void> setName(String raw) async {
     final clean = sanitizeDeviceName(raw);
     final prefs = await SharedPreferences.getInstance();

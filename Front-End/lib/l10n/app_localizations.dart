@@ -14233,6 +14233,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Product Quantity Updated ({user})'**
   String productQuantityUpdated(String user);
+
+  /// No description provided for @deviceNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a name for this terminal.'**
+  String get deviceNameRequired;
+
+  /// A POS name is the terminal's document-number prefix, so it must be unique within the account.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is already used by another terminal on this account. Choose another name, or revoke that terminal first under Active Devices.'**
+  String deviceNameTaken(String name);
+
+  /// No description provided for @deviceNameCheckFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t check this name with the server. Connect to the network and try again.'**
+  String get deviceNameCheckFailed;
+
+  /// No description provided for @deviceStatusBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocked'**
+  String get deviceStatusBlocked;
+
+  /// No description provided for @deviceStatusRevoked.
+  ///
+  /// In en, this message translates to:
+  /// **'Removed'**
+  String get deviceStatusRevoked;
+
+  /// No description provided for @lastSeenAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Last seen: {date}'**
+  String lastSeenAt(String date);
+
+  /// No description provided for @seatsInUseTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Seats in use / licensed seats'**
+  String get seatsInUseTooltip;
+
+  /// No description provided for @taxInUseByProducts.
+  ///
+  /// In en, this message translates to:
+  /// **'“{name}” can\'t be deleted — {count, plural, =1{1 product uses it} other{{count} products use it}}. Move them to another tax with {action} first, or disable this tax instead.'**
+  String taxInUseByProducts(String name, int count, String action);
+
+  /// No description provided for @taxInUseByDocuments.
+  ///
+  /// In en, this message translates to:
+  /// **'“{name}” can\'t be deleted — it appears in existing sales or documents, which must keep the tax they were issued with. Disable it instead.'**
+  String taxInUseByDocuments(String name);
+
+  /// No description provided for @taxesNotDeletedInUse.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 tax wasn\'t deleted} other{{count} taxes weren\'t deleted}} — still used by products or sales: {names}. Disable them instead.'**
+  String taxesNotDeletedInUse(int count, String names);
 }
 
 class _AppLocalizationsDelegate

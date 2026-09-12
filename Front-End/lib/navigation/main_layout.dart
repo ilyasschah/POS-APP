@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:pos_app/core/desktop_window.dart';
 import 'package:pos_app/core/ilyass_screen.dart';
 import 'package:pos_app/barcode/barcode_debug_widget.dart';
 import 'package:pos_app/barcode/global_scan_listener.dart';
@@ -46,6 +47,7 @@ import 'package:pos_app/update/app_release.dart';
 import 'package:pos_app/update/update_providers.dart';
 import 'package:pos_app/update/update_watcher.dart';
 import 'package:pos_app/sync/sync_button.dart';
+import 'package:pos_app/sync/sync_outcome_listener.dart';
 import 'package:pos_app/security/security_guard.dart';
 import 'package:pos_app/security/security_keys.dart';
 
@@ -154,10 +156,6 @@ class _MainLayoutState extends ConsumerState<MainLayout> with WindowListener {
   // button) so the on-close backup + destroy only run once.
   bool _closing = false;
 
-  // Windows only: whether the window was maximized before it went fullscreen,
-  // so leaving fullscreen puts it back the way the cashier had it. See the
-  // full-screen button for why maximized has to be dropped first at all.
-  bool _wasMaximizedBeforeFullScreen = false;
 
   // Version already announced to the operator this session. The auto-check
   // repeats every 6 hours, so without this the same snackbar would reappear all
@@ -662,31 +660,10 @@ class _MainLayoutState extends ConsumerState<MainLayout> with WindowListener {
                       tooltip: AppLocalizations.of(context).fullScreen,
                       onTap: () async {
                         _closeSidebar();
-                        final full = await windowManager.isFullScreen();
-                        // 🚨 Windows only: window_manager enters fullscreen by
-                        // moving and resizing the window to the monitor rect,
-                        // and Windows ignores that on a MAXIMIZED (zoomed)
-                        // window — it keeps the maximized placement, so the
-                        // button did nothing at all on a till that boots
-                        // maximized. macOS uses the native fullscreen path and
-                        // was never affected, which is why it worked there.
-                        // Drop out of maximized first, and put it back on exit.
-                        if (defaultTargetPlatform == TargetPlatform.windows) {
-                          if (!full) {
-                            _wasMaximizedBeforeFullScreen = await windowManager
-                                .isMaximized();
-                            if (_wasMaximizedBeforeFullScreen) {
-                              await windowManager.unmaximize();
-                            }
-                          }
-                          await windowManager.setFullScreen(!full);
-                          if (full && _wasMaximizedBeforeFullScreen) {
-                            await windowManager.maximize();
-                            _wasMaximizedBeforeFullScreen = false;
-                          }
-                          return;
-                        }
-                        await windowManager.setFullScreen(!full);
+                        // Flips the window and remembers the choice on this
+                        // device, so the next launch opens the same way. The
+                        // Windows maximized-window quirk lives there too.
+                        await toggleDesktopFullScreen();
                       },
                     ),
                   NavIconButton(
@@ -734,6 +711,11 @@ class _MainLayoutState extends ConsumerState<MainLayout> with WindowListener {
           // Wedge scans, wherever the operator happens to be. Renders nothing;
           // it only watches the keyboard.
           const GlobalScanListener(),
+          // How each sync ended — a refused delete above all — for this shell
+          // AND Management, which is pushed over it. Renders nothing. It used
+          // to live in SyncButton, inside the drawer, i.e. only while the
+          // drawer was open.
+          const SyncOutcomeListener(),
           const Positioned.fill(child: BarcodeDebugOverlay()),
         ],
       ),

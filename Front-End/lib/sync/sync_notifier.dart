@@ -9,7 +9,7 @@ import 'package:pos_app/sync/sync_provider.dart';
 /// Tracks the in-flight state of a manual sync. `isLoading` is true while a sync
 /// runs; `hasError` flips true only on a hard failure (the whole run threw). On
 /// a normal finish the value is the list of step labels that failed individually
-/// (empty = clean) — the SyncButton surfaces these so partial failures are
+/// (empty = clean) — SyncOutcomeListener surfaces these so partial failures are
 /// visible instead of silently swallowed.
 class SyncNotifier extends AsyncNotifier<List<String>> {
   @override
@@ -24,6 +24,14 @@ class SyncNotifier extends AsyncNotifier<List<String>> {
   /// invalidates it, so this notifier lives as long as the app does.
   Future<void>? _inFlight;
   bool _inFlightIsManual = false;
+
+  /// Whether the run that last started was operator-initiated — or null before
+  /// any run has started. Read by `SyncOutcomeListener` when the state leaves
+  /// loading: null means it was this notifier's own first build finishing, not
+  /// a sync; otherwise it decides whether a failure must be reported even if it
+  /// is the same one as last time.
+  bool? get lastRunWasManual => _lastRunManual;
+  bool? _lastRunManual;
 
   /// Kicks off a full bidirectional sync. UI bindings should call this and
   /// observe `state.isLoading` / `state.hasError` rather than awaiting the
@@ -93,6 +101,7 @@ class SyncNotifier extends AsyncNotifier<List<String>> {
   }
 
   Future<void> _run({required bool manual}) async {
+    _lastRunManual = manual;
     final companyId = ref.read(selectedCompanyProvider)?.id;
     if (companyId == null) {
       // No company selected — surface as an error so the snackbar fires.

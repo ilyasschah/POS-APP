@@ -7773,22 +7773,56 @@ class _TimezoneCardState extends ConsumerState<_TimezoneCard> {
 /// Device-name editor dialog. Owns its [TextEditingController] so the controller
 /// is disposed with the dialog's State (after the close animation), never inline
 /// after showDialog() where a rebuild during the exit could touch it disposed.
-class _DeviceNameDialog extends StatefulWidget {
+class _DeviceNameDialog extends ConsumerStatefulWidget {
   final String initial;
   const _DeviceNameDialog({required this.initial});
 
   @override
-  State<_DeviceNameDialog> createState() => _DeviceNameDialogState();
+  ConsumerState<_DeviceNameDialog> createState() => _DeviceNameDialogState();
 }
 
-class _DeviceNameDialogState extends State<_DeviceNameDialog> {
+class _DeviceNameDialogState extends ConsumerState<_DeviceNameDialog> {
   late final TextEditingController _ctrl =
       TextEditingController(text: widget.initial);
+  bool _checking = false;
+  String? _error;
 
   @override
   void dispose() {
     _ctrl.dispose();
     super.dispose();
+  }
+
+  /// Pops with the name only once the server has confirmed no other terminal
+  /// of this account carries it — the same rule as onboarding's name field.
+  Future<void> _save() async {
+    final l = AppLocalizations.of(context);
+    final name = _ctrl.text.trim();
+    if (name.isNotEmpty && name == widget.initial) {
+      Navigator.pop(context);
+      return;
+    }
+    if (name.isEmpty) {
+      setState(() => _error = l.deviceNameRequired);
+      return;
+    }
+
+    setState(() {
+      _checking = true;
+      _error = null;
+    });
+    final result = await ref.read(deviceNameCheckerProvider)(name);
+    if (!mounted) return;
+
+    final rejection = deviceNameRejection(l, name, result);
+    if (rejection != null) {
+      setState(() {
+        _checking = false;
+        _error = rejection;
+      });
+      return;
+    }
+    Navigator.pop(context, name);
   }
 
   @override
@@ -7811,21 +7845,34 @@ class _DeviceNameDialogState extends State<_DeviceNameDialog> {
             // Same rules as onboarding's field: what's on screen is what gets
             // stored, instead of the name being silently rewritten on save.
             inputFormatters: const [DeviceNameInputFormatter()],
+            readOnly: _checking,
+            onChanged: (_) {
+              if (_error != null) setState(() => _error = null);
+            },
+            onSubmitted: (_) => _checking ? null : _save(),
             decoration: InputDecoration(
               labelText: AppLocalizations.of(context).deviceNameLower,
               hintText: AppLocalizations.of(context).setHintCaisse,
+              errorText: _error,
+              errorMaxLines: 4,
             ),
           ),
         ],
       ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.pop(context),
+          onPressed: _checking ? null : () => Navigator.pop(context),
           child: Text(AppLocalizations.of(context).actionCancel),
         ),
         FilledButton(
-          onPressed: () => Navigator.pop(context, _ctrl.text),
-          child: Text(AppLocalizations.of(context).actionSave),
+          onPressed: _checking ? null : _save,
+          child: _checking
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : Text(AppLocalizations.of(context).actionSave),
         ),
       ],
     );

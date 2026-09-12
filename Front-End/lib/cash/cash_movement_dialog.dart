@@ -9,7 +9,7 @@ import 'package:pos_app/core/status_colors.dart';
 import 'package:pos_app/database/app_database.dart';
 import 'package:pos_app/database/database_provider.dart';
 import 'package:pos_app/session/session_gate.dart';
-import 'package:pos_app/session/session_summary_provider.dart';
+import 'package:pos_app/session/session_provider.dart';
 
 Future<void> showCashMovementDialog(BuildContext context, WidgetRef ref) {
   return showDialog(
@@ -74,6 +74,15 @@ class _CashMovementDialogState extends ConsumerState<_CashMovementDialog> {
       }
       if (!mounted) return;
 
+      // Awaited, not `.value`: the session the gate just approved. build()
+      // watches the provider, so this resolves at once; the timeout only
+      // guards a stream that never answers — a movement is money that already
+      // moved, so it is saved unattached rather than not saved at all.
+      final session = await ref
+          .read(activeSessionProvider.future)
+          .timeout(const Duration(seconds: 3), onTimeout: () => null);
+      if (!mounted) return;
+
       final db = ref.read(appDatabaseProvider);
       await db.insertOfflineCashMovement(
         StartingCashTableCompanion.insert(
@@ -90,8 +99,7 @@ class _CashMovementDialogState extends ConsumerState<_CashMovementDialog> {
           // moves during a session, so this is what makes it reconcilable —
           // and it replaces the legacy `ZReportNumber`, which was company-wide
           // and could not tell two registers apart.
-          sessionLocalId: Value(
-              ref.read(activeSessionRowProvider).value?.localId),
+          sessionLocalId: Value(session?.localId),
         ),
       );
       if (mounted) Navigator.of(context).pop();
@@ -105,6 +113,10 @@ class _CashMovementDialogState extends ConsumerState<_CashMovementDialog> {
 
   @override
   Widget build(BuildContext context) {
+    // Keeps the session stream LISTENED while the dialog is up. An unlistened
+    // provider is paused, so Save's awaited read would never complete — and a
+    // plain `.value` read there is how movements got stamped with no session.
+    ref.watch(activeSessionProvider);
     final theme = Theme.of(context);
     final isCashIn = _type == 0;
 

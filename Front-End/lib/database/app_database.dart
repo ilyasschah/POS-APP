@@ -5754,6 +5754,44 @@ class AppDatabase extends _$AppDatabase {
     }
   }
 
+  /// Removes a tax row outright — for a delete the SERVER has already accepted,
+  /// so there is nothing left to push. (A tombstone here would make the next
+  /// sync send a second DELETE, get a 404, and un-delete the row.)
+  Future<void> removeTaxLocal(int id) async {
+    await (delete(taxesTable)..where((t) => t.id.equals(id))).go();
+  }
+
+  /// What still points at [taxId] locally — the same links the server's
+  /// FK_ProductTax_Tax, FK_DocumentItemTax_Tax and FK_PosOrderItemTax_Tax
+  /// refuse a delete over. [products] counts products assigned the tax (a link
+  /// already queued for removal no longer counts); [inDocuments] is whether any
+  /// sale or document line carries it.
+  Future<({int products, bool inDocuments})> taxUsageLocal(int taxId) async {
+    final links = productTaxesTable.productId.count();
+    final products = await (selectOnly(productTaxesTable)
+          ..addColumns([links])
+          ..where(productTaxesTable.taxId.equals(taxId) &
+              productTaxesTable.syncStatus.equals('pending_delete').not()))
+        .map((r) => r.read(links) ?? 0)
+        .getSingle();
+
+    final row = await customSelect(
+      'SELECT '
+      'EXISTS(SELECT 1 FROM document_item_taxes WHERE tax_id = ?1) '
+      'OR EXISTS(SELECT 1 FROM document_items WHERE tax_id = ?1) '
+      'OR EXISTS(SELECT 1 FROM pos_order_item_taxes '
+      'WHERE tax_id = ?1 OR tax_rate_id = ?1) AS used',
+      variables: [Variable.withInt(taxId)],
+      readsFrom: {
+        documentItemTaxesTable,
+        documentItemsTable,
+        posOrderItemTaxesTable,
+      },
+    ).getSingle();
+
+    return (products: products, inDocuments: row.read<int>('used') != 0);
+  }
+
   /// Cascade a tax id swap (temp → real) to product-tax assignments so their
   /// pending pushes reference the real id.
   Future<void> remapTaxId(int tempId, int realId) async {

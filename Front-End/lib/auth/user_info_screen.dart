@@ -40,7 +40,13 @@ class _UserInfoScreenState extends ConsumerState<UserInfoScreen> {
   /// Below this, the three cards stack in one column.
   static const _twoColumnMinWidth = 860.0;
 
-  List<dynamic> _activeDevices = [];
+  /// Every terminal registered to the ACCOUNT (`DeviceRegistry`) — not the PIN
+  /// table. The PIN table only knows the terminals the signed-in USER set a PIN
+  /// on, so an admin saw one device here while the account had three and the
+  /// admin portal said "3 / 7".
+  List<Map<String, dynamic>> _devices = [];
+  int _seatAllowance = 0;
+  int _activeSeats = 0;
   bool _isLoadingDevices = false;
   String _currentDeviceId = "";
 
@@ -63,13 +69,15 @@ class _UserInfoScreenState extends ConsumerState<UserInfoScreen> {
     setState(() => _isLoadingDevices = true);
     try {
       final dio = createDio();
-      final response = await dio.get(
-        '/UserDevicePins/GetActiveDevices',
-        queryParameters: {'userId': user.id, 'companyId': user.companyId},
-      );
+      // The company comes from the token server-side, never from the query.
+      final response = await dio.get('/Master/AccountDevices');
+      final data = response.data as Map<String, dynamic>;
       if (mounted) {
         setState(() {
-          _activeDevices = response.data as List<dynamic>;
+          _devices = ((data['devices'] as List?) ?? const [])
+              .cast<Map<String, dynamic>>();
+          _seatAllowance = (data['seatAllowance'] as num?)?.toInt() ?? 0;
+          _activeSeats = (data['activeSeats'] as num?)?.toInt() ?? 0;
         });
       }
     } on DioException catch (e, st) {
@@ -365,7 +373,8 @@ class _UserInfoScreenState extends ConsumerState<UserInfoScreen> {
         ],
       ),
     );
-    final devices = _buildDevicesCard(context);
+    final devices =
+        _buildDevicesCard(context, canRevoke: currentUser.isAdmin);
 
     return IlyassScreen(
       title: l.userInfoSecurity,
@@ -406,19 +415,18 @@ class _UserInfoScreenState extends ConsumerState<UserInfoScreen> {
     );
   }
 
-  Widget _buildDevicesCard(BuildContext context) {
+  Widget _buildDevicesCard(BuildContext context, {required bool canRevoke}) {
     final l = AppLocalizations.of(context);
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
+    final cs = Theme.of(context).colorScheme;
     final dates = ref.watch(appDateFormatProvider);
 
     final Widget body;
-    if (_isLoadingDevices && _activeDevices.isEmpty) {
+    if (_isLoadingDevices && _devices.isEmpty) {
       body = const Padding(
         padding: EdgeInsets.all(32),
         child: Center(child: CircularProgressIndicator()),
       );
-    } else if (_activeDevices.isEmpty) {
+    } else if (_devices.isEmpty) {
       body = Padding(
         padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 16),
         child: Column(
@@ -438,11 +446,17 @@ class _UserInfoScreenState extends ConsumerState<UserInfoScreen> {
         ),
       );
     } else {
+      // This terminal first, then the server's order: active before released,
+      // oldest first.
+      final ordered = [
+        ..._devices.where((d) => d['deviceId'] == _currentDeviceId),
+        ..._devices.where((d) => d['deviceId'] != _currentDeviceId),
+      ];
       body = Column(
         children: [
-          for (var i = 0; i < _activeDevices.length; i++) ...[
+          for (var i = 0; i < ordered.length; i++) ...[
             if (i > 0) const Divider(height: 1, indent: 68),
-            _deviceTile(context, _activeDevices[i], dates),
+            _deviceTile(context, ordered[i], dates, canRevoke: canRevoke),
           ],
         ],
       );
@@ -453,19 +467,16 @@ class _UserInfoScreenState extends ConsumerState<UserInfoScreen> {
       title: l.activeDevices,
       subtitle: l.activeDevicesHint,
       trailing: [
-        if (_activeDevices.isNotEmpty)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-            decoration: BoxDecoration(
-              color: cs.primary.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              '${_activeDevices.length}',
-              style: theme.textTheme.labelMedium?.copyWith(
-                color: cs.primary,
-                fontWeight: FontWeight.w700,
-              ),
+        if (_devices.isNotEmpty)
+          // Seats in use against the licence — the same "3 / 7" the admin
+          // portal shows, so the two never appear to disagree.
+          Tooltip(
+            message: l.seatsInUseTooltip,
+            child: _Pill(
+              label: _seatAllowance > 0
+                  ? '$_activeSeats / $_seatAllowance'
+                  : '${_devices.length}',
+              color: cs.primary,
             ),
           ),
         IconButton(
@@ -484,13 +495,19 @@ class _UserInfoScreenState extends ConsumerState<UserInfoScreen> {
     );
   }
 
-  Widget _deviceTile(BuildContext context, dynamic device, AppDateFormat dates) {
+  Widget _deviceTile(
+    BuildContext context,
+    Map<String, dynamic> device,
+    AppDateFormat dates, {
+    required bool canRevoke,
+  }) {
     final l = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
 
     final deviceId = device['deviceId'] as String;
     final isCurrent = deviceId == _currentDeviceId;
+    final status = (device['status'] as String?) ?? 'active';
     // The terminal's own POS name, recorded in the device registry. A device
     // enrolled before names were reported has none yet — show a short form of
     // the signature rather than the full UUID, which is unreadable and
@@ -498,10 +515,38 @@ class _UserInfoScreenState extends ConsumerState<UserInfoScreen> {
     final name = (device['deviceName'] as String?)?.trim() ?? '';
     final label = name.isNotEmpty ? name : _shortDeviceId(deviceId);
     // The company's date format and timezone, not `DateTime.toString()`.
-    final linkedRaw = device['createdAt'] as String?;
-    final linked = linkedRaw == null ? null : DateTime.tryParse(linkedRaw);
+    String? stamp(String key) {
+      final raw = device[key] as String?;
+      if (raw == null) return null;
+      final dt = DateTime.tryParse(raw);
+      return dt != null ? dates.stamp(dt) : raw;
+    }
 
-    final tint = isCurrent ? context.successColor : cs.onSurfaceVariant;
+    final linked = stamp('registeredAt');
+    final lastSeen = isCurrent ? null : stamp('lastSeenAt');
+
+    final tint = isCurrent
+        ? context.successColor
+        : status == 'active'
+            ? cs.onSurfaceVariant
+            : cs.onSurfaceVariant.withValues(alpha: 0.5);
+
+    // A released or reaped terminal still holds its name and takes a seat back
+    // on its next sign-in, so it is listed — marked, not hidden.
+    final statusPill = switch (status) {
+      'active' => null,
+      'inactive' => _Pill(label: l.statusInactive, color: cs.onSurfaceVariant),
+      'blocked' =>
+        _Pill(label: l.deviceStatusBlocked, color: context.dangerColor),
+      'revoked' =>
+        _Pill(label: l.deviceStatusRevoked, color: context.dangerColor),
+      _ => _Pill(label: status, color: cs.onSurfaceVariant),
+    };
+
+    // Revoking removes the terminal from the whole ACCOUNT — every PIN on it,
+    // its registry row, its seat — so it is an administrator's call. A blocked
+    // terminal is left alone: its ban lives in its row, which a revoke keeps.
+    final showRevoke = canRevoke && !isCurrent && status != 'blocked';
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -524,9 +569,18 @@ class _UserInfoScreenState extends ConsumerState<UserInfoScreen> {
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                if (linked != null || linkedRaw != null)
+                if (linked != null)
                   Text(
-                    l.linkedAt(linked != null ? dates.stamp(linked) : linkedRaw!),
+                    l.linkedAt(linked),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: cs.onSurfaceVariant,
+                    ),
+                  ),
+                if (lastSeen != null)
+                  Text(
+                    l.lastSeenAt(lastSeen),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.bodySmall?.copyWith(
@@ -537,22 +591,10 @@ class _UserInfoScreenState extends ConsumerState<UserInfoScreen> {
             ),
           ),
           const SizedBox(width: 12),
+          if (statusPill != null) ...[statusPill, const SizedBox(width: 8)],
           if (isCurrent)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: context.successColor.withValues(alpha: 0.14),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                l.thisDevice,
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: context.successColor,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            )
-          else
+            _Pill(label: l.thisDevice, color: context.successColor)
+          else if (showRevoke)
             IconButton(
               tooltip: l.actionRevoke,
               icon: Icon(Icons.link_off_rounded, color: context.dangerColor),
@@ -881,6 +923,33 @@ class _ActionTile extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// A small rounded label tinted in [color] — a status, "This device", the seat
+/// count.
+class _Pill extends StatelessWidget {
+  const _Pill({required this.label, required this.color});
+
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        label,
+        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: color,
+              fontWeight: FontWeight.w700,
+            ),
       ),
     );
   }

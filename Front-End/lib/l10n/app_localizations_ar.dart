@@ -7974,4 +7974,57 @@ class AppLocalizationsAr extends AppLocalizations {
   String productQuantityUpdated(String user) {
     return 'تم تحديث كمية المنتج ($user)';
   }
+
+  @override
+  String get deviceNameRequired => 'أدخل اسمًا لهذه المحطة.';
+
+  @override
+  String deviceNameTaken(String name) {
+    return 'الاسم $name مستخدم بالفعل من قِبل محطة أخرى في هذا الحساب. اختر اسمًا آخر، أو ألغِ تلك المحطة أولًا من «الأجهزة النشطة».';
+  }
+
+  @override
+  String get deviceNameCheckFailed =>
+      'تعذّر التحقق من هذا الاسم لدى الخادم. اتصل بالشبكة وحاول مرة أخرى.';
+
+  @override
+  String get deviceStatusBlocked => 'محظور';
+
+  @override
+  String get deviceStatusRevoked => 'مُزال';
+
+  @override
+  String lastSeenAt(String date) {
+    return 'آخر نشاط: $date';
+  }
+
+  @override
+  String get seatsInUseTooltip => 'المقاعد المستخدمة / المقاعد المرخّصة';
+
+  @override
+  String taxInUseByProducts(String name, int count, String action) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'يستخدمها $count منتجات',
+      one: 'يستخدمها منتج واحد',
+    );
+    return 'لا يمكن حذف «$name» — $_temp0. انقل المنتجات أولًا إلى ضريبة أخرى عبر $action، أو عطّل هذه الضريبة.';
+  }
+
+  @override
+  String taxInUseByDocuments(String name) {
+    return 'لا يمكن حذف «$name» — فهي مستخدمة في مبيعات أو مستندات موجودة يجب أن تحتفظ بالضريبة التي صدرت بها. عطّلها بدلًا من ذلك.';
+  }
+
+  @override
+  String taxesNotDeletedInUse(int count, String names) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'لم يتم حذف $count ضرائب',
+      one: 'لم يتم حذف ضريبة واحدة',
+    );
+    return '$_temp0 — لا تزال مستخدمة في منتجات أو مبيعات: $names. عطّلها بدلًا من ذلك.';
+  }
 }

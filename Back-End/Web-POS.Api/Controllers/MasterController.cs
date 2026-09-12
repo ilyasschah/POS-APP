@@ -109,8 +109,52 @@ namespace Api.Controllers
             if (!int.TryParse(User.FindFirstValue("companyId"), out var companyId) || companyId <= 0)
                 return Unauthorized();
 
-            var renamed = await provisioning.RenameDeviceAsync(companyId, deviceId, deviceName);
-            return Ok(new { success = renamed });
+            var outcome = await provisioning.RenameDeviceAsync(companyId, deviceId, deviceName);
+            if (outcome == DeviceRenameOutcome.NameTaken)
+                return BadRequest(new
+                {
+                    success = false,
+                    error = "device_name_taken",
+                    message = $"The name \"{deviceName.Trim()}\" is already used by another terminal on this account.",
+                });
+            return Ok(new { success = outcome != DeviceRenameOutcome.NotFound });
+        }
+
+        /// <summary>
+        /// Whether this terminal may take <paramref name="deviceName"/> — i.e. no
+        /// other terminal of the caller's company carries it. Asked by onboarding
+        /// and Settings BEFORE the name is stored locally, because the local name
+        /// is the document-number prefix and a duplicate collides offline.
+        /// "Taken" is an answer, not a failure: 200 with <c>available = false</c>.
+        /// </summary>
+        [Authorize]
+        [HttpGet("[action]")]
+        public async Task<IActionResult> CheckDeviceName([FromQuery] string deviceId, [FromQuery] string deviceName)
+        {
+            if (string.IsNullOrWhiteSpace(deviceId))
+                return BadRequest(new { success = false, message = "deviceId is required." });
+            if (string.IsNullOrWhiteSpace(deviceName))
+                return BadRequest(new { success = false, message = "deviceName is required." });
+            if (!int.TryParse(User.FindFirstValue("companyId"), out var companyId) || companyId <= 0)
+                return Unauthorized();
+
+            var available = await provisioning.IsDeviceNameAvailableAsync(companyId, deviceId, deviceName);
+            return Ok(new { available, deviceName = deviceName.Trim() });
+        }
+
+        /// <summary>
+        /// Every terminal registered to the caller's company (User info → Active
+        /// devices), with the seat allowance — the same figures as the admin
+        /// portal. CompanyId comes from the token, never from the query.
+        /// </summary>
+        [Authorize]
+        [HttpGet("[action]")]
+        public async Task<IActionResult> AccountDevices()
+        {
+            if (!int.TryParse(User.FindFirstValue("companyId"), out var companyId) || companyId <= 0)
+                return Unauthorized();
+
+            return Ok(await provisioning.GetAccountDevicesAsync(companyId));
         }
 
         /// <summary>

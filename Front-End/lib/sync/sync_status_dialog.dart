@@ -93,8 +93,8 @@ class SyncStatusDialog extends ConsumerWidget {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
 
-    // Toasts (success / partial-failure / rejection) are surfaced by the
-    // always-mounted SyncButton's listener — we don't duplicate them here.
+    // Toasts (success / partial-failure / rejection) are surfaced by
+    // SyncOutcomeListener, mounted in MainLayout — we don't duplicate them here.
     final statusAsync = ref.watch(syncStatusProvider);
     final isSyncing = ref.watch(syncStateProvider).isLoading;
 

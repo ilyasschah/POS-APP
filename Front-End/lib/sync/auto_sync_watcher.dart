@@ -12,7 +12,8 @@ import 'package:pos_app/sync/sync_notifier.dart';
 /// Global background sync trigger, configured by the AUTO SYNC settings:
 ///   • Enabled            (App.AutoSync.Enabled)
 ///   • Mode               (App.AutoSync.Mode = 'After every save' | 'Every 1 hour')
-///   • Show notification  (App.AutoSync.ShowNotification) — gated in SyncButton.
+///   • Show notification  (App.AutoSync.ShowNotification) — gated in
+///     SyncOutcomeListener.
 ///
 /// "After every save": a short debounce after any local write, then push+pull,
 ///   PLUS a steady 30s background full-sync so an idle terminal still pulls

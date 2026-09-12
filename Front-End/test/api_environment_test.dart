@@ -48,6 +48,32 @@ void main() {
     expect(apiBaseUrl, AppConfig.devBaseUrl);
   });
 
+  group('release builds hide the picker', () {
+    test('only a release build hides it — this test build still shows it', () {
+      // kReleaseMode is false under `flutter test`, and nothing here passes
+      // SHOW_ENV_PICKER, so the debug/profile default must be "shown".
+      expect(AppConfig.showEnvironmentPicker, isTrue);
+    });
+
+    test('a saved Dev or Test preset goes back to the shipped default', () {
+      // Only the picker ever wrote these. With it hidden, nothing on screen
+      // could show or change them, and Windows keeps prefs across reinstalls.
+      expect(replacementForHiddenPicker(AppConfig.devBaseUrl),
+          AppConfig.defaultApiBaseUrl);
+      expect(replacementForHiddenPicker(' ${AppConfig.testBaseUrl}/ '),
+          AppConfig.defaultApiBaseUrl);
+    });
+
+    test('the shipped default is left alone', () {
+      expect(replacementForHiddenPicker(AppConfig.defaultApiBaseUrl), isNull);
+    });
+
+    test('a hand-entered endpoint is kept — someone chose it on purpose', () {
+      expect(replacementForHiddenPicker('http://192.168.1.20:5002/api'),
+          isNull);
+    });
+  });
+
   test('the endpoint is device-scoped and can never be cloud-synced', () {
     // If this key ever reached app_properties, a terminal on the LAN endpoint
     // would push it to one on the hosted endpoint and silently move it to a

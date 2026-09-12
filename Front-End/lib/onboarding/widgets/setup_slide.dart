@@ -15,7 +15,11 @@ import 'package:pos_app/settings/local_ui_prefs.dart';
 /// on first login. Tables / booking are no longer here — they're driven by the
 /// activity slide that follows.
 class SetupSlide extends ConsumerWidget {
-  const SetupSlide({super.key});
+  const SetupSlide({super.key, this.nameFieldKey});
+
+  /// Lets the onboarding screen ask the name field to validate and store its
+  /// name before moving on — see [PosNameFieldState.commit].
+  final GlobalKey<PosNameFieldState>? nameFieldKey;
 
   // Accent swatches come from kAccentPalette (core/app_theme.dart) — the same
   // list Settings offers, brand first. See its doc comment for why.
@@ -58,7 +62,7 @@ class SetupSlide extends ConsumerWidget {
               // anything — and it is what the account's device list shows instead
               // of the raw hardware signature.
               const _SectionLabel('TERMINAL'),
-              const _PosNameField(),
+              PosNameField(key: nameFieldKey),
               Padding(
                 padding: const EdgeInsets.only(top: 6, bottom: 4),
                 child: Text(
@@ -155,19 +159,56 @@ class SetupSlide extends ConsumerWidget {
 
 /// Names this terminal (the `pos.device.name` device-local pref).
 ///
-/// Persisted **as it is typed** rather than behind a Save button: an onboarding
-/// slide has no save affordance, and swiping to the next one must not silently
-/// drop the name. Empty is skipped so clearing the field mid-edit never writes
-/// the `sanitizeDeviceName` fallback ("POS") over a real name.
-class _PosNameField extends ConsumerStatefulWidget {
-  const _PosNameField();
+/// 🚨 Stored only once the SERVER confirms no other terminal of this account
+/// carries the name — [PosNameFieldState.commit], run by the onboarding
+/// screen's Next. It used to be persisted as it was typed, which is how a
+/// reinstalled till could quietly take "POS1" while the old POS1 was still
+/// registered: two terminals, one document-number prefix.
+class PosNameField extends ConsumerStatefulWidget {
+  const PosNameField({super.key});
 
   @override
-  ConsumerState<_PosNameField> createState() => _PosNameFieldState();
+  ConsumerState<PosNameField> createState() => PosNameFieldState();
 }
 
-class _PosNameFieldState extends ConsumerState<_PosNameField> {
+class PosNameFieldState extends ConsumerState<PosNameField> {
   final _ctrl = TextEditingController();
+  bool _checking = false;
+  String? _error;
+
+  /// Checks the typed name with the server and stores it only if it is free.
+  /// Returns whether onboarding may move on.
+  ///
+  /// Needs the network, and a fresh install has it: it signed in to the account
+  /// one screen ago. A name that cannot be verified is refused, not waved on.
+  Future<bool> commit() async {
+    final l = AppLocalizations.of(context);
+    final name = _ctrl.text.trim();
+    if (name.isEmpty) {
+      setState(() => _error = l.deviceNameRequired);
+      return false;
+    }
+
+    setState(() {
+      _checking = true;
+      _error = null;
+    });
+    final result = await ref.read(deviceNameCheckerProvider)(name);
+    if (!mounted) return false;
+
+    final rejection = deviceNameRejection(l, name, result);
+    if (rejection != null) {
+      setState(() {
+        _checking = false;
+        _error = rejection;
+      });
+      return false;
+    }
+
+    await ref.read(deviceNameProvider.notifier).setName(name);
+    if (mounted) setState(() => _checking = false);
+    return true;
+  }
 
   @override
   void initState() {
@@ -188,19 +229,33 @@ class _PosNameFieldState extends ConsumerState<_PosNameField> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return TextField(
       controller: _ctrl,
+      readOnly: _checking,
       textCapitalization: TextCapitalization.characters,
       inputFormatters: const [DeviceNameInputFormatter()],
       decoration: InputDecoration(
-        labelText: AppLocalizations.of(context).deviceNameLower,
-        hintText: AppLocalizations.of(context).setHintCaisse,
+        labelText: l.deviceNameLower,
+        hintText: l.setHintCaisse,
         border: const OutlineInputBorder(),
         prefixIcon: const Icon(Icons.point_of_sale),
+        errorText: _error,
+        errorMaxLines: 4,
+        suffixIcon: _checking
+            ? const Padding(
+                padding: EdgeInsets.all(14),
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              )
+            : null,
       ),
-      onChanged: (v) {
-        if (v.isEmpty) return;
-        ref.read(deviceNameProvider.notifier).setName(v);
+      // Editing clears a stale refusal; nothing is stored until Next.
+      onChanged: (_) {
+        if (_error != null) setState(() => _error = null);
       },
     );
   }

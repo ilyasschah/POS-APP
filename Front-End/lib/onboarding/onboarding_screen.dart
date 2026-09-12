@@ -39,6 +39,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final _controller = PageController();
   int _page = 0;
 
+  /// The Setup slide's name field. Next on that slide goes through it: the POS
+  /// name must be confirmed free by the server before onboarding moves on.
+  final _posNameKey = GlobalKey<PosNameFieldState>();
+
+  /// True while that check runs, so a second tap on Next can neither start a
+  /// second check nor skip past the first.
+  bool _checkingName = false;
+
   /// Built rather than `const`, because the data-source slide needs a callback
   /// into this state to advance past itself.
   ///
@@ -51,12 +59,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         DataSourceSlide(onUseCloud: _next),
         const FeaturesSlide(),
         const QuickStartSlide(),
-        const SetupSlide(),
+        SetupSlide(nameFieldKey: _posNameKey),
         const LayoutSlide(),
         const ActivitySlide(),
       ];
 
   bool get _isLast => _page == _pages.length - 1;
+
+  bool get _onSetupSlide => _pages[_page] is SetupSlide;
 
   @override
   void dispose() {
@@ -64,7 +74,18 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     super.dispose();
   }
 
-  void _next() {
+  Future<void> _next() async {
+    if (_onSetupSlide) {
+      if (_checkingName) return;
+      final field = _posNameKey.currentState;
+      if (field != null) {
+        setState(() => _checkingName = true);
+        final ok = await field.commit();
+        if (!mounted) return;
+        setState(() => _checkingName = false);
+        if (!ok) return;
+      }
+    }
     if (_isLast) {
       _finish();
       return;
@@ -122,6 +143,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               Expanded(
                 child: PageView(
                   controller: _controller,
+                  // No swiping OFF the Setup slide: a swipe would skip the POS
+                  // name check that Next runs. Back / Next still work.
+                  physics: _onSetupSlide
+                      ? const NeverScrollableScrollPhysics()
+                      : null,
                   onPageChanged: (i) => setState(() => _page = i),
                   children: _pages,
                 ),

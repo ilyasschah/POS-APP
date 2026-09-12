@@ -7943,4 +7943,57 @@ class AppLocalizationsEn extends AppLocalizations {
   String productQuantityUpdated(String user) {
     return 'Product Quantity Updated ($user)';
   }
+
+  @override
+  String get deviceNameRequired => 'Enter a name for this terminal.';
+
+  @override
+  String deviceNameTaken(String name) {
+    return '$name is already used by another terminal on this account. Choose another name, or revoke that terminal first under Active Devices.';
+  }
+
+  @override
+  String get deviceNameCheckFailed =>
+      'Couldn\'t check this name with the server. Connect to the network and try again.';
+
+  @override
+  String get deviceStatusBlocked => 'Blocked';
+
+  @override
+  String get deviceStatusRevoked => 'Removed';
+
+  @override
+  String lastSeenAt(String date) {
+    return 'Last seen: $date';
+  }
+
+  @override
+  String get seatsInUseTooltip => 'Seats in use / licensed seats';
+
+  @override
+  String taxInUseByProducts(String name, int count, String action) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count products use it',
+      one: '1 product uses it',
+    );
+    return '“$name” can\'t be deleted — $_temp0. Move them to another tax with $action first, or disable this tax instead.';
+  }
+
+  @override
+  String taxInUseByDocuments(String name) {
+    return '“$name” can\'t be deleted — it appears in existing sales or documents, which must keep the tax they were issued with. Disable it instead.';
+  }
+
+  @override
+  String taxesNotDeletedInUse(int count, String names) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count taxes weren\'t deleted',
+      one: '1 tax wasn\'t deleted',
+    );
+    return '$_temp0 — still used by products or sales: $names. Disable them instead.';
+  }
 }

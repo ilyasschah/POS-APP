@@ -2518,5 +2518,15 @@
   "printSelectedPdf": "طباعة المحدد ({count})",
   "saveSelectedAsPdf": "حفظ المحدد بصيغة PDF ({count})",
   "exportSelectedToExcel": "تصدير المحدد إلى Excel ({count})",
-  "productQuantityUpdated": "تم تحديث كمية المنتج ({user})"
+  "productQuantityUpdated": "تم تحديث كمية المنتج ({user})",
+  "deviceNameRequired": "أدخل اسمًا لهذه المحطة.",
+  "deviceNameTaken": "الاسم {name} مستخدم بالفعل من قِبل محطة أخرى في هذا الحساب. اختر اسمًا آخر، أو ألغِ تلك المحطة أولًا من «الأجهزة النشطة».",
+  "deviceNameCheckFailed": "تعذّر التحقق من هذا الاسم لدى الخادم. اتصل بالشبكة وحاول مرة أخرى.",
+  "deviceStatusBlocked": "محظور",
+  "deviceStatusRevoked": "مُزال",
+  "lastSeenAt": "آخر نشاط: {date}",
+  "seatsInUseTooltip": "المقاعد المستخدمة / المقاعد المرخّصة",
+  "taxInUseByProducts": "لا يمكن حذف «{name}» — {count, plural, =1{يستخدمها منتج واحد} other{يستخدمها {count} منتجات}}. انقل المنتجات أولًا إلى ضريبة أخرى عبر {action}، أو عطّل هذه الضريبة.",
+  "taxInUseByDocuments": "لا يمكن حذف «{name}» — فهي مستخدمة في مبيعات أو مستندات موجودة يجب أن تحتفظ بالضريبة التي صدرت بها. عطّلها بدلًا من ذلك.",
+  "taxesNotDeletedInUse": "{count, plural, =1{لم يتم حذف ضريبة واحدة} other{لم يتم حذف {count} ضرائب}} — لا تزال مستخدمة في منتجات أو مبيعات: {names}. عطّلها بدلًا من ذلك."
 }

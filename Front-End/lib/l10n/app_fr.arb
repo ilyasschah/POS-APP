@@ -2518,5 +2518,15 @@
   "printSelectedPdf": "Imprimer la sélection ({count})",
   "saveSelectedAsPdf": "Enregistrer la sélection en PDF ({count})",
   "exportSelectedToExcel": "Exporter la sélection vers Excel ({count})",
-  "productQuantityUpdated": "Quantité de produit mise à jour ({user})"
+  "productQuantityUpdated": "Quantité de produit mise à jour ({user})",
+  "deviceNameRequired": "Saisissez un nom pour ce terminal.",
+  "deviceNameTaken": "{name} est déjà utilisé par un autre terminal de ce compte. Choisissez un autre nom, ou révoquez d'abord ce terminal dans Appareils actifs.",
+  "deviceNameCheckFailed": "Impossible de vérifier ce nom auprès du serveur. Connectez-vous au réseau et réessayez.",
+  "deviceStatusBlocked": "Bloqué",
+  "deviceStatusRevoked": "Retiré",
+  "lastSeenAt": "Dernière activité : {date}",
+  "seatsInUseTooltip": "Postes utilisés / postes sous licence",
+  "taxInUseByProducts": "« {name} » ne peut pas être supprimée — {count, plural, =1{1 produit l'utilise} other{{count} produits l'utilisent}}. Déplacez-les d'abord vers une autre taxe avec {action}, ou désactivez cette taxe.",
+  "taxInUseByDocuments": "« {name} » ne peut pas être supprimée — elle figure dans des ventes ou documents existants, qui doivent conserver la taxe avec laquelle ils ont été émis. Désactivez-la plutôt.",
+  "taxesNotDeletedInUse": "{count, plural, =1{1 taxe n'a pas été supprimée} other{{count} taxes n'ont pas été supprimées}} — encore utilisées par des produits ou des ventes : {names}. Désactivez-les plutôt."
 }

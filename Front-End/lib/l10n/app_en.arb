@@ -4205,5 +4205,60 @@
         "type": "String"
       }
     }
+  },
+  "deviceNameRequired": "Enter a name for this terminal.",
+  "deviceNameTaken": "{name} is already used by another terminal on this account. Choose another name, or revoke that terminal first under Active Devices.",
+  "@deviceNameTaken": {
+    "description": "A POS name is the terminal's document-number prefix, so it must be unique within the account.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "deviceNameCheckFailed": "Couldn't check this name with the server. Connect to the network and try again.",
+  "deviceStatusBlocked": "Blocked",
+  "deviceStatusRevoked": "Removed",
+  "lastSeenAt": "Last seen: {date}",
+  "@lastSeenAt": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "seatsInUseTooltip": "Seats in use / licensed seats",
+  "taxInUseByProducts": "“{name}” can't be deleted — {count, plural, =1{1 product uses it} other{{count} products use it}}. Move them to another tax with {action} first, or disable this tax instead.",
+  "@taxInUseByProducts": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      },
+      "action": {
+        "type": "String"
+      }
+    }
+  },
+  "taxInUseByDocuments": "“{name}” can't be deleted — it appears in existing sales or documents, which must keep the tax they were issued with. Disable it instead.",
+  "@taxInUseByDocuments": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "taxesNotDeletedInUse": "{count, plural, =1{1 tax wasn't deleted} other{{count} taxes weren't deleted}} — still used by products or sales: {names}. Disable them instead.",
+  "@taxesNotDeletedInUse": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "names": {
+        "type": "String"
+      }
+    }
   }
 }

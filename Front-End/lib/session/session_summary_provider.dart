@@ -9,7 +9,7 @@ import 'package:pos_app/database/app_database.dart';
 import 'package:pos_app/database/database_provider.dart';
 import 'package:pos_app/cart/payment_type_provider.dart';
 import 'package:pos_app/session/pos_session_status.dart';
-import 'package:pos_app/session/register_identity.dart';
+import 'package:pos_app/session/session_provider.dart';
 import 'package:pos_app/session/session_reconciliation.dart';
 import 'package:pos_app/settings/device_identity.dart';
 
@@ -135,26 +135,16 @@ final remoteSessionSummaryProvider =
   }
 });
 
-/// The active session row, split out so the summary can depend on it without
-/// re-running the whole register lookup.
+/// The active session row — the SAME provider as [activeSessionProvider], kept
+/// under this name for the summary and session screens that already use it.
 ///
-/// Keyed on the REGISTER's uid, in step with `activeSessionProvider` — a
-/// terminal joining a shared till must reconcile the session it is actually
-/// selling into, not the one it happened to open itself.
-final activeSessionRowProvider = StreamProvider<ShiftsTableData?>((ref) {
-  final db = ref.watch(appDatabaseProvider);
-  final companyId = ref.watch(selectedCompanyProvider)?.id;
-  final uid = ref.watch(registerUidProvider).value;
-  if (companyId == null || uid == null) return Stream.value(null);
-
-  return (db.select(db.shiftsTable)
-        ..where((t) => t.companyId.equals(companyId))
-        ..where((t) => t.posDeviceUid.equals(uid))
-        ..where((t) => t.status.isIn(PosSessionStatus.live))
-        ..orderBy([(t) => OrderingTerm.desc(t.openedAt)])
-        ..limit(1))
-      .watchSingleOrNull();
-});
+/// 🚨 It used to be a second, identical Drift query. Nothing on the cash in/out
+/// screens kept that copy alive, so `ref.read(activeSessionRowProvider).value`
+/// at Save built it from scratch, got `AsyncLoading`, and stamped the movement
+/// with NO session — while the session gate, reading the live original, had
+/// just said "a session is open". Cash in/out then never reached the closing
+/// count or the Z report. One provider means one answer.
+final activeSessionRowProvider = activeSessionProvider;
 
 /// One payment taken during a session, with the document it settles.
 ///

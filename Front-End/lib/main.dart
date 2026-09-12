@@ -22,6 +22,7 @@ import 'package:pos_app/app_settings/app_settings_model.dart';
 import 'package:pos_app/app_settings/app_settings_provider.dart';
 import 'package:pos_app/core/pos_virtual_keyboard.dart';
 import 'package:pos_app/core/app_theme.dart';
+import 'package:pos_app/core/desktop_window.dart';
 import 'package:pos_app/core/device_theme_mode_provider.dart';
 import 'package:pos_app/database/db_missing_screen.dart';
 import 'package:pos_app/database/restore_service.dart';
@@ -39,6 +40,10 @@ void main() async {
     await windowManager.ensureInitialized();
   }
   final prefs = await SharedPreferences.getInstance();
+  // Reopen full screen if this terminal was left that way. After the first
+  // frame, once the runner has created and shown the window.
+  WidgetsBinding.instance
+      .addPostFrameCallback((_) => restoreDesktopFullScreen(prefs));
   // Seed the API endpoint from the device-local override BEFORE any request
   // (master-login/sync need it, and it can't come from the cloud-synced settings
   // because you need the endpoint to reach the cloud in the first place).

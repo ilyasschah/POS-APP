@@ -23,7 +23,15 @@ import 'package:pos_app/utils/api_error_parser.dart';
 import 'package:pos_app/utils/snackbar_helper.dart';
 
 class MasterLoginScreen extends ConsumerStatefulWidget {
-  const MasterLoginScreen({super.key});
+  const MasterLoginScreen({
+    super.key,
+    this.showEnvironmentPicker = AppConfig.showEnvironmentPicker,
+  });
+
+  /// The Dev / Test / Production picker and the endpoint under it. Off in a
+  /// release build ([AppConfig.showEnvironmentPicker]); a parameter only so
+  /// tests can render the release layout.
+  final bool showEnvironmentPicker;
 
   @override
   ConsumerState<MasterLoginScreen> createState() => _MasterLoginScreenState();
@@ -40,6 +48,18 @@ class _MasterLoginScreenState extends ConsumerState<MasterLoginScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
+      // No picker in this build: a Dev/Test preset left on the device by an
+      // earlier build could never be seen or changed from here, so register
+      // against the endpoint this build ships with instead.
+      if (!widget.showEnvironmentPicker) {
+        final replacement = replacementForHiddenPicker(apiBaseUrl);
+        if (replacement != null) {
+          await ref
+              .read(appSettingsProvider.notifier)
+              .set(SettingKeys.apiBaseUrl, replacement);
+          if (!mounted) return;
+        }
+      }
       final selectedCo = ref.read(selectedCompanyProvider);
       if (selectedCo != null) return;
       final defaultCoId = ref.read(defaultCompanyIdProvider);
@@ -245,11 +265,13 @@ class _MasterLoginScreenState extends ConsumerState<MasterLoginScreen> {
                 // afterwards — the app logs in, syncs, and faithfully reports
                 // whatever that server believes, including a subscription
                 // expiry from a tenant that isn't yours.
-                _EnvironmentPicker(
-                  onChanged: _selectEnvironment,
-                ),
-
-                const Gap(24),
+                //
+                // Debug / profile builds only. A customer's release build shows
+                // email and password and nothing else — no server choice, no URL.
+                if (widget.showEnvironmentPicker) ...[
+                  _EnvironmentPicker(onChanged: _selectEnvironment),
+                  const Gap(24),
+                ],
 
                 TextField(
                   controller: _emailController,

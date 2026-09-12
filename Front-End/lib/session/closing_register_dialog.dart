@@ -52,7 +52,10 @@ class ClosingRegisterDialog extends ConsumerStatefulWidget {
 }
 
 class _ClosingRegisterDialogState extends ConsumerState<ClosingRegisterDialog> {
-  final _cashCount = TextEditingController(text: '0.00');
+  // Empty, not '0.00': a pre-filled value made every keystroke append to it
+  // ("0.00222" — a drawer counted at 0.00222 instead of 222). The field shows
+  // 0.00 as a hint instead, and an empty count reads as 0 (see _countedCash).
+  final _cashCount = TextEditingController();
   final _note = TextEditingController();
   final _counted = <int, TextEditingController>{};
   bool _cashExpanded = true;
@@ -342,13 +345,20 @@ class _ClosingRegisterDialogState extends ConsumerState<ClosingRegisterDialog> {
                 decoration: InputDecoration(
                   border: const OutlineInputBorder(),
                   isDense: true,
-                  suffixIcon: IconButton(
-                    icon: const Icon(Icons.close, size: 18),
-                    onPressed: () {
-                      _cashCount.text = '0.00';
-                      setState(() {});
-                    },
-                  ),
+                  hintText: '0.00',
+                  // ✕ empties the field (it used to write '0.00' back, so the
+                  // next digit appended to it again).
+                  suffixIcon: _cashCount.text.isEmpty
+                      ? null
+                      : IconButton(
+                          tooltip: MaterialLocalizations.of(context)
+                              .deleteButtonTooltip,
+                          icon: const Icon(Icons.close, size: 18),
+                          onPressed: () {
+                            _cashCount.clear();
+                            setState(() {});
+                          },
+                        ),
                 ),
               ),
 

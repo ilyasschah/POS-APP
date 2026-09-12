@@ -7,6 +7,18 @@ namespace Api.Master.Services
     /// <summary>Result of a device registration / seat-cap check (Pillar 4).</summary>
     public record DeviceCheckResult(bool Allowed, string Reason, int ActiveSeats, int SeatAllowance);
 
+    /// <summary>Outcome of <see cref="ITenantProvisioningService.RenameDeviceAsync"/>.</summary>
+    public enum DeviceRenameOutcome { Renamed, Unchanged, NotFound, NameTaken }
+
+    /// <summary>One terminal registered to an account, as the POS device list shows it.</summary>
+    public record AccountDevice(string DeviceId, string? DeviceName, string Status, DateTime RegisteredAt, DateTime LastSeenAt);
+
+    /// <summary>
+    /// Every terminal registered to a company, with the same seat figures the
+    /// admin portal shows ("3 / 7").
+    /// </summary>
+    public record AccountDevicesResult(int SeatAllowance, int ActiveSeats, IReadOnlyList<AccountDevice> Devices);
+
     public interface ITenantProvisioningService
     {
         /// <summary>Creates the Tenant + default Subscription for a company if missing (idempotent).</summary>
@@ -57,9 +69,24 @@ namespace Api.Master.Services
         /// keeps device-locally and uses as its document-number prefix, so the
         /// admin lists a device by the label the venue actually calls it instead
         /// of a 40-character UUID. Blank is ignored (never blanks an existing
-        /// name); an unknown device is a no-op.
+        /// name) and, like an unknown device, reports <see cref="DeviceRenameOutcome.NotFound"/>.
+        /// A name another terminal of the same account already carries is refused
+        /// with <see cref="DeviceRenameOutcome.NameTaken"/> — see <see cref="IsDeviceNameAvailableAsync"/>.
         /// </summary>
-        Task<bool> RenameDeviceAsync(int companyId, string deviceId, string? deviceName, CancellationToken ct = default);
+        Task<DeviceRenameOutcome> RenameDeviceAsync(int companyId, string deviceId, string? deviceName, CancellationToken ct = default);
+
+        /// <summary>
+        /// True when no OTHER terminal of the company carries <paramref name="deviceName"/>
+        /// (case-insensitive). The name is the terminal's document-number prefix, so
+        /// two tills sharing one would issue colliding numbers offline — the exact
+        /// thing the prefix exists to prevent.
+        ///
+        /// Every registered row counts, <c>inactive</c> and <c>blocked</c> included:
+        /// a released or reaped terminal still exists and can come back. Only a
+        /// legacy <c>revoked</c> tombstone frees its name. To reuse the name of a
+        /// dead install, revoke that terminal first (User info → Active devices).
+        /// </summary>
+        Task<bool> IsDeviceNameAvailableAsync(int companyId, string deviceId, string deviceName, CancellationToken ct = default);
 
         /// <summary>
         /// DeviceId → DeviceName for every registered terminal of a company, so a
@@ -67,6 +94,14 @@ namespace Api.Master.Services
         /// name recorded are omitted, letting the caller fall back to the id.
         /// </summary>
         Task<Dictionary<string, string>> GetDeviceNamesAsync(int companyId, CancellationToken ct = default);
+
+        /// <summary>
+        /// Every terminal registered to the company — whatever its status, and
+        /// whoever has a PIN on it — plus the seat allowance. This is the
+        /// account's device list; the PIN table only knows which terminals a
+        /// given USER has set a PIN on, which is not the same list at all.
+        /// </summary>
+        Task<AccountDevicesResult> GetAccountDevicesAsync(int companyId, CancellationToken ct = default);
     }
 
     public class TenantProvisioningService : ITenantProvisioningService
@@ -167,7 +202,7 @@ namespace Api.Master.Services
 
                     existing.Status = "active";
                     existing.LastSeenAt = DateTime.UtcNow;
-                    ApplyDeviceName(existing, deviceName);
+                    await ApplyDeviceNameAsync(existing, deviceName, ct);
                     await _db.SaveChangesAsync(ct);
                     return new DeviceCheckResult(true, "reactivated", activeSeats + 1, allowance);
                 }
@@ -176,7 +211,7 @@ namespace Api.Master.Services
                 // A terminal renamed in Settings carries the new name on its next
                 // login/sync — without this the registry kept whatever it was first
                 // registered with, forever.
-                ApplyDeviceName(existing, deviceName);
+                await ApplyDeviceNameAsync(existing, deviceName, ct);
                 await _db.SaveChangesAsync(ct);
                 return new DeviceCheckResult(true, "known_device", activeSeats, allowance);
             }
@@ -201,12 +236,19 @@ namespace Api.Master.Services
             if (activeSeats >= allowance)
                 return new DeviceCheckResult(false, "seat_limit_exceeded", activeSeats, allowance);
 
+            // A name another terminal already carries is not adopted — the row is
+            // enrolled unnamed and the operator picks a free name in onboarding.
+            // Refusing the LOGIN over a label would lock a paying till out.
+            var name = NormalizeDeviceName(deviceName);
+            if (name != null && await IsNameHeldByAnotherDeviceAsync(tenant.Id, deviceId, name, ct))
+                name = null;
+
             _db.Devices.Add(new DeviceRegistry
             {
                 TenantId = tenant.Id,
                 CompanyId = companyId,
                 DeviceId = deviceId,
-                DeviceName = NormalizeDeviceName(deviceName),
+                DeviceName = name,
                 Status = "active",
             });
             await _db.SaveChangesAsync(ct);
@@ -260,26 +302,70 @@ namespace Api.Master.Services
             return true;
         }
 
-        public async Task<bool> RenameDeviceAsync(int companyId, string deviceId, string? deviceName, CancellationToken ct = default)
+        public async Task<DeviceRenameOutcome> RenameDeviceAsync(int companyId, string deviceId, string? deviceName, CancellationToken ct = default)
         {
             var clean = NormalizeDeviceName(deviceName);
-            if (string.IsNullOrWhiteSpace(deviceId) || clean == null) return false;
+            if (string.IsNullOrWhiteSpace(deviceId) || clean == null) return DeviceRenameOutcome.NotFound;
 
             var tenant = await _db.Tenants.FirstOrDefaultAsync(t => t.CompanyId == companyId, ct);
-            if (tenant == null) return false;
+            if (tenant == null) return DeviceRenameOutcome.NotFound;
 
             var device = await _db.Devices
                 .FirstOrDefaultAsync(d => d.TenantId == tenant.Id && d.DeviceId == deviceId, ct);
-            if (device == null) return false;
+            if (device == null) return DeviceRenameOutcome.NotFound;
 
             // Rename only. Status and LastSeenAt are seat state and are deliberately
             // NOT touched: renaming a terminal must never reactivate a released one
             // or make a stale device look alive to the reaper.
-            if (device.DeviceName == clean) return true;
+            if (device.DeviceName == clean) return DeviceRenameOutcome.Unchanged;
+
+            if (await IsNameHeldByAnotherDeviceAsync(tenant.Id, deviceId, clean, ct))
+                return DeviceRenameOutcome.NameTaken;
 
             device.DeviceName = clean;
             await _db.SaveChangesAsync(ct);
-            return true;
+            return DeviceRenameOutcome.Renamed;
+        }
+
+        public async Task<bool> IsDeviceNameAvailableAsync(int companyId, string deviceId, string deviceName, CancellationToken ct = default)
+        {
+            var clean = NormalizeDeviceName(deviceName);
+            if (clean == null) return false;
+
+            var tenant = await _db.Tenants.AsNoTracking().FirstOrDefaultAsync(t => t.CompanyId == companyId, ct);
+            if (tenant == null) return true;
+
+            return !await IsNameHeldByAnotherDeviceAsync(tenant.Id, deviceId, clean, ct);
+        }
+
+        public async Task<AccountDevicesResult> GetAccountDevicesAsync(int companyId, CancellationToken ct = default)
+        {
+            var tenant = await _db.Tenants.AsNoTracking().FirstOrDefaultAsync(t => t.CompanyId == companyId, ct);
+            if (tenant == null) return new AccountDevicesResult(0, 0, Array.Empty<AccountDevice>());
+
+            var sub = await _db.Subscriptions.AsNoTracking().FirstOrDefaultAsync(s => s.TenantId == tenant.Id, ct);
+
+            // A read: stale devices are NOT reaped here. The list shows what the
+            // seat check would see before its own reap on the next login/sync.
+            var rows = await _db.Devices.AsNoTracking()
+                .Where(d => d.TenantId == tenant.Id)
+                .OrderBy(d => d.Status == "active" ? 0 : 1)
+                .ThenBy(d => d.RegisteredAt)
+                .ToListAsync(ct);
+
+            var devices = rows
+                .Select(d => new AccountDevice(
+                    d.DeviceId,
+                    IsRealDeviceName(d.DeviceName) ? d.DeviceName : null,
+                    d.Status,
+                    d.RegisteredAt,
+                    d.LastSeenAt))
+                .ToList();
+
+            return new AccountDevicesResult(
+                sub?.SeatAllowance ?? 1,
+                rows.Count(d => d.Status == "active"),
+                devices);
         }
 
         /// <summary>
@@ -290,6 +376,9 @@ namespace Api.Master.Services
         /// POS name can never collide with it: names are stripped to A–Z0–9.
         /// </summary>
         private const string LegacyDeviceNamePlaceholder = "POS terminal";
+
+        private static bool IsRealDeviceName(string? name) =>
+            !string.IsNullOrEmpty(name) && name != LegacyDeviceNamePlaceholder;
 
         public async Task<Dictionary<string, string>> GetDeviceNamesAsync(int companyId, CancellationToken ct = default)
         {
@@ -320,11 +409,35 @@ namespace Api.Master.Services
         /// blank/absent name means "the caller didn't say", not "clear it": an
         /// older client, or an ingress that carries no name header, must never
         /// wipe the label the operator set.
+        ///
+        /// 🚨 Nor with one another terminal carries. Login and every sync resend
+        /// the terminal's local name, so without this a till named before the
+        /// uniqueness check existed would push a duplicate straight past the
+        /// check that <see cref="RenameDeviceAsync"/> enforces. Skipped silently:
+        /// this runs inside login/sync, and a label must never fail either.
         /// </summary>
-        private static void ApplyDeviceName(DeviceRegistry device, string? deviceName)
+        private async Task ApplyDeviceNameAsync(DeviceRegistry device, string? deviceName, CancellationToken ct)
         {
             var clean = NormalizeDeviceName(deviceName);
-            if (clean != null && device.DeviceName != clean) device.DeviceName = clean;
+            if (clean == null || device.DeviceName == clean) return;
+            if (await IsNameHeldByAnotherDeviceAsync(device.TenantId, device.DeviceId, clean, ct)) return;
+            device.DeviceName = clean;
+        }
+
+        /// <summary>
+        /// Whether a terminal OTHER than <paramref name="deviceId"/> in the tenant
+        /// carries <paramref name="cleanName"/>. Case-insensitive on every provider
+        /// (UPPER on both sides) rather than trusting the SQL Server collation.
+        /// A legacy <c>revoked</c> row is a tombstone and holds no name.
+        /// </summary>
+        private Task<bool> IsNameHeldByAnotherDeviceAsync(int tenantId, string deviceId, string cleanName, CancellationToken ct)
+        {
+            var upper = cleanName.ToUpperInvariant();
+            return _db.Devices.AnyAsync(d => d.TenantId == tenantId
+                                          && d.DeviceId != deviceId
+                                          && d.Status != "revoked"
+                                          && d.DeviceName != null
+                                          && d.DeviceName.ToUpper() == upper, ct);
         }
 
         /// <summary>Flip 'active' devices that haven't been seen within the stale

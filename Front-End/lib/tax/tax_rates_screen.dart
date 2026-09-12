@@ -1,4 +1,6 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:pos_app/api/api_client.dart';
 import 'package:pos_app/core/ilyass_dropdown.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:pos_app/core/ilyass_list_scaffold.dart';
@@ -108,11 +110,37 @@ class _TaxRatesScreenState extends ConsumerState<TaxRatesScreen> {
     );
     if (confirm != true || !mounted) return;
 
+    // Tax id → why it was refused.
+    final refused = <int, String>{};
     for (final tax in targets) {
       if (!mounted) return;
-      await _delete(context, ref, tax.id, companyId);
+      final reason = await _deleteOne(tax, companyId);
+      if (reason != null) refused[tax.id] = reason;
     }
-    if (mounted) setState(_selectedIds.clear);
+    if (!mounted) return;
+
+    if (refused.length < targets.length) ref.invalidate(allTaxesProvider);
+    // Refused rows stay ticked, so what wasn't deleted is plain to see.
+    setState(() => _selectedIds
+      ..clear()
+      ..addAll(refused.keys));
+
+    if (refused.isEmpty) {
+      showAppSnackbar(context, ref, l.taxRateDeleted);
+    } else if (refused.length == 1) {
+      showAppSnackbar(context, ref, refused.values.first, isError: true);
+    } else {
+      final names = targets
+          .where((t) => refused.containsKey(t.id))
+          .map((t) => t.name)
+          .join(', ');
+      showAppSnackbar(
+        context,
+        ref,
+        l.taxesNotDeletedInUse(refused.length, names),
+        isError: true,
+      );
+    }
   }
 
   List<IlyassMenuAction> _menuActions(
@@ -326,23 +354,64 @@ class _TaxRatesScreenState extends ConsumerState<TaxRatesScreen> {
     );
   }
 
-  Future<void> _delete(
-    BuildContext context,
-    WidgetRef ref,
-    int id,
-    int companyId,
-  ) async {
+  /// Deletes [tax] and returns null, or returns why it was refused.
+  ///
+  /// 🚨 Not a blind local tombstone any more. That is how this used to work:
+  /// the row vanished, "Tax rate deleted" showed, and the server's refusal (a
+  /// product or a sale still uses the tax) came back in a BACKGROUND sync whose
+  /// notice only the POS shell's Sync button displays. From Management the
+  /// delete looked done, the tax quietly came back, and the reason lived only
+  /// in the API log.
+  ///
+  ///  1. Local check first — works offline and names the cause.
+  ///  2. Online, the server decides NOW, with the whole account's data (sales
+  ///     from other tills included), and its refusal is shown right here.
+  ///  3. Offline, the delete is queued as before; the next sync pushes it.
+  Future<String?> _deleteOne(Tax tax, int companyId) async {
+    final l = AppLocalizations.of(context);
+    final db = ref.read(appDatabaseProvider);
+
     try {
-      // Offline-first: tombstone locally (the list drops it instantly via the
-      // Drift stream); SyncManager issues /Taxes/DeleteTax on the next push.
-      await ref.read(appDatabaseProvider).deleteTaxLocal(id);
-      ref.read(syncStateProvider.notifier).sync().catchError((_) {});
-      if (!context.mounted) return;
-      showAppSnackbar(context, ref, AppLocalizations.of(context).taxRateDeleted);
-    } catch (e) {
-      if (!context.mounted) return;
-      showAppSnackbar(context, ref, AppLocalizations.of(context).deleteFailed,
-          isError: true);
+      final usage = await db.taxUsageLocal(tax.id);
+      if (usage.inDocuments) return l.taxInUseByDocuments(tax.name);
+      if (usage.products > 0) {
+        return l.taxInUseByProducts(tax.name, usage.products, l.switchTaxes);
+      }
+
+      // Never reached the server — nothing there to refuse.
+      if (tax.id < 0) {
+        await db.deleteTaxLocal(tax.id);
+        return null;
+      }
+
+      try {
+        await createDio().delete<dynamic>(
+          '/Taxes/DeleteTax',
+          queryParameters: {'id': tax.id, 'companyId': companyId},
+        );
+        await db.removeTaxLocal(tax.id);
+        return null;
+      } on DioException catch (e) {
+        final res = e.response;
+        if (res == null) {
+          // Offline — queue it. The server still has the last word on the next
+          // sync; if it refuses then, the row comes back.
+          await db.deleteTaxLocal(tax.id);
+          ref.read(syncStateProvider.notifier).sync().catchError((_) {});
+          return null;
+        }
+        // Already gone on the server (another till deleted it): gone here too.
+        if (res.statusCode == 404) {
+          await db.removeTaxLocal(tax.id);
+          return null;
+        }
+        final data = res.data;
+        return data is Map && data['message'] != null
+            ? data['message'].toString()
+            : l.deleteFailed;
+      }
+    } catch (_) {
+      return l.deleteFailed;
     }
   }
 }

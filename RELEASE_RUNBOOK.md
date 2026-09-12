@@ -238,6 +238,16 @@ To build against a different backend without touching source:
 flutter build windows --dart-define=API_BASE_URL=https://your-endpoint/api
 ```
 
+The master-login **environment picker** (Dev / Test / Production and the endpoint
+URL under it) is debug/profile only. A release build shows email and password and
+nothing else, and registers against the compiled default above; a Dev/Test preset
+left on the machine by an earlier build is reset to it at master login. An internal
+release that still needs the picker:
+
+```powershell
+flutter build windows --dart-define=SHOW_ENV_PICKER=true
+```
+
 ---
 
 ## The iOS Owner Dashboard is not in this pipeline

@@ -81,6 +81,20 @@ namespace Api.Repository
             return true;
         }
 
+        /// <summary>
+        /// Rows that still point at a tax — every foreign key on <c>Tax</c>, all
+        /// NO ACTION in the live database (FK_ProductTax_Tax,
+        /// FK_DocumentItemTax_Tax, FK_PosOrderItemTax_Tax). Any of them makes the
+        /// delete fail with SQL error 547.
+        /// </summary>
+        public async Task<(int Products, int SaleLines)> GetUsageAsync(int taxId)
+        {
+            var products = await _db.ProductsTaxes.CountAsync(pt => pt.TaxId == taxId);
+            var saleLines = await _db.DocumentItemTaxes.CountAsync(d => d.TaxId == taxId)
+                          + await _db.PosOrderItemTaxes.CountAsync(o => o.TaxId == taxId);
+            return (products, saleLines);
+        }
+
         public async Task<bool> DeleteTaxAsync(int id, int companyId)
         {
             var tax = await GetTaxByIdAsync(id, companyId);

@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 /// Compile-time configuration.
 ///
 /// ✅ **[defaultApiBaseUrl] points at PRODUCTION** (`api.octopus-pos.com`).
@@ -57,6 +59,17 @@ class AppConfig {
     'API_BASE_URL',
     defaultValue: prodBaseUrl,
   );
+
+  /// Whether master login offers the Dev / Test / Production picker and prints
+  /// the endpoint under it.
+  ///
+  /// Debug and profile builds: yes — that is where the picker earns its keep.
+  /// A **release** build: no. A customer's terminal shows email and password
+  /// and nothing else, and registers against [defaultApiBaseUrl] (Production).
+  /// An internal release that still needs the picker opts back in:
+  /// `flutter build windows --dart-define=SHOW_ENV_PICKER=true`
+  static const bool showEnvironmentPicker =
+      !kReleaseMode || bool.fromEnvironment('SHOW_ENV_PICKER');
 }
 
 /// The backends the master-login picker offers.
@@ -106,4 +119,21 @@ enum ApiEnvironment {
     }
     return null;
   }
+}
+
+/// For a build that hides the environment picker: the endpoint to switch
+/// [current] to before master login, or null to leave it alone.
+///
+/// A saved Dev or Test PRESET is replaced by this build's own default. Only the
+/// picker ever wrote those, and with the picker gone nothing on screen could
+/// show or change them — a Windows terminal keeps its prefs across reinstalls,
+/// so a machine once pointed at Dev would register a customer against the
+/// Tailscale box, invisibly. A hand-entered endpoint (Settings → Connection) is
+/// kept: someone chose it on purpose.
+String? replacementForHiddenPicker(String current) {
+  final preset = ApiEnvironment.forUrl(current);
+  final isDefault = preset != null &&
+      ApiEnvironment.normalize(preset.baseUrl) ==
+          ApiEnvironment.normalize(AppConfig.defaultApiBaseUrl);
+  return preset == null || isDefault ? null : AppConfig.defaultApiBaseUrl;
 }

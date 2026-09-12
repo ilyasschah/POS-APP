@@ -33,7 +33,10 @@ class OpeningControlDialog extends ConsumerStatefulWidget {
 }
 
 class _OpeningControlDialogState extends ConsumerState<OpeningControlDialog> {
-  final _cash = TextEditingController(text: '0.00');
+  // Empty, not '0.00': a pre-filled value made every keystroke append to it
+  // ("0.00222") unless the cashier hit ✕ first. The field shows 0.00 as a hint
+  // instead, and an empty float is read as 0 at open (see _open).
+  final _cash = TextEditingController();
   final _note = TextEditingController();
   bool _busy = false;
   String? _error;
@@ -237,6 +240,7 @@ class _AmountFieldState extends State<_AmountField> {
             decoration: InputDecoration(
               border: const OutlineInputBorder(),
               isDense: true,
+              hintText: '0.00',
               suffixIcon: widget.controller.text.isEmpty
                   ? null
                   : IconButton(
@@ -255,11 +259,12 @@ class _AmountFieldState extends State<_AmountField> {
         // The coin button: a deliberate "count it again from zero" reset, which
         // is what the Odoo affordance does. Kept because a cashier mis-typing a
         // float then correcting it digit by digit is how wrong opening balances
-        // get entered.
+        // get entered. It empties the field (the 0.00 hint shows) rather than
+        // writing '0.00' into it, so the next digit starts a fresh amount.
         IconButton.filledTonal(
           tooltip: '0.00',
           onPressed: () {
-            widget.controller.text = '0.00';
+            widget.controller.clear();
             setState(() {});
           },
           icon: Icon(Icons.savings_outlined,
