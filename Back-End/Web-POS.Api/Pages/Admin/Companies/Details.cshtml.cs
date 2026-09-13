@@ -1,6 +1,7 @@
 using Api.Commands.UserCommands.Add;
 using Api.Commands.UserCommands.Delete;
 using Api.Commands.UserCommands.Update;
+using Api.Commands.UserDevicePinCommands;
 using Api.Master;
 using Api.Master.Domain;
 using Api.Models;
@@ -25,6 +26,7 @@ public class DetailsModel : PageModel
 
     public CompanyDto? Company { get; private set; }
     public List<UserDto> Users { get; private set; } = new();
+    public List<DeviceRegistry> Devices { get; private set; } = new();
 
     // Pillar 1/4 control-plane stats for this company.
     public bool HasTenant { get; private set; }
@@ -122,6 +124,35 @@ public class DetailsModel : PageModel
         return RedirectToPage(new { id });
     }
 
+    public async Task<IActionResult> OnPostRevokeDeviceAsync(int id, string deviceId)
+    {
+        if (string.IsNullOrWhiteSpace(deviceId))
+        {
+            TempData["Error"] = "Device ID is required to revoke.";
+            return RedirectToPage(new { id });
+        }
+
+        try
+        {
+            var req = new RevokeDeviceRequest { UserId = 0, DeviceId = deviceId };
+            var result = await _mediator.Send(new RevokeDeviceCommand(req, id));
+            if (result)
+            {
+                TempData["Success"] = "Device revoked.";
+            }
+            else
+            {
+                TempData["Error"] = "Device not found or nothing to revoke.";
+            }
+        }
+        catch (Exception ex)
+        {
+            TempData["Error"] = $"Revoke failed: {ex.Message}";
+        }
+
+        return RedirectToPage(new { id });
+    }
+
     private async Task<bool> LoadAsync(int id)
     {
         Company = await _mediator.Send(new GetCompanyByIdQuery(id));
@@ -154,6 +185,13 @@ public class DetailsModel : PageModel
                             (sub.CurrentPeriodEnd.Value.ToUniversalTime() - DateTime.UtcNow).TotalDays);
                 }
             }
+
+            // Devices registered to this company (control plane). Show even if the
+            // tenant record is missing — the registry may carry orphaned rows.
+            Devices = await _master.Devices.AsNoTracking()
+                .Where(d => d.CompanyId == id)
+                .OrderByDescending(d => d.LastSeenAt)
+                .ToListAsync();
 
             // Pillar 5 — flagged clone / duplicate transactions for this company.
             CloneAlertCount = await _master.TransactionAudits.AsNoTracking()

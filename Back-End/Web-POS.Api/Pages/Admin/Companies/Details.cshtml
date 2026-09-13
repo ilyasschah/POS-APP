@@ -186,6 +186,169 @@
                 </div>
             </div>
 
+            <!-- Devices -->
+            <div class="col-12">
+                <div class="card table-scroll-hint">
+                    <div class="card-header">
+                        <h3 class="card-title">Devices</h3>
+                        <div class="card-subtitle">@Model.Devices.Count total</div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-vcenter card-table table-min table-mobile-stack" style="--table-min:66rem;">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Status</th>
+                                    <th>Registered</th>
+                                    <th>Last seen</th>
+                                    <th class="w-1"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (Model.Devices == null || Model.Devices.Count == 0)
+                                {
+                                    <tr><td colspan="5" class="text-secondary">No devices registered.</td></tr>
+                                }
+                                else
+                                {
+                                    @foreach (var d in Model.Devices)
+                                        {
+                                            <tr>
+                                                <td class="cell-title" data-label="Name">@(string.IsNullOrEmpty(d.DeviceName) ? "—" : d.DeviceName)</td>
+                                                <td data-label="Status">
+                                                    @if (d.Status == "active")
+                                                    {
+                                                        <span class="status status-green"><span class="status-dot"></span>Active</span>
+                                                    }
+                                                    else if (d.Status == "inactive")
+                                                    {
+                                                        <span class="status status-secondary"><span class="status-dot"></span>Inactive</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="status status-red"><span class="status-dot"></span>@d.Status</span>
+                                                    }
+                                                </td>
+                                                <td class="text-nowrap" data-label="Registered">@d.RegisteredAt.ToLocalTime().ToString("MM/dd/yyyy h:mm tt")</td>
+                                                <td class="text-nowrap" data-label="Last seen">@d.LastSeenAt.ToLocalTime().ToString("MM/dd/yyyy h:mm tt")</td>
+                                                <td class="cell-block" data-label="Actions">
+                                                    <div class="btn-list flex-nowrap justify-content-end align-items-center">
+                                                        <button type="button" class="btn btn-sm btn-outline-danger btn-revoke-device" data-device-id="@d.DeviceId" data-device-name="@d.DeviceName">Revoke</button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        }
+                                    }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="toastContainer" class="position-fixed top-0 end-0 p-3" style="z-index:1080"></div>
+
+            <style>
+                .revoke-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:1080; display:none; }
+                .revoke-modal { position:fixed; left:50%; top:50%; transform:translate(-50%,-50%); z-index:1081; min-width:320px; max-width:90%; display:none; }
+                .revoke-modal .card { padding:0; }
+                .toast-custom { margin-bottom:0.5rem; min-width:240px; }
+            </style>
+
+            <div id="revokeBackdrop" class="revoke-backdrop" aria-hidden="true"></div>
+            <div id="revokeModalCustom" class="revoke-modal">
+                <div class="card">
+                    <div class="card-body text-center py-4">
+                        <h3 class="card-title">Revoke device</h3>
+                        <div class="text-muted mt-2">Are you sure you want to revoke <strong id="revokeDeviceName"></strong>?</div>
+                    </div>
+                    <div class="card-footer text-end">
+                        <div class="btn-list btn-list-sm">
+                            <button type="button" class="btn btn-link" id="revokeCancelBtn">Cancel</button>
+                            <button type="button" class="btn btn-danger" id="revokeConfirmBtn">Revoke</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <script>
+                (function () {
+                    const companyId = @(Model.Company?.Id ?? 0);
+                    const backdrop = document.getElementById('revokeBackdrop');
+                    const modal = document.getElementById('revokeModalCustom');
+                    const toastContainer = document.getElementById('toastContainer');
+                    let pendingButton = null;
+                    let pendingDeviceId = null;
+
+                    function showAppToast(message, type) {
+                        if (!toastContainer) { alert(message); return; }
+                        const el = document.createElement('div');
+                        el.className = 'alert ' + (type === 'success' ? 'alert-success' : 'alert-danger') + ' toast-custom shadow';
+                        el.setAttribute('role', 'status');
+                        el.textContent = message;
+                        toastContainer.appendChild(el);
+                        setTimeout(() => el.remove(), 4000);
+                    }
+
+                    function showModal(deviceName) {
+                        const nameEl = document.getElementById('revokeDeviceName');
+                        if (nameEl) nameEl.textContent = deviceName;
+                        pendingButton = null;
+                        pendingDeviceId = null;
+                        backdrop.style.display = 'block';
+                        modal.style.display = 'block';
+                    }
+
+                    function hideModal() {
+                        backdrop.style.display = 'none';
+                        modal.style.display = 'none';
+                    }
+
+                    document.getElementById('revokeCancelBtn').addEventListener('click', function () { hideModal(); });
+                    backdrop.addEventListener('click', function () { hideModal(); });
+
+                    document.querySelectorAll('.btn-revoke-device').forEach(function (btn) {
+                        btn.addEventListener('click', function (e) {
+                            const deviceId = btn.getAttribute('data-device-id');
+                            const deviceName = btn.getAttribute('data-device-name') || deviceId;
+                            pendingButton = btn;
+                            pendingDeviceId = deviceId;
+                            showModal(deviceName);
+                        });
+                    });
+
+                    document.getElementById('revokeConfirmBtn').addEventListener('click', async function () {
+                        const btn = pendingButton;
+                        const deviceId = pendingDeviceId;
+                        if (!deviceId) { hideModal(); return; }
+                        hideModal();
+                        if (btn) btn.disabled = true;
+                        try {
+                            const res = await fetch('/api/UserDevicePins/RevokeDevice?companyId=' + companyId, {
+                                method: 'DELETE',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ userId: 0, deviceId })
+                            });
+                            if (!res.ok) {
+                                const txt = await res.text();
+                                showAppToast('Revoke failed: ' + txt, 'danger');
+                                if (btn) btn.disabled = false;
+                                return;
+                            }
+                            const row = btn ? btn.closest('tr') : null;
+                            if (row) row.remove();
+                            showAppToast('Device revoked.', 'success');
+                        } catch (err) {
+                            showAppToast('Revoke failed: ' + err, 'danger');
+                            if (btn) btn.disabled = false;
+                        } finally {
+                            pendingButton = null;
+                            pendingDeviceId = null;
+                        }
+                    });
+                })();
+            </script>
+
             <!-- Users -->
             <div class="col-12">
                 <div class="card table-scroll-hint">
