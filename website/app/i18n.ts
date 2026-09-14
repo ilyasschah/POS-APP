@@ -149,8 +149,8 @@ const en: Dict = {
     lede: "One-time lifetime licenses with no monthly subscription and no transaction fees.",
     cta: "Contact Us to Buy",
     tiers: [
-      { name: "Standard License", price: "500 DH", note: "Lifetime · single location", points: ["100% Offline-First (No Internet Needed)", "Kitchen Display System (KDS) & Customer Display", "Waiter Tablet Order Taking", "Local Barcodes & Menu", "Local Database Automatic Backup", "Single Store / Single POS Device"] },
-      { name: "Pro License", price: "700 DH", note: "Lifetime · multi-location ready", points: ["Everything in Standard, plus:", "Octopus Mobile Owner Dashboard App (Remote Monitoring)", "Multi-Store & Multi-POS Device Sync", "Multi-Warehouse & Advanced Stock Control"] },
+      { name: "Standard License", price: "500 DH", note: "One-time · Lifetime · local operations for a single location", points: ["100% Offline-First (No Internet Needed)", "Kitchen Display System (KDS) & Customer Display", "Waiter Tablet Order Taking", "Local Barcodes & Menu", "Local Database Automatic Backup", "Single Store / Single POS Device"] },
+      { name: "Pro License", price: "700 DH", note: "One-time · Lifetime · advanced management and multi-location scaling", points: ["Everything in Standard, plus:", "Octopus Mobile Owner Dashboard App (Remote Monitoring)", "Multi-Store & Multi-POS Device Sync", "Multi-Warehouse & Advanced Stock Control"] },
     ],
   },
   faq: {
