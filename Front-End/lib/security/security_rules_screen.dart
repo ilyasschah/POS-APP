@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pos_app/auth/auth_provider.dart';
 import 'package:pos_app/company/company_provider.dart';
+import 'package:pos_app/core/ilyass_dropdown.dart';
 import 'package:pos_app/core/ilyass_list_scaffold.dart';
 import 'package:pos_app/core/responsive.dart';
 import 'package:pos_app/core/status_colors.dart';
@@ -455,9 +456,13 @@ class _CategorySection extends StatelessWidget {
           builder: (context, constraints) {
             // Math-based wrapping: the column count comes from the width this
             // section actually got, never from a device breakpoint.
-            final columns = math.max(
-              1,
-              ((constraints.maxWidth + _gap) / (_minTileWidth + _gap)).floor(),
+            final columns = math.min(
+              2,
+              math.max(
+                1,
+                ((constraints.maxWidth + _gap) / (_minTileWidth + _gap))
+                    .floor(),
+              ),
             );
             final tileWidth =
                 (constraints.maxWidth - _gap * (columns - 1)) / columns;
@@ -491,10 +496,8 @@ class _CategorySection extends StatelessWidget {
 
 /// One rule: what it governs, and who may do it.
 ///
-/// The control is a two-segment button rather than the old dropdown so the
-/// answer is visible without opening anything — on a screen whose entire job is
-/// "what is switched on", a closed dropdown hides that behind a tap. It also
-/// halves the taps: a dropdown costs one to open and one to pick.
+/// The role is a compact dropdown: only the current role needs to be visible
+/// in every tile, while the menu keeps the two choices available when editing.
 class _RuleTile extends ConsumerStatefulWidget {
   const _RuleTile({
     required this.rule,
@@ -505,9 +508,8 @@ class _RuleTile extends ConsumerStatefulWidget {
   final SecurityKeyModel rule;
   final int companyId;
 
-  /// Drop the segment words and keep the two icons. Decided from the TILE's
-  /// own width by [_CategorySection], not from a device breakpoint — the same
-  /// window is roomy at one column and tight at three.
+  /// Kept for the tile's responsive contract. The dropdown stays compact at
+  /// every tile width, so its role label cannot compete with the rule label.
   final bool dense;
 
   @override
@@ -606,13 +608,8 @@ class _RuleTileState extends ConsumerState<_RuleTile> {
               : cs.outlineVariant,
         ),
       ),
-      // 🚨 The label is the ONLY flexible child. The control is a fixed-size
-      // thing: giving it `Flexible(flex: 2)` handed it a fifth of the tile,
-      // and a SegmentedButton that cannot fit its words does not shrink or
-      // ellipsize them — it wraps them one character per line ("Ca sh ie r").
-      // Non-flex here means Row measures it at its natural width first and the
-      // label takes what is left, which is the right way round: an operator
-      // can lose the end of a long rule name, never the control they came for.
+      // The label is the only flexible child. The role picker has a bounded
+      // width so a long translated rule name cannot squeeze its selection.
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -629,54 +626,37 @@ class _RuleTileState extends ConsumerState<_RuleTile> {
             ),
           ),
           const SizedBox(width: 12),
-          SegmentedButton<int>(
-            showSelectedIcon: false,
-            segments: [
-              ButtonSegment(
-                value: 0,
-                icon: const Icon(Icons.groups_outlined, size: 18),
-                label: widget.dense
-                    ? null
-                    // softWrap:false is the belt to the layout's braces: a
-                    // segment label given too little room wraps per character
-                    // rather than clipping, which is what made this unreadable.
-                    : Text(l10n.roleCashier, maxLines: 1, softWrap: false),
-                tooltip: l10n.securityLevelCashierHint,
+          SizedBox(
+            width: widget.dense ? 150 : 178,
+            child: IlyassDropdown<int>(
+              dense: true,
+              value: widget.rule.level,
+              items: [
+                IlyassDropdownItem(
+                  value: 0,
+                  label: l10n.roleCashier,
+                  icon: Icons.groups_outlined,
+                ),
+                IlyassDropdownItem(
+                  value: 1,
+                  label: l10n.roleAdmin,
+                  icon: Icons.lock_outline,
+                ),
+              ],
+              prefixIcon: adminOnly
+                  ? Icons.lock_outline
+                  : Icons.groups_outlined,
+              textStyle: theme.textTheme.labelLarge?.copyWith(
+                color: adminOnly ? context.dangerColor : cs.primary,
+                fontWeight: FontWeight.w600,
               ),
-              ButtonSegment(
-                value: 1,
-                icon: const Icon(Icons.lock_outline, size: 18),
-                label: widget.dense
-                    ? null
-                    : Text(l10n.roleAdmin, maxLines: 1, softWrap: false),
-                tooltip: l10n.securityLevelAdminHint,
-              ),
-            ],
-            selected: {widget.rule.level},
-            onSelectionChanged: _isLoading
-                ? null
-                : (s) {
-                    final next = s.first;
-                    if (next != widget.rule.level) _updateLevel(next);
-                  },
-            style: ButtonStyle(
-              visualDensity: VisualDensity.compact,
-              padding: WidgetStateProperty.all(
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-              ),
-              textStyle: WidgetStateProperty.all(theme.textTheme.labelLarge),
-              backgroundColor: WidgetStateProperty.resolveWith((states) {
-                if (!states.contains(WidgetState.selected)) return null;
-                return adminOnly
-                    ? context.dangerColor.withValues(alpha: 0.16)
-                    : cs.primary.withValues(alpha: 0.14);
-              }),
-              foregroundColor: WidgetStateProperty.resolveWith((states) {
-                if (!states.contains(WidgetState.selected)) {
-                  return cs.onSurfaceVariant;
-                }
-                return adminOnly ? context.dangerColor : cs.primary;
-              }),
+              onChanged: _isLoading
+                  ? null
+                  : (next) {
+                      if (next != null && next != widget.rule.level) {
+                        _updateLevel(next);
+                      }
+                    },
             ),
           ),
         ],
