@@ -264,7 +264,7 @@ export default function Home() {
               <p className="lede measure" style={{ marginTop: "1.25rem" }}>{t.pricing.lede}</p>
             </Reveal>
 
-            <div className="grid grid-3" style={{ marginTop: "3rem" }}>
+            <div className="grid grid-2" style={{ marginTop: "3rem" }}>
               {t.pricing.tiers.map((tier, i) => (
                 <Reveal key={tier.name} delay={i * 60}>
                   <div className="plan">
@@ -408,39 +408,15 @@ function Check() {
   );
 }
 
-/**
- * The octopus mark, reduced to what survives at 22px.
- *
- * Traced from `Front-End/assets/icon.svg` — the same hub and the same radiating
- * terminals, at the icon's own proportions (hub r=70/512, node r=28/512). The
- * eight tentacles of the full icon turn to mud at nav size, so five carry the
- * shape; the tentacle stroke is thickened from the icon's 0.94/24 because at
- * this size the true weight renders thinner than one device pixel.
- */
 function Mark({ size = 22 }: { size?: number }) {
   return (
-    <svg
+    <Image
+      src="/logo-NO_Background.png"
       width={size}
       height={size}
-      viewBox="0 0 24 24"
-      fill="currentColor"
       className="brand-mark"
       aria-hidden="true"
-      focusable="false"
-    >
-      <g stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" fill="none">
-        <path d="M9.4 10.8Q6.4 13.6 6.9 16.6" />
-        <path d="M12 12.4V17.4" />
-        <path d="M14.6 10.8Q17.6 13.6 17.1 16.6" />
-        <path d="M9 9.2Q5.2 9.8 4.1 12.1" />
-        <path d="M15 9.2Q18.8 9.8 19.9 12.1" />
-      </g>
-      <circle cx="12" cy="9" r="3.3" />
-      <circle cx="6.9" cy="17.6" r="1.5" />
-      <circle cx="12" cy="18.4" r="1.5" />
-      <circle cx="17.1" cy="17.6" r="1.5" />
-      <circle cx="3.7" cy="13.1" r="1.4" />
-      <circle cx="20.3" cy="13.1" r="1.4" />
-    </svg>
+      alt=""
+    />
   );
 }

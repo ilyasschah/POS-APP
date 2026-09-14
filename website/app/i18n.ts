@@ -145,13 +145,12 @@ const en: Dict = {
     floorBody: "Finger-sized targets rather than mouse-sized ones. Six themes including a dimmed and a night mode for low-light rooms. Full right-to-left layout for Arabic. Layouts that compute their own columns, so a 10-inch tablet and a 15-inch counter monitor both get a layout that fits instead of one that overflows.",
   },
   pricing: {
-    eyebrow: "Pricing", h2: "Per terminal, per month.",
-    lede: "No transaction fees and no cut of your takings.",
-    cta: "Talk to us",
+    eyebrow: "Lifetime licensing", h2: "One payment. Yours for life.",
+    lede: "One-time lifetime licenses with no monthly subscription and no transaction fees.",
+    cta: "Contact Us to Buy",
     tiers: [
-      { name: "Single", price: "249 DH", note: "One terminal", points: ["One Windows or Android terminal", "Kitchen display included", "Keeps selling offline", "Email support"] },
-      { name: "Venue", price: "199 DH", note: "Up to 5 terminals", points: ["Everything in Single", "Up to five terminals", "Owner dashboard, web + iOS", "Floor plan & bookings", "Priority support"] },
-      { name: "Group", price: "149 DH", note: "Multi-location", points: ["Everything in Venue", "Unlimited terminals", "Multi-location reporting", "Per-warehouse stock control", "Onboarding & migration"] },
+      { name: "Standard License", price: "500 DH", note: "Lifetime · single location", points: ["100% Offline-First (No Internet Needed)", "Kitchen Display System (KDS) & Customer Display", "Waiter Tablet Order Taking", "Local Barcodes & Menu", "Local Database Automatic Backup", "Single Store / Single POS Device"] },
+      { name: "Pro License", price: "700 DH", note: "Lifetime · multi-location ready", points: ["Everything in Standard, plus:", "Octopus Mobile Owner Dashboard App (Remote Monitoring)", "Multi-Store & Multi-POS Device Sync", "Multi-Warehouse & Advanced Stock Control"] },
     ],
   },
   faq: {
@@ -266,13 +265,12 @@ const fr: Dict = {
     floorBody: "Des cibles à la taille du doigt, pas de la souris. Six thèmes dont un mode atténué et un mode nuit pour les salles sombres. Mise en page entièrement droite-à-gauche pour l’arabe. Des grilles qui calculent leurs colonnes, pour qu’une tablette 10 pouces et un écran 15 pouces aient chacun une mise en page adaptée.",
   },
   pricing: {
-    eyebrow: "Tarifs", h2: "Par terminal, par mois.",
-    lede: "Aucune commission et aucun prélèvement sur vos recettes.",
-    cta: "Nous contacter",
+    eyebrow: "Licences à vie", h2: "Un paiement. À vous pour toujours.",
+    lede: "Des licences à vie payées une seule fois, sans abonnement mensuel ni commission.",
+    cta: "Nous contacter pour acheter",
     tiers: [
-      { name: "Single", price: "249 DH", note: "Un terminal", points: ["Un terminal Windows ou Android", "Écran cuisine inclus", "Continue de vendre hors ligne", "Support par e-mail"] },
-      { name: "Venue", price: "199 DH", note: "Jusqu’à 5 terminaux", points: ["Tout Single", "Jusqu’à cinq terminaux", "Tableau de bord, web + iOS", "Plan de salle & réservations", "Support prioritaire"] },
-      { name: "Group", price: "149 DH", note: "Multi-sites", points: ["Tout Venue", "Terminaux illimités", "Rapports multi-sites", "Stock par entrepôt", "Mise en route & migration"] },
+      { name: "Licence Standard", price: "500 DH", note: "À vie · un seul site", points: ["100 % hors ligne en priorité (aucun Internet nécessaire)", "Système d’affichage cuisine (KDS) et écran client", "Prise de commandes sur tablette par les serveurs", "Codes-barres et menu locaux", "Sauvegarde automatique de la base locale", "Un magasin / un appareil POS"] },
+      { name: "Licence Pro", price: "700 DH", note: "À vie · prête pour plusieurs sites", points: ["Tout le contenu de Standard, plus :", "Application mobile du tableau de bord propriétaire (surveillance à distance)", "Synchronisation multi-magasins et multi-appareils POS", "Multi-entrepôts et contrôle avancé du stock"] },
     ],
   },
   faq: {
@@ -387,13 +385,12 @@ const ar: Dict = {
     floorBody: "أهداف لمس بحجم الإصبع لا بحجم مؤشر الفأرة. ستة سمات منها وضع خافت ووضع ليلي للقاعات المعتمة. تخطيط عربي كامل من اليمين إلى اليسار. تخطيطات تحسب أعمدتها بنفسها، فتحصل تابلت ١٠ بوصات وشاشة ١٥ بوصة على تخطيط مناسب لكل منهما.",
   },
   pricing: {
-    eyebrow: "الأسعار", h2: "لكل طرفية، شهريًا.",
-    lede: "بلا رسوم على المعاملات وبلا نسبة من مبيعاتك.",
+    eyebrow: "تراخيص مدى الحياة", h2: "دفعة واحدة. ملكك مدى الحياة.",
+    lede: "تراخيص مدى الحياة تُدفع مرة واحدة، بلا اشتراك شهري أو رسوم على المعاملات.",
     cta: "تواصل معنا",
     tiers: [
-      { name: "Single", price: "249 د.م.", note: "طرفية واحدة", points: ["طرفية Windows أو Android واحدة", "شاشة المطبخ مشمولة", "يواصل البيع دون اتصال", "دعم عبر البريد"] },
-      { name: "Venue", price: "199 د.م.", note: "حتى ٥ طرفيات", points: ["كل مزايا Single", "حتى خمس طرفيات", "لوحة تحكم، ويب + iOS", "مخطط القاعة والحجوزات", "دعم ذو أولوية"] },
-      { name: "Group", price: "149 د.م.", note: "فروع متعددة", points: ["كل مزايا Venue", "طرفيات غير محدودة", "تقارير متعددة الفروع", "مخزون لكل مستودع", "تهيئة ونقل البيانات"] },
+      { name: "الترخيص القياسي", price: "500 د.م.", note: "مدى الحياة · موقع واحد", points: ["يعمل دون اتصال 100% (لا حاجة إلى الإنترنت)", "نظام شاشة المطبخ (KDS) وشاشة العميل", "أخذ الطلبات عبر جهاز لوحي للنادل", "رموز شريطية وقائمة محلية", "نسخ احتياطي تلقائي لقاعدة البيانات المحلية", "متجر واحد / جهاز POS واحد"] },
+      { name: "الترخيص الاحترافي", price: "700 د.م.", note: "مدى الحياة · جاهز لعدة مواقع", points: ["كل ما في القياسي، بالإضافة إلى:", "تطبيق لوحة تحكم المالك على الهاتف (مراقبة عن بُعد)", "مزامنة عدة متاجر وعدة أجهزة POS", "عدة مستودعات وتحكم متقدم بالمخزون"] },
     ],
   },
   faq: {
