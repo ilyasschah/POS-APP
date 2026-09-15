@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/async_controller.dart';
 import '../../core/screen_state.dart';
+import '../auth/auth_controller.dart';
 import '../../models/product.dart';
+import '../../models/product_group.dart';
 
 class ProductsController extends AsyncController<List<Product>> {
   @override
@@ -26,7 +28,52 @@ class ProductsController extends AsyncController<List<Product>> {
     );
     await load();
   }
+
+  Future<void> createProduct({
+    required String name,
+    required double price,
+    required double cost,
+    required int? productGroupId,
+    required String color,
+  }) async {
+    await api.createProduct(
+      name: name,
+      price: price,
+      cost: cost,
+      productGroupId: productGroupId,
+      color: color,
+    );
+    await load();
+  }
+
+  Future<void> updateProduct({
+    required Product product,
+    required String name,
+    required double price,
+    required double cost,
+    required int? productGroupId,
+    required String color,
+  }) async {
+    await api.updateProduct(
+      product: product,
+      name: name,
+      price: price,
+      cost: cost,
+      productGroupId: productGroupId,
+      color: color,
+    );
+    await load();
+  }
+
+  Future<void> deleteProduct(Product product) async {
+    await api.deleteProduct(id: product.id);
+    await load();
+  }
 }
+
+final productGroupsProvider = FutureProvider<List<ProductGroup>>(
+  (ref) => ref.watch(apiProvider).fetchProductGroups(),
+);
 
 final productsProvider =
     NotifierProvider<ProductsController, ScreenState<List<Product>>>(

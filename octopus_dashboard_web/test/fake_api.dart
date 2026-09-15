@@ -5,6 +5,7 @@ import 'package:octopus_dashboard_web/models/document.dart';
 import 'package:octopus_dashboard_web/models/document_lookups.dart';
 import 'package:octopus_dashboard_web/models/pos_session.dart';
 import 'package:octopus_dashboard_web/models/product.dart';
+import 'package:octopus_dashboard_web/models/product_group.dart';
 import 'package:octopus_dashboard_web/models/stock.dart';
 import 'package:octopus_dashboard_web/models/stock_rule.dart';
 import 'package:octopus_dashboard_web/models/user.dart';
@@ -127,12 +128,41 @@ class FakeApi implements OctopusApi {
       _respond(_products);
 
   @override
+  Future<List<ProductGroup>> fetchProductGroups({CancelToken? cancelToken}) =>
+      _respond(const [ProductGroup(id: 1, name: 'Drinks')]);
+
+  @override
+  Future<void> createProduct({
+    required String name,
+    required double price,
+    required double cost,
+    required int? productGroupId,
+    required String color,
+    CancelToken? cancelToken,
+  }) => _respond(null);
+
+  @override
   Future<void> updateProductPricing({
     required Product product,
     required double price,
     required double cost,
     CancelToken? cancelToken,
   }) => _respond(null);
+
+  @override
+  Future<void> updateProduct({
+    required Product product,
+    required String name,
+    required double price,
+    required double cost,
+    required int? productGroupId,
+    required String color,
+    CancelToken? cancelToken,
+  }) => _respond(null);
+
+  @override
+  Future<void> deleteProduct({required int id, CancelToken? cancelToken}) =>
+      _respond(null);
 
   @override
   Future<List<StockEntry>> fetchStocks({CancelToken? cancelToken}) => _respond([

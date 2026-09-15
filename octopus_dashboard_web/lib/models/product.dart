@@ -156,4 +156,24 @@ class Product {
     'isToWeigh': isToWeigh,
     'packSize': packSize,
   };
+
+  Map<String, dynamic> toCreateJson({
+    required String newName,
+    required double newPrice,
+    required double newCost,
+    required int? newProductGroupId,
+    required String newColor,
+  }) => {
+    'productGroupId': newProductGroupId,
+    'name': newName.trim(),
+    'price': newPrice,
+    'cost': newCost,
+    'color': newColor.trim().isEmpty ? 'Transparent' : newColor.trim(),
+    'uomId': uomId,
+    'isTaxInclusivePrice': false,
+    'isPriceChangeAllowed': true,
+    'isService': false,
+    'isUsingDefaultQuantity': true,
+    'isEnabled': true,
+  };
 }

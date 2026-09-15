@@ -43,6 +43,13 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
           children: [
             PageHeader(
               title: 'Products & Prices',
+              actions: [
+                FilledButton.icon(
+                  onPressed: () => showProductForm(context),
+                  icon: const Icon(Icons.add_rounded),
+                  label: const Text('New product'),
+                ),
+              ],
               onRefresh: reload,
               isRefreshing: state.isRefreshing,
             ),
@@ -77,7 +84,7 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                     itemBuilder: (context, index) => _ProductRow(
                       product: filtered[index],
                       onTap: () =>
-                          showEditPriceSheet(context, filtered[index]),
+                          showProductForm(context, product: filtered[index]),
                     ),
                   );
                 },

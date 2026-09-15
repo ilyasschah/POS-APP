@@ -7,6 +7,7 @@ import '../models/document.dart';
 import '../models/document_lookups.dart';
 import '../models/pos_session.dart';
 import '../models/product.dart';
+import '../models/product_group.dart';
 import '../models/stock.dart';
 import '../models/stock_rule.dart';
 import '../models/user.dart';
@@ -193,6 +194,54 @@ class OctopusApi {
     });
   }
 
+  Future<List<ProductGroup>> fetchProductGroups({CancelToken? cancelToken}) {
+    return _guard(() async {
+      final response = await _dio.get<dynamic>(
+        '/ProductGroups/GetAll',
+        queryParameters: _companyQuery,
+        cancelToken: cancelToken,
+      );
+      return asList(response.data, ProductGroup.fromJson);
+    });
+  }
+
+  Future<void> createProduct({
+    required String name,
+    required double price,
+    required double cost,
+    required int? productGroupId,
+    required String color,
+    CancelToken? cancelToken,
+  }) {
+    return _guard(() async {
+      await _dio.post<dynamic>(
+        '/Products/Add',
+        queryParameters: _companyQuery,
+        data: Product(
+          id: 0,
+          name: name,
+          code: null,
+          price: price,
+          cost: cost,
+          isTaxInclusivePrice: false,
+          isPriceChangeAllowed: true,
+          isService: false,
+          isUsingDefaultQuantity: true,
+          isEnabled: true,
+          color: color,
+        ).toCreateJson(
+          newName: name,
+          newPrice: price,
+          newCost: cost,
+          newProductGroupId: productGroupId,
+          newColor: color,
+        ),
+        options: _json,
+        cancelToken: cancelToken,
+      );
+    });
+  }
+
   /// `PATCH /Products/Update?companyId=...`
   ///
   /// PATCH, not PUT, and `companyId` rides in the query string rather than the
@@ -210,6 +259,41 @@ class OctopusApi {
         queryParameters: _companyQuery,
         data: product.toUpdateJson(newPrice: price, newCost: cost),
         options: _json,
+        cancelToken: cancelToken,
+      );
+    });
+  }
+
+  Future<void> updateProduct({
+    required Product product,
+    required String name,
+    required double price,
+    required double cost,
+    required int? productGroupId,
+    required String color,
+    CancelToken? cancelToken,
+  }) {
+    return _guard(() async {
+      await _dio.patch<dynamic>(
+        '/Products/Update',
+        queryParameters: _companyQuery,
+        data: {
+          ...product.toUpdateJson(newPrice: price, newCost: cost),
+          'name': name.trim(),
+          'productGroupId': productGroupId,
+          'color': color.trim().isEmpty ? 'Transparent' : color.trim(),
+        },
+        options: _json,
+        cancelToken: cancelToken,
+      );
+    });
+  }
+
+  Future<void> deleteProduct({required int id, CancelToken? cancelToken}) {
+    return _guard(() async {
+      await _dio.delete<dynamic>(
+        '/Products/Delete',
+        queryParameters: {'id': id, ..._companyQuery},
         cancelToken: cancelToken,
       );
     });
