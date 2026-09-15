@@ -158,6 +158,7 @@ abstract final class AppTheme {
       scaffoldBackgroundColor: palette.base,
       canvasColor: palette.base,
       fontFamily: AppText.family,
+      fontFamilyFallback: const ['NotoSans', 'NotoNaskhArabic'],
       textTheme: textTheme,
       extensions: [palette],
       splashFactory: InkSparkle.splashFactory,

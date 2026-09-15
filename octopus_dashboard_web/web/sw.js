@@ -20,9 +20,10 @@
  *     every screen will show its error state, which is the honest outcome.
  */
 
-// Bumped to v2 for the 2026-09-10 logo redraw: activate() deletes every older
-// cache, which is the only thing that evicts the old icons it was holding.
-const CACHE_VERSION = 'v2';
+// Bumped to v3 for the production static-asset and fallback-font fix:
+// activate() deletes every older cache, which forces installed PWAs to reload
+// the corrected shell.
+const CACHE_VERSION = 'v3';
 const CACHE_NAME = `octopus-shell-${CACHE_VERSION}`;
 
 /** Static file extensions that are safe to cache. */
