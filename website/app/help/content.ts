@@ -53,6 +53,29 @@ export type HelpDict = {
 
 const REGISTRATION = { src: "/help/device-registration.png", width: 560, height: 540 };
 const TERMINAL_SETUP = { src: "/help/terminal-setup.png", width: 852, height: 780 };
+const DATA_SOURCE = { src: "/help/data-source-choice.png", width: 852, height: 780 };
+const business_type = { src: "/help/business-type.png", width: 852, height: 780 };
+const sign_in = { src: "/help/pin-sign-in.png", width: 852, height: 780 };
+const open_register = { src: "/help/opening-control.png", width: 852, height: 780 };
+const make_sale = { src: "/help/sale-screen.png", width: 852, height: 780 };
+const floor_plan = { src: "/help/floor-plan.png", width: 852, height: 780 };
+const refund_dialog = { src: "/help/refund-dialog.png", width: 852, height: 780 };
+const cash_in_out = { src: "/help/cash-in-out.png", width: 852, height: 780 };
+const closing_register = { src: "/help/closing-register.png", width: 852, height: 780 };
+const offline_pending_sync = { src: "/help/offline-pending-sync.png", width: 852, height: 780 };
+const sync_status_panel = { src: "/help/sync-status-panel.png", width: 852, height: 780 };
+const database_backup_settings = { src: "/help/database-backup-settings.png", width: 852, height: 780 };
+const product_editor = { src: "/help/product-editor.png", width: 852, height: 780 };
+const stock_warehouses = { src: "/help/stock-warehouses.png", width: 852, height: 780 };
+const customer_loyalty = { src: "/help/customer-loyalty.png", width: 852, height: 780 };
+const security_rules = { src: "/help/security-rules.png", width: 852, height: 780 };
+const reports = { src: "/help/reports.png", width: 852, height: 780 };
+const kitchen_display_settings = { src: "/help/kitchen-display-settings.png", width: 852, height: 780 };
+const customer_display_qr = { src: "/help/customer-display-qr.png", width: 852, height: 780 };
+const weighing_scale_settings = { src: "/help/weighing-scale-settings.png", width: 852, height: 780 };
+const subscription_inactive = { src: "/help/subscription-inactive.png", width: 852, height: 780 };
+const cashier_refused = { src: "/help/cashier-refused.png", width: 852, height: 780 };
+
 
 /* -------------------------------------------------------------------------- */
 
@@ -108,6 +131,11 @@ const en: HelpDict = {
             "Choose [[Restore from a backup]] when you replace a machine, and pick the old terminal’s .sqlite backup. It brings back work that never synced, with its settings, layout and theme.",
             "A restore restarts the app and skips the rest of set-up — the backup already carries it.",
           ],
+          shot: {
+            ...DATA_SOURCE,
+            alt: "The data source screen: options to sync with the cloud or restore from a backup.",
+            caption: "Choose your data source — shown here in French.",
+          },
         },
         {
           id: "name-terminal",
@@ -135,6 +163,11 @@ const en: HelpDict = {
             "Choose how products appear on the sales screen: a scrolling list or pages of tiles. You can change it anytime in [[Settings]].",
             "Press [[Get Started]].",
           ],
+          shot: {
+            ...business_type,
+            alt: "The business type screen, in French: options for restaurant, retail, etc.",
+            caption: "Choose your business type — shown here in French.",
+          },
         },
       ],
     },
@@ -150,6 +183,11 @@ const en: HelpDict = {
           summary: "Everyone signs in with their own PIN, so each sale is recorded against the right name.",
           steps: ["Tap your name on the sign-in screen.", "Enter your PIN."],
           note: "A PIN belongs to one user on one terminal. What you can do once signed in depends on your role — see [[Security Rules]].",
+          shot: {
+            ...sign_in,
+            alt: "The sign-in screen, in French: enter your name and PIN.",
+            caption: "Sign in — shown here in French.",
+          },
         },
         {
           id: "open-register",
@@ -161,6 +199,11 @@ const en: HelpDict = {
             "The register is open. You can sell.",
           ],
           note: "Count the float carefully: the cash expected at closing is worked out from it.",
+          shot: {
+            ...open_register,
+            alt: "The open register screen, in French: options to open the register.",
+            caption: "Open the register — shown here in French.",
+          },
         },
         {
           id: "make-sale",
@@ -171,6 +214,11 @@ const en: HelpDict = {
             "To change a quantity, open the quantity keypad. On a Windows till with a serial scale it shows the live weight — press [[Use weight]] once the reading is stable.",
             "Take the payment. The receipt prints if a receipt printer is set up.",
           ],
+          shot: {
+            ...make_sale,
+            alt: "The sales screen, in French: options to add products and take payment.",
+            caption: "Ring up a sale — shown here in French.",
+          },
         },
         {
           id: "tables-orders",
@@ -182,6 +230,11 @@ const en: HelpDict = {
             "Reservations are managed in [[Bookings]].",
           ],
           note: "[[Floor Plan]] and [[Bookings]] only appear when they are switched on for your business.",
+          shot: {
+            ...floor_plan,
+            alt: "The floor plan screen, in French: options to manage tables and orders.",
+            caption: "Manage tables and orders — shown here in French.",
+          },
         },
         {
           id: "refund",
@@ -189,6 +242,11 @@ const en: HelpDict = {
           summary: "A refund always starts from the original sale.",
           steps: ["Open [[Sales history]] and find the sale.", "Choose [[Refund]] and follow the dialog."],
           note: "Refunds can be limited to admins in [[Security Rules]].",
+          shot: {
+            ...refund_dialog,
+            alt: "The refund dialog, in French: options to process a refund.",
+            caption: "Refund a sale — shown here in French.",
+          }
         },
         {
           id: "cash-in-out",
@@ -198,6 +256,11 @@ const en: HelpDict = {
             "Use [[Cash In / Out]] for change brought in, a supplier paid from the till, or cash taken to the bank.",
             "Each movement is added to the register’s expected cash, so the closing count still balances.",
           ],
+          shot: {
+            ...cash_in_out,
+            alt: "The cash in/out screen, in French: options to record cash movements.",
+            caption: "Record cash in and out — shown here in French.",
+          },
         },
         {
           id: "close-register",
@@ -209,6 +272,11 @@ const en: HelpDict = {
             "Add a closing note if something does not match, then press [[Close Register]]. The session’s Z-report is generated.",
           ],
           note: "Selling stops the moment closing starts, so no sale can land between the count and the report.",
+          shot: {
+            ...closing_register,
+            alt: "The closing register screen, in French: options to close the register.",
+            caption: "Close the register — shown here in French.",
+          },
         },
       ],
     },
@@ -227,6 +295,11 @@ const en: HelpDict = {
             "Changes are saved on the terminal and marked [[Pending sync]].",
             "When the connection returns, they are sent automatically.",
           ],
+          shot: {
+            ...offline_pending_sync,
+            alt: "The offline pending sync screen, in French: options to manage offline sales.",
+            caption: "Manage offline sales — shown here in French.",
+          },
         },
         {
           id: "sync-status",
@@ -236,6 +309,11 @@ const en: HelpDict = {
             "Open the sync status panel from the sync button. It lists each kind of record, with what is pending and what is [[Synced]].",
             "Press [[Sync now]] to send everything straight away.",
           ],
+          shot: {
+            ...sync_status_panel,
+            alt: "The sync status panel, in French: options to check sync status.",
+            caption: "Check sync status — shown here in French.",
+          },
         },
         {
           id: "backups",
@@ -246,6 +324,11 @@ const en: HelpDict = {
             "Set [[Back up automatically every]] and choose where backups are saved. You can also back up each time the app starts or closes.",
             "A backup is a single .sqlite file. To move a terminal to new hardware, restore it during set-up.",
           ],
+          shot: {
+            ...database_backup_settings,
+            alt: "The database backup settings screen, in French: options to configure automatic backups.",
+            caption: "Configure database backups — shown here in French.",
+          },
         },
       ],
     },
@@ -263,6 +346,11 @@ const en: HelpDict = {
             "In [[Management]], create your [[Categories]] and [[Taxes]] first.",
             "Add [[Products]] with a price, a category, a tax and, if they have one, a barcode.",
           ],
+          shot: {
+            ...product_editor,
+            alt: "The product editor screen, in French: options to create and edit products.",
+            caption: "Create and edit products — shown here in French.",
+          }
         },
         {
           id: "stock",
@@ -273,6 +361,11 @@ const en: HelpDict = {
             "[[Stock]] lists every product in every warehouse. A product with no stock record in a warehouse shows as unassigned, with an option to add it.",
             "Items in one sale can come from different warehouses. If an item is out of stock, the app suggests warehouses that still have it.",
           ],
+          shot: {
+            ...stock_warehouses,
+            alt: "The stock and warehouses screen, in French: options to manage stock and warehouses.",
+            caption: "Manage stock and warehouses — shown here in French.",
+          }
         },
         {
           id: "customers",
@@ -283,6 +376,11 @@ const en: HelpDict = {
             "Issue [[Loyalty Cards]] and set how customers earn points.",
             "Set up your offers in [[Promotions]].",
           ],
+          shot: {
+            ...customer_loyalty,
+            alt: "The customer loyalty screen, in French: options to manage customer loyalty programs.",
+            caption: "Manage customer loyalty — shown here in French.",
+          }
         },
         {
           id: "users-security",
@@ -293,6 +391,11 @@ const en: HelpDict = {
             "In [[Security Rules]], set each action — refunds, opening the cash drawer, viewing cost prices — to [[Cashier]] or [[Admin]].",
             "Rules apply to the whole company, on every terminal.",
           ],
+          shot: {
+            ...security_rules,
+            alt: "The security rules screen, in French: options to configure security settings.",
+            caption: "Configure security rules — shown here in French.",
+          }
         },
         {
           id: "reports",
@@ -302,6 +405,11 @@ const en: HelpDict = {
             "[[Reports]] break sales down by product, customer and user.",
             "[[Sales history]] lists every sale. From there you can reprint a receipt or start a refund.",
           ],
+          shot: {
+            ...reports,
+            alt: "The reports screen, in French: options to view sales reports.",
+            caption: "View sales reports — shown here in French.",
+          }
         },
       ],
     },
@@ -332,6 +440,11 @@ const en: HelpDict = {
             "Orders sent from the till appear in the kitchen straight away.",
           ],
           note: "The till and the kitchen talk over your local network, so this keeps working without internet.",
+          shot: {
+            ...kitchen_display_settings,
+            alt: "The kitchen display settings screen, in French: options to configure the kitchen display.",
+            caption: "Configure the kitchen display — shown here in French.",
+          }
         },
         {
           id: "customer-display",
@@ -342,6 +455,11 @@ const en: HelpDict = {
             "Scan the QR code shown there to open the customer display on another device, such as a tablet facing the customer.",
             "The customer sees each item and the total as you add them.",
           ],
+          shot: {
+            ...customer_display_qr,
+            alt: "The customer display QR code screen, in French: options to open the customer display.",
+            caption: "Open the customer display — shown here in French.",
+          }
         },
         {
           id: "scales",
@@ -352,6 +470,11 @@ const en: HelpDict = {
             "Serial scales (Windows only): in [[Settings]], open [[Weighing Scale]], choose the COM port and speed, and check the live reading before you sell.",
             "At the till, the quantity keypad shows the live weight. [[Use weight]] becomes available once the reading is stable.",
           ],
+          shot: {
+            ...weighing_scale_settings,
+            alt: "The weighing scale settings screen, in French: options to configure the weighing scale.",
+            caption: "Configure the weighing scale — shown here in French.",
+          }
         },
       ],
     },
@@ -398,6 +521,11 @@ const en: HelpDict = {
             "Connect the terminal to the internet so it can refresh its license.",
             "If [[Subscription inactive]] stays on screen, contact us.",
           ],
+          shot: {
+            ...subscription_inactive,
+            alt: "The subscription inactive screen, in French: indicates the terminal cannot confirm its license.",
+            caption: "Subscription inactive — shown here in French.",
+          }
         },
         {
           id: "switch-register",
@@ -416,6 +544,11 @@ const en: HelpDict = {
             "In [[Security Rules]], the action is set to [[Admin]].",
             "Ask an admin to do it, or change the rule to [[Cashier]] for the whole company.",
           ],
+          shot: {
+            ...cashier_refused,
+            alt: "The cashier refused screen, in French: indicates the user is not an admin.",
+            caption: "Cashier refused — shown here in French.",
+          }
         },
       ],
     },

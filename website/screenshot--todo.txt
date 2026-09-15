@@ -19,11 +19,7 @@ HOW TO TAKE THEM
 - App in ENGLISH, LIGHT theme, the default BLUE accent colour.
   (If you take one in French or Arabic, say so when wiring it in, so the
   caption says "shown in French".)
-- Use demo data only. No real customer names, phone numbers or emails.
-- Windows: Win + Shift + S, then "Rectangle", then save as PNG.
-- CROP to the part of the screen the guide talks about. A small form in the
-  middle of a big empty window becomes unreadable on the page
-  (device-registration.png had to be cropped for that reason).
+
 - Wide screens: keep the window about 1280 x 800 so text stays readable.
 - PNG only. File names are lowercase with dashes, exactly as written below.
 
