@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:octopus_dashboard_web/core/constants.dart';
+import 'package:octopus_dashboard_web/core/ilyass_dropdown.dart';
 import 'package:octopus_dashboard_web/core/settings.dart';
 import 'package:octopus_dashboard_web/core/theme.dart';
 import 'package:octopus_dashboard_web/features/auth/auth_controller.dart';
@@ -130,14 +131,14 @@ void main() {
     expect(scope.read(authProvider).isAuthenticated, isTrue);
   });
 
-  testWidgets('defaults to the Test environment, not the stale Dev IP', (
+  testWidgets('defaults to the Production environment, not the stale Dev IP', (
     tester,
   ) async {
     final scope = await _container();
     await _pumpLogin(tester, scope);
 
-    expect(scope.read(authProvider).baseUrl, AppConfig.testBaseUrl);
-    expect(find.text(AppConfig.testBaseUrl), findsOneWidget);
+    expect(scope.read(authProvider).baseUrl, AppConfig.prodBaseUrl);
+    expect(find.text(AppConfig.prodBaseUrl), findsOneWidget);
   });
 
   testWidgets('picking an environment overwrites the API Base URL field', (
@@ -146,13 +147,17 @@ void main() {
     final scope = await _container();
     await _pumpLogin(tester, scope);
 
-    await tester.tap(find.text('Dev'));
+    await tester.tap(find.byType(IlyassDropdown<ApiEnvironment>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Dev').last);
     await tester.pumpAndSettle();
 
     expect(scope.read(authProvider).baseUrl, AppConfig.devBaseUrl);
     expect(find.text(AppConfig.devBaseUrl), findsOneWidget);
 
-    await tester.tap(find.text('Test'));
+    await tester.tap(find.byType(IlyassDropdown<ApiEnvironment>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Test').last);
     await tester.pumpAndSettle();
     expect(scope.read(authProvider).baseUrl, AppConfig.testBaseUrl);
   });

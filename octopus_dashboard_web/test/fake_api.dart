@@ -165,6 +165,29 @@ class FakeApi implements OctopusApi {
       _respond(null);
 
   @override
+  Future<void> createProductGroup({
+    required String name,
+    required int? parentGroupId,
+    required String color,
+    required int rank,
+    CancelToken? cancelToken,
+  }) => _respond(null);
+
+  @override
+  Future<void> updateProductGroup({
+    required ProductGroup group,
+    required String name,
+    required int? parentGroupId,
+    required String color,
+    required int rank,
+    CancelToken? cancelToken,
+  }) => _respond(null);
+
+  @override
+  Future<void> deleteProductGroup({required int id, CancelToken? cancelToken}) =>
+      _respond(null);
+
+  @override
   Future<List<StockEntry>> fetchStocks({CancelToken? cancelToken}) => _respond([
     // Product 7 is split across two warehouses; product 8 has no stock row at
     // all and must still appear, as "Unassigned".

@@ -98,7 +98,9 @@ class AuthController extends Notifier<AuthState> {
       // The last-used URL is remembered so a client doesn't retype it on
       // every visit; defaults to Test rather than the stale Dev IP the iOS
       // build shipped with.
-      baseUrl: prefs.getString(PrefKeys.apiBaseUrl) ?? AppConfig.defaultBaseUrl,
+      baseUrl: kDebugMode
+          ? prefs.getString(PrefKeys.apiBaseUrl) ?? AppConfig.defaultBaseUrl
+          : AppConfig.prodBaseUrl,
       // The LAST EMAIL SIGNED IN WITH, not a compile-time address. The field
       // used to be pre-filled with a developer's own account, so signing in on
       // a fresh browser with only a password typed logged you into somebody
@@ -123,6 +125,9 @@ class AuthController extends Notifier<AuthState> {
 
   Future<bool> login(String password) async {
     if (state.isLoading) return false;
+    if (!kDebugMode && state.baseUrl != AppConfig.prodBaseUrl) {
+      state = state.copyWith(baseUrl: AppConfig.prodBaseUrl);
+    }
     state = state.copyWith(isLoading: true, clearError: true);
 
     final baseUrl = OctopusApi.normalizeBaseUrl(state.baseUrl);

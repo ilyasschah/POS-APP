@@ -313,22 +313,10 @@ class _DocumentLineFormState extends State<DocumentLineForm> {
             style: AppText.caption(palette.dim(0.65)).copyWith(fontSize: 13),
           ),
           const SizedBox(height: 20),
-          IlyassDropdown<int>(
-            label: 'Product',
-            searchable: true,
-            value: _productId,
+          _ProductPicker(
+            products: products,
+            selectedId: _productId,
             hasError: _error != null && product == null,
-            items: [
-              for (final p in products)
-                IlyassDropdownItem(
-                  value: p.id,
-                  label: p.displayName,
-                  caption: [
-                    if (p.code != null) p.code!,
-                    p.saleUnit.code,
-                  ].join('  '),
-                ),
-            ],
             onChanged: _selectProduct,
           ),
           const SizedBox(height: kIlyassFieldGap),
@@ -452,6 +440,169 @@ class _DocumentLineFormState extends State<DocumentLineForm> {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ProductPicker extends StatelessWidget {
+  const _ProductPicker({
+    required this.products,
+    required this.selectedId,
+    required this.onChanged,
+    required this.hasError,
+  });
+
+  final List<Product> products;
+  final int? selectedId;
+  final ValueChanged<int?> onChanged;
+  final bool hasError;
+
+  Future<void> _open(BuildContext context) async {
+    final selected = await showDialog<int>(
+      context: context,
+      builder: (_) => _ProductPickerDialog(
+        products: products,
+        selectedId: selectedId,
+      ),
+    );
+    if (selected != null) onChanged(selected);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+    final selected = products
+        .where((product) => product.id == selectedId)
+        .firstOrNull;
+    return InkWell(
+      onTap: () => _open(context),
+      borderRadius: BorderRadius.circular(AppTheme.controlRadius),
+      child: InputDecorator(
+        decoration: InputDecoration(
+          labelText: 'Product',
+          errorText: hasError ? 'Choose a product.' : null,
+          suffixIcon: Icon(
+            Icons.keyboard_arrow_down_rounded,
+            color: palette.dim(0.6),
+          ),
+        ),
+        child: Text(
+          selected?.displayName ?? 'Select a product',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: AppText.body(
+            selected == null ? palette.dim(0.55) : palette.primaryText,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ProductPickerDialog extends StatefulWidget {
+  const _ProductPickerDialog({
+    required this.products,
+    required this.selectedId,
+  });
+
+  final List<Product> products;
+  final int? selectedId;
+
+  @override
+  State<_ProductPickerDialog> createState() => _ProductPickerDialogState();
+}
+
+class _ProductPickerDialogState extends State<_ProductPickerDialog> {
+  final _search = TextEditingController();
+  String _query = '';
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+    final query = _query.trim().toLowerCase();
+    final filtered = query.isEmpty
+        ? widget.products
+        : widget.products
+            .where(
+              (product) =>
+                  product.name.toLowerCase().contains(query) ||
+                  (product.code?.toLowerCase().contains(query) ?? false),
+            )
+            .toList(growable: false);
+
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.all(24),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 640, maxHeight: 620),
+        child: GlassCard.overlay(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text('Select product', style: AppText.headline(palette.primaryText)),
+              const SizedBox(height: 14),
+              TextField(
+                controller: _search,
+                autofocus: true,
+                onChanged: (value) => setState(() => _query = value),
+                decoration: const InputDecoration(
+                  hintText: 'Search by name or code',
+                  prefixIcon: Icon(Icons.search_rounded),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Expanded(
+                child: filtered.isEmpty
+                    ? Center(
+                        child: Text(
+                          'No products match "$_query".',
+                          style: AppText.body(palette.dim(0.65)),
+                        ),
+                      )
+                    : ListView.builder(
+                        itemCount: filtered.length,
+                        itemBuilder: (context, index) {
+                          final product = filtered[index];
+                          final selected = product.id == widget.selectedId;
+                          return ListTile(
+                            dense: false,
+                            selected: selected,
+                            selectedColor: palette.accent,
+                            leading: Icon(
+                              selected
+                                  ? Icons.check_circle_rounded
+                                  : Icons.sell_outlined,
+                              color: selected
+                                  ? palette.accent
+                                  : palette.dim(0.55),
+                            ),
+                            title: Text(
+                              product.displayName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            subtitle: Text(
+                              [
+                                if (product.code != null) product.code!,
+                                product.saleUnit.code,
+                              ].join('  '),
+                            ),
+                            onTap: () => Navigator.of(context).pop(product.id),
+                          );
+                        },
+                      ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

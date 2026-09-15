@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/breakpoints.dart';
 import '../../core/glass.dart';
+import '../../core/ilyass_dropdown.dart';
 import '../../core/settings.dart';
 import '../../core/theme.dart';
 import '../../core/typography.dart';
@@ -153,22 +154,26 @@ class SettingsScreen extends ConsumerWidget {
               GlassCard(
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
-                  child: SegmentedButton<String>(
-                    segments: const [
-                      ButtonSegment(value: 'en', label: Text('English')),
-                      ButtonSegment(value: 'fr', label: Text('Français')),
-                      ButtonSegment(value: 'ar', label: Text('العربية')),
-                    ],
-                    selected: {settings.language},
-                    onSelectionChanged: (Set<String> newSelection) {
-                      settingsController.setLanguage(newSelection.first);
-                    },
-                    style: SegmentedButton.styleFrom(
-                      selectedBackgroundColor: palette.accent.withValues(
-                        alpha: 0.2,
+                  child: IlyassDropdown<String>(
+                    label: 'Language / اللغة',
+                    value: settings.language,
+                    items: const [
+                      IlyassDropdownItem(
+                        value: 'en',
+                        label: 'English',
                       ),
-                      selectedForegroundColor: palette.accent,
-                    ),
+                      IlyassDropdownItem(
+                        value: 'fr',
+                        label: 'Français',
+                      ),
+                      IlyassDropdownItem(
+                        value: 'ar',
+                        label: 'العربية',
+                      ),
+                    ],
+                    onChanged: (value) {
+                      if (value != null) settingsController.setLanguage(value);
+                    },
                   ),
                 ),
               ),

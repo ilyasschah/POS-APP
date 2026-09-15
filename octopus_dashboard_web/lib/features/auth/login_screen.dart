@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/breakpoints.dart';
 import '../../core/glass.dart';
+import '../../core/ilyass_dropdown.dart';
 import '../../core/theme.dart';
 import '../../core/typography.dart';
 import 'auth_controller.dart';
@@ -91,40 +92,41 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                     const SizedBox(height: 26),
 
-                    _FieldLabel('Environment', palette: palette),
-                    const SizedBox(height: 8),
-                    _EnvironmentPicker(
-                      selected: selectedEnv,
-                      onChanged: _selectEnvironment,
-                    ),
-                    const SizedBox(height: 18),
-
-                    _FieldLabel('API Base URL', palette: palette),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: _urlController,
-                      keyboardType: TextInputType.url,
-                      autocorrect: false,
-                      enableSuggestions: false,
-                      style: AppText.body(palette.primaryText),
-                      decoration: const InputDecoration(hintText: 'https://...'),
-                      onChanged: (value) {
-                        ref.read(authProvider.notifier).setBaseUrl(value);
-                        setState(() {}); // refresh the mixed-content notice
-                      },
-                    ),
-                    if (_hasMixedContentProblem) ...[
+                    if (kDebugMode) ...[
+                      _FieldLabel('Environment', palette: palette),
                       const SizedBox(height: 8),
-                      _InlineNotice(
-                        icon: Icons.info_outline_rounded,
-                        color: palette.warning,
-                        message:
-                            'This page is served over HTTPS, so the browser will block '
-                            'requests to an http:// address. Use the Test environment, '
-                            'or open this app over http.',
+                      _EnvironmentPicker(
+                        selected: selectedEnv,
+                        onChanged: _selectEnvironment,
                       ),
+                      const SizedBox(height: 18),
+                      _FieldLabel('API Base URL', palette: palette),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: _urlController,
+                        keyboardType: TextInputType.url,
+                        autocorrect: false,
+                        enableSuggestions: false,
+                        style: AppText.body(palette.primaryText),
+                        decoration: const InputDecoration(hintText: 'https://...'),
+                        onChanged: (value) {
+                          ref.read(authProvider.notifier).setBaseUrl(value);
+                          setState(() {});
+                        },
+                      ),
+                      if (_hasMixedContentProblem) ...[
+                        const SizedBox(height: 8),
+                        _InlineNotice(
+                          icon: Icons.info_outline_rounded,
+                          color: palette.warning,
+                          message:
+                              'This page is served over HTTPS, so the browser will block '
+                              'requests to an http:// address. Use the Test environment, '
+                              'or open this app over http.',
+                        ),
+                      ],
+                      const SizedBox(height: 18),
                     ],
-                    const SizedBox(height: 18),
 
                     _FieldLabel('Email', palette: palette),
                     const SizedBox(height: 8),
@@ -214,36 +216,16 @@ class _EnvironmentPicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final palette = context.palette;
-    return SegmentedButton<ApiEnvironment>(
-      segments: [
+    return IlyassDropdown<ApiEnvironment>(
+      value: selected,
+      label: 'Environment',
+      items: [
         for (final env in ApiEnvironment.values)
-          ButtonSegment(value: env, label: Text(env.label)),
+          IlyassDropdownItem(value: env, label: env.label),
       ],
-      selected: {selected},
-      showSelectedIcon: false,
-      onSelectionChanged: (selection) => onChanged(selection.first),
-      style: ButtonStyle(
-        textStyle: WidgetStatePropertyAll(AppText.style(size: 14, weight: 600)),
-        foregroundColor: WidgetStateProperty.resolveWith(
-          (states) => states.contains(WidgetState.selected)
-              ? AppTheme.onAccent(palette.accent)
-              : palette.dim(0.75),
-        ),
-        backgroundColor: WidgetStateProperty.resolveWith(
-          (states) => states.contains(WidgetState.selected)
-              ? palette.accent
-              : Colors.transparent,
-        ),
-        side: WidgetStatePropertyAll(
-          BorderSide(color: palette.primaryText.withValues(alpha: 0.18)),
-        ),
-        shape: WidgetStatePropertyAll(
-          RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppTheme.controlRadius),
-          ),
-        ),
-      ),
+      onChanged: (value) {
+        if (value != null) onChanged(value);
+      },
     );
   }
 }

@@ -69,6 +69,43 @@ class ProductsController extends AsyncController<List<Product>> {
     await api.deleteProduct(id: product.id);
     await load();
   }
+
+  Future<void> createProductGroup({
+    required String name,
+    required int? parentGroupId,
+    required String color,
+    required int rank,
+  }) async {
+    await api.createProductGroup(
+      name: name,
+      parentGroupId: parentGroupId,
+      color: color,
+      rank: rank,
+    );
+    ref.invalidate(productGroupsProvider);
+  }
+
+  Future<void> updateProductGroup({
+    required ProductGroup group,
+    required String name,
+    required int? parentGroupId,
+    required String color,
+    required int rank,
+  }) async {
+    await api.updateProductGroup(
+      group: group,
+      name: name,
+      parentGroupId: parentGroupId,
+      color: color,
+      rank: rank,
+    );
+    ref.invalidate(productGroupsProvider);
+  }
+
+  Future<void> deleteProductGroup(ProductGroup group) async {
+    await api.deleteProductGroup(id: group.id);
+    ref.invalidate(productGroupsProvider);
+  }
 }
 
 final productGroupsProvider = FutureProvider<List<ProductGroup>>(

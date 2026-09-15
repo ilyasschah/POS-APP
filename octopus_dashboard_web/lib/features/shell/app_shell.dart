@@ -11,6 +11,7 @@ import '../documents/documents_controller.dart';
 import '../documents/documents_screen.dart';
 import '../products/products_controller.dart';
 import '../products/products_screen.dart';
+import '../products/product_groups_screen.dart';
 import '../sessions/sessions_controller.dart';
 import '../sessions/sessions_screen.dart';
 import '../settings/settings_screen.dart';
@@ -19,12 +20,13 @@ import '../stock/stock_screen.dart';
 import '../users/users_controller.dart';
 import '../users/users_screen.dart';
 
-/// The seven top-level destinations, in order. Settings is reachable *only*
+/// The eight top-level destinations, in order. Settings is reachable *only*
 /// from here — there is no second entry point anywhere in the UI.
 enum AppDestination {
   dashboard(Icons.show_chart),
   sessions(Icons.point_of_sale),
   products(Icons.sell),
+  productGroups(Icons.folder_outlined),
   stock(Icons.inventory_2),
   documents(Icons.description),
   users(Icons.people),
@@ -42,6 +44,8 @@ enum AppDestination {
         return loc.navSessions;
       case AppDestination.products:
         return loc.navProducts;
+      case AppDestination.productGroups:
+        return 'Product groups';
       case AppDestination.stock:
         return loc.navStock;
       case AppDestination.documents:
@@ -90,6 +94,8 @@ class _AppShellState extends ConsumerState<AppShell> {
         ref.read(sessionsProvider.notifier).load();
       case AppDestination.products:
         ref.read(productsProvider.notifier).load();
+      case AppDestination.productGroups:
+        ref.invalidate(productGroupsProvider);
       case AppDestination.stock:
         ref.read(stockProvider.notifier).load();
       case AppDestination.documents:
@@ -180,6 +186,7 @@ class _ScreenStack extends StatelessWidget {
     DashboardScreen(),
     SessionsScreen(),
     ProductsScreen(),
+    ProductGroupsScreen(),
     StockScreen(),
     DocumentsScreen(),
     UsersScreen(),

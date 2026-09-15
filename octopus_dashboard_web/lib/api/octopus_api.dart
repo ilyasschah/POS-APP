@@ -205,6 +205,64 @@ class OctopusApi {
     });
   }
 
+  Future<void> createProductGroup({
+    required String name,
+    required int? parentGroupId,
+    required String color,
+    required int rank,
+    CancelToken? cancelToken,
+  }) {
+    return _guard(() async {
+      await _dio.post<dynamic>(
+        '/ProductGroups/Add',
+        queryParameters: _companyQuery,
+        data: {
+          'name': name.trim(),
+          'parentGroupId': parentGroupId,
+          'color': color,
+          'rank': rank,
+        },
+        options: _json,
+        cancelToken: cancelToken,
+      );
+    });
+  }
+
+  Future<void> updateProductGroup({
+    required ProductGroup group,
+    required String name,
+    required int? parentGroupId,
+    required String color,
+    required int rank,
+    CancelToken? cancelToken,
+  }) {
+    return _guard(() async {
+      await _dio.patch<dynamic>(
+        '/ProductGroups/Update',
+        queryParameters: _companyQuery,
+        data: {
+          'id': group.id,
+          'name': name.trim(),
+          'parentGroupId': parentGroupId,
+          'color': color,
+          'rank': rank,
+        },
+        options: _json,
+        cancelToken: cancelToken,
+      );
+    });
+  }
+
+  Future<void> deleteProductGroup({required int id, CancelToken? cancelToken}) {
+    return _guard(() async {
+      await _dio.delete<dynamic>(
+        '/ProductGroups/Delete',
+        queryParameters: {'id': id, ..._companyQuery},
+        cancelToken: cancelToken,
+      );
+    });
+  }
+
   Future<void> createProduct({
     required String name,
     required double price,
