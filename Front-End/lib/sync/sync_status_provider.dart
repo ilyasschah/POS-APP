@@ -57,7 +57,7 @@ class _Entity {
 
 // Working states that mean "not yet on the server, will be retried".
 const _pendingStates =
-    "('pending','pending_create','pending_update','pending_delete')";
+    "('pending','pending_create','pending_update','pending_delete','pending_import')";
 // Terminal failure states (server rejected / errored — won't auto-retry).
 const _failedStates = "('failed','sync_failed')";
 

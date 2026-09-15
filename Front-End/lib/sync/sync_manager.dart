@@ -11,7 +11,9 @@ import 'package:pos_app/cash/cash_movement_kind.dart';
 import 'package:pos_app/database/app_database.dart';
 import 'package:pos_app/uom/unit_of_measure.dart';
 import 'package:pos_app/document/document_type_constants.dart';
+import 'package:pos_app/product/catalog_import_local.dart' show kPendingImport;
 import 'package:pos_app/product/product_group_reconcile.dart';
+import 'package:pos_app/sync/catalog_import_sync.dart';
 import 'package:pos_app/session/pos_session_status.dart';
 import 'package:pos_app/session/register_identity.dart';
 import 'package:pos_app/settings/device_identity.dart';
@@ -69,6 +71,10 @@ class SyncManager {
   final Dio dio;
   final AuthStorage authStorage;
   final ImageSyncHelper imageHelper;
+
+  /// Uploads XML product imports in batches — see [CatalogImportUploader].
+  late final CatalogImportUploader catalogImport =
+      CatalogImportUploader(db: db, dio: dio);
 
   static const _kProducts = 'products';
   static const _kTaxes = 'taxes';
@@ -365,6 +371,11 @@ class SyncManager {
     await _step('push:productTaxes', () => pushPendingProductTaxes(companyId));
     await _step('push:warehouseDeletes',
         () => pushPendingWarehouseOps(companyId, deletePhase: true));
+    // LAST, and time-boxed: a 5,000-product XML import takes minutes to upload
+    // and nothing above may wait on it. Its products already work locally, and
+    // an order that sold one waits a cycle for the real id like any offline
+    // product. The notifier runs again while rows remain.
+    await _step('push:catalogImport', () => catalogImport.push(companyId));
   }
 
   // ==========================================================================
@@ -454,6 +465,10 @@ class SyncManager {
     await _step('appProperties', () => pullAppProperties(companyId));
     await _step('productGroups',
         () => pullProductGroups(companyId, forceReconcile: manual));
+    // Right after products AND groups are pulled: an imported row the server
+    // acknowledged without an id is matched by name before the duplicate shows.
+    await _step('catalogImport:reconcile',
+        () => catalogImport.reconcileByName(companyId));
     await _step('paymentTypes', () => pullPaymentTypes(companyId));
     await _step('customers', () => pullCustomers(companyId));
     await _step('promotions', () => pullPromotions(companyId));
@@ -2672,7 +2687,8 @@ class SyncManager {
     final pending =
         await (db.select(db.barcodesTable)
               ..where((t) => t.companyId.equals(companyId))
-              ..where((t) => t.syncStatus.isNotIn(['synced'])))
+              // Imported barcodes travel with their import (push:catalogImport).
+              ..where((t) => t.syncStatus.isNotIn(['synced', kPendingImport])))
             .get();
 
     for (final b in pending) {
@@ -3322,7 +3338,8 @@ class SyncManager {
     final pending =
         await (db.select(db.productGroupsTable)
               ..where((t) => t.companyId.equals(companyId))
-              ..where((t) => t.syncStatus.isNotIn(['synced'])))
+              // Imported groups travel with their import (push:catalogImport).
+              ..where((t) => t.syncStatus.isNotIn(['synced', kPendingImport])))
             .get();
 
     for (final g in pending) {

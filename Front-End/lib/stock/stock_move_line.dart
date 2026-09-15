@@ -28,32 +28,27 @@ typedef StockMoveRoute = ({
   double quantity,
 });
 
-/// The mapping from a document line to a location-to-location move.
+/// The mapping from a document line to a location-to-location move, driven by
+/// the line's document TYPE as the `document_types` table defines it — never by
+/// a list of type ids, so a type added or changed on the server moves the way
+/// it says.
 ///
-/// | Type | Moves goods |
-/// |---|---|
-/// | 1 Purchase | Vendors → Stock |
-/// | 2 Sales | Stock → Customers |
-/// | 3 Inventory Count | Inventory adj. → Stock when the count found more, Stock → Inventory adj. when it found less |
-/// | 4 Refund | Customers → Stock |
-/// | 5 Stock Return | Stock → Vendors |
-/// | 6 Loss And Damage | Stock → Scrap |
-/// | 7 Proforma | nothing — a quote moves no goods |
+/// * **Which way** is the type's `stock_direction`: 1 brings goods into the
+///   warehouse, 2 takes them out, 0 moves nothing.
+/// * **The other end** is the type's category: Expenses trade with Vendors,
+///   Sales with Customers, Inventory corrects against Inventory adjustment, and
+///   Loss writes off to Scrap.
 ///
-/// Agrees with the server's seeded `DocumentType.StockDirection` (1 in, 2 out,
-/// 0 none); `test/stock_move_matrix_test.dart` holds the two together.
+/// | Type | Category | Direction | Moves goods |
+/// |---|---|---|---|
+/// | 100 Purchase | Expenses | 1 | Vendors → Stock |
+/// | 120 Stock Return | Expenses | 2 | Stock → Vendors |
+/// | 200 Sales | Sales | 2 | Stock → Customers |
+/// | 220 Refund | Sales | 1 | Customers → Stock |
+/// | 230 Proforma | Sales | 0 | nothing — a quote moves no goods |
+/// | 300 Inventory Count | Inventory | 1 | its variance: Adjustment → Stock when more was found, Stock → Adjustment when less |
+/// | 400 Loss And Damage | Loss | 2 | Stock → Scrap |
 abstract final class StockMoveMatrix {
-  /// Every document type that moves stock. The history's query selects exactly
-  /// these, so a type missing here is a type the history never shows.
-  static const List<int> movingDocumentTypes = [
-    DocumentTypes.purchase,
-    DocumentTypes.sales,
-    DocumentTypes.inventoryCount,
-    DocumentTypes.refund,
-    DocumentTypes.stockReturn,
-    DocumentTypes.lossAndDamage,
-  ];
-
   /// The day inventory counts started recording, in `ExpectedQuantity`, the
   /// stock they were counted against.
   ///
@@ -65,31 +60,55 @@ abstract final class StockMoveMatrix {
   /// the system, and that moves nothing.
   static final DateTime countVarianceRecordedSince = DateTime.utc(2026, 9, 12);
 
-  /// The move one document line made, or null when it made none — a Proforma,
-  /// a zero quantity, or a count that agreed with the system.
+  /// The move one document line made, or null when it made none — a type with
+  /// no stock direction, a zero quantity, or a count that agreed with the
+  /// system.
   ///
-  /// A negative quantity turns the route around rather than producing a
-  /// negative move, which is also how a count that came up short becomes
-  /// Stock → Inventory adjustment.
+  /// 🚨 A line's SIGN is not a direction. A refund rung up on this till records
+  /// its lines negative, like the money it gives back, while the same refund
+  /// pulled from the server carries them positive — and both brought the goods
+  /// back in. Only an inventory count's variance is signed: a shortfall goes
+  /// out, a surplus comes in.
   static StockMoveRoute? resolve({
     required int documentTypeId,
+    required int stockDirection,
+    required int? documentCategoryId,
     required double quantity,
     required double? expectedQuantity,
     required DateTime date,
   }) {
-    final route = _routeOf(documentTypeId);
-    if (route == null) return null;
+    if (stockDirection != StockDirections.intoStock &&
+        stockDirection != StockDirections.outOfStock) {
+      return null;
+    }
+    const warehouse = StockLocationKind.warehouse;
+    final counterpart = counterpartOf(documentCategoryId);
+    final incoming = stockDirection == StockDirections.intoStock;
+    final from = incoming ? counterpart : warehouse;
+    final to = incoming ? warehouse : counterpart;
 
     final moved = documentTypeId == DocumentTypes.inventoryCount
         ? countVariance(
             counted: quantity, expected: expectedQuantity, date: date)
-        : quantity;
+        : quantity.abs();
     if (moved == 0) return null;
 
     return moved > 0
-        ? (from: route.from, to: route.to, quantity: moved)
-        : (from: route.to, to: route.from, quantity: -moved);
+        ? (from: from, to: to, quantity: moved)
+        : (from: to, to: from, quantity: -moved);
   }
+
+  /// Where a type's goods come from or go to, by its category. A category this
+  /// app does not know is booked against Inventory adjustment — a virtual
+  /// location — rather than a trading partner it would be guessing at.
+  static StockLocationKind counterpartOf(int? documentCategoryId) =>
+      switch (documentCategoryId) {
+        DocumentCategories.expenses => StockLocationKind.vendors,
+        DocumentCategories.sales => StockLocationKind.customers,
+        DocumentCategories.loss => StockLocationKind.scrap,
+        DocumentCategories.inventory => StockLocationKind.inventoryAdjustment,
+        _ => StockLocationKind.inventoryAdjustment,
+      };
 
   /// How far an inventory count moved stock: what was counted minus what the
   /// system held when it was counted.
@@ -110,37 +129,6 @@ abstract final class StockMoveMatrix {
     // than a phantom one of 0.00000000000000004.
     return snapToStorage(counted - expected);
   }
-
-  /// The direction a POSITIVE quantity of [documentTypeId] moves goods.
-  static ({StockLocationKind from, StockLocationKind to})? _routeOf(
-          int documentTypeId) =>
-      switch (documentTypeId) {
-        DocumentTypes.purchase => (
-            from: StockLocationKind.vendors,
-            to: StockLocationKind.warehouse,
-          ),
-        DocumentTypes.sales => (
-            from: StockLocationKind.warehouse,
-            to: StockLocationKind.customers,
-          ),
-        DocumentTypes.inventoryCount => (
-            from: StockLocationKind.inventoryAdjustment,
-            to: StockLocationKind.warehouse,
-          ),
-        DocumentTypes.refund => (
-            from: StockLocationKind.customers,
-            to: StockLocationKind.warehouse,
-          ),
-        DocumentTypes.stockReturn => (
-            from: StockLocationKind.warehouse,
-            to: StockLocationKind.vendors,
-          ),
-        DocumentTypes.lossAndDamage => (
-            from: StockLocationKind.warehouse,
-            to: StockLocationKind.scrap,
-          ),
-        _ => null,
-      };
 }
 
 /// One row of the Stock Moves history: a document line, read as a move.

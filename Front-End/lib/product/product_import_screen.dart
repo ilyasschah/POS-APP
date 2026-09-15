@@ -1,5 +1,6 @@
 // ignore_for_file: deprecated_member_use
 
+import 'dart:async';
 import 'dart:io';
 
 import 'package:dio/dio.dart' show Dio;
@@ -12,9 +13,12 @@ import 'package:pos_app/auth/auth_provider.dart';
 import 'package:pos_app/company/company_provider.dart';
 import 'package:pos_app/core/ilyass_table.dart';
 import 'package:pos_app/core/status_colors.dart';
+import 'package:pos_app/database/database_provider.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
+import 'package:pos_app/product/catalog_import_local.dart';
 import 'package:pos_app/product/catalog_transfer.dart';
 import 'package:pos_app/product/csv_codec.dart';
+import 'package:pos_app/sync/catalog_import_sync.dart';
 import 'package:pos_app/sync/sync_notifier.dart';
 import 'package:pos_app/uom/unit_of_measure.dart';
 import 'package:pos_app/utils/api_error_parser.dart';
@@ -77,9 +81,17 @@ class _ProductImportScreenState extends ConsumerState<ProductImportScreen>
   String? _xmlName;
   List<_PreviewRow> _xmlRows = const [];
   List<GroupNode> _xmlGroups = const [];
+
+  /// The fields the XML file actually carries — its preview shows no empty
+  /// columns. Worked out once per file, not on every rebuild of a large preview.
+  List<ImportField> _xmlFields = const [];
   bool _xmlMerge = true;
+  bool _xmlReading = false;
 
   bool _busy = false;
+
+  /// Rows written so far by a local XML import, while one runs.
+  ({int done, int total})? _progress;
 
   @override
   void dispose() {
@@ -91,7 +103,7 @@ class _ProductImportScreenState extends ConsumerState<ProductImportScreen>
 
   /// The picked file as text. Bytes first: on Android a picked file's path can
   /// be a copy the plugin has not finished writing, or no path at all.
-  Future<({String name, String text})?> _pick(String extension) async {
+  Future<({String name, List<int> bytes})?> _pick(String extension) async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: [extension],
@@ -102,7 +114,7 @@ class _ProductImportScreenState extends ConsumerState<ProductImportScreen>
     final bytes =
         file.bytes ?? (file.path == null ? null : await File(file.path!).readAsBytes());
     if (bytes == null) return null;
-    return (name: file.name, text: decodeCsvBytes(bytes));
+    return (name: file.name, bytes: bytes);
   }
 
   Future<void> _pickCsv() async {
@@ -110,7 +122,7 @@ class _ProductImportScreenState extends ConsumerState<ProductImportScreen>
     try {
       final file = await _pick('csv');
       if (file == null || !mounted) return;
-      final table = parseCsv(file.text);
+      final table = parseCsv(decodeCsvBytes(file.bytes));
       setState(() {
         _csvName = file.name;
         _csv = table;
@@ -130,20 +142,28 @@ class _ProductImportScreenState extends ConsumerState<ProductImportScreen>
     try {
       final file = await _pick('xml');
       if (file == null || !mounted) return;
-      final text = file.text.startsWith('﻿') ? file.text.substring(1) : file.text;
-      final groups = parseGroupsXml(text);
+      setState(() => _xmlReading = true);
+      // Off the UI isolate: a 5,000-product export is megabytes of XML.
+      final parsed = await parseCatalogXmlInBackground(file.bytes);
+      if (!mounted) return;
       final rows = _groups
-          ? [for (final g in groups) g.toImportJson()]
-          : parseProductsXml(text);
+          ? [for (final g in parsed.groups) g.toImportJson()]
+          : parsed.rows;
       setState(() {
         _xmlName = file.name;
-        _xmlGroups = _groups ? const [] : groups;
+        _xmlGroups = _groups ? const [] : parsed.groups;
         _xmlRows = [for (var i = 0; i < rows.length; i++) _PreviewRow(i + 1, rows[i])];
+        _xmlFields = [
+          for (final f in _fields)
+            if (rows.any((r) => _present(r[f.key]))) f,
+        ];
       });
     } catch (e) {
       if (mounted) {
         showAppSnackbar(context, ref, l.importFileUnreadable('$e'), isError: true);
       }
+    } finally {
+      if (mounted) setState(() => _xmlReading = false);
     }
   }
 
@@ -179,16 +199,11 @@ class _ProductImportScreenState extends ConsumerState<ProductImportScreen>
     _xmlName = null;
     _xmlRows = const [];
     _xmlGroups = const [];
+    _xmlFields = const [];
   }
 
   List<ImportField> get _mappedFields =>
       [for (final f in _fields) if (_mapping[f.key] != null) f];
-
-  /// The fields an XML file actually carries — its preview shows no empty columns.
-  List<ImportField> get _xmlFields => [
-        for (final f in _fields)
-          if (_xmlRows.any((r) => _present(r.data[f.key]))) f,
-      ];
 
   static bool _present(Object? v) =>
       v != null && !(v is String && v.isEmpty) && !(v is List && v.isEmpty);
@@ -200,7 +215,6 @@ class _ProductImportScreenState extends ConsumerState<ProductImportScreen>
     required bool merge,
     required String documentType,
     required VoidCallback onDone,
-    List<GroupNode> groupsFirst = const [],
   }) async {
     final company = ref.read(selectedCompanyProvider);
     final payload = [for (final r in rows) if (r.hasName) r.data];
@@ -223,13 +237,6 @@ class _ProductImportScreenState extends ConsumerState<ProductImportScreen>
       if (_groups) {
         outcome.absorb(await _post(dio, '/ProductGroups/ImportBulk', body(payload)));
       } else {
-        // An XML export's groups carry their colour and rank. Imported first,
-        // so the products find their groups already built, and built right —
-        // the product import alone would create them plain.
-        if (groupsFirst.isNotEmpty) {
-          outcome.absorbGroups(await _post(dio, '/ProductGroups/ImportBulk',
-              body([for (final g in groupsFirst) g.toImportJson()])));
-        }
         outcome.absorb(await _post(dio, '/Products/ImportBulk', {
           ...body(payload),
           'userId': userId,
@@ -255,6 +262,64 @@ class _ProductImportScreenState extends ConsumerState<ProductImportScreen>
     }
   }
 
+  /// The XML product import, local-first: into this till's catalogue now, and
+  /// to the server in batches by the sync — see `catalog_import_local.dart`.
+  ///
+  /// 🚨 It used to POST the whole file in one request, which a 5,000-product
+  /// export could never finish inside the receive timeout.
+  Future<void> _importXmlLocally() async {
+    final company = ref.read(selectedCompanyProvider);
+    final rows = [for (final r in _xmlRows) if (r.hasName) r.data];
+    if (company == null || rows.isEmpty) return;
+    final l = AppLocalizations.of(context);
+    final importer = LocalCatalogImporter(ref.read(appDatabaseProvider));
+    final sync = ref.read(syncStateProvider.notifier);
+
+    setState(() {
+      _busy = true;
+      _progress = (done: 0, total: rows.length);
+    });
+    try {
+      final result = await importer.importProducts(
+        companyId: company.id,
+        rows: rows,
+        groups: _xmlGroups,
+        merge: _xmlMerge,
+        fileName: _xmlName,
+        onProgress: (done, total) {
+          if (mounted) setState(() => _progress = (done: done, total: total));
+        },
+      );
+      // The upload is the sync's job from here: batched, retried, and resumed
+      // after a restart or a lost connection. Not awaited — the till is usable now.
+      unawaited(sync.sync());
+      if (!mounted) return;
+
+      final waiting = result.queued + result.alreadyQueued;
+      final outcome = _Outcome()
+        ..created = result.created
+        ..updated = result.updated
+        ..skipped = result.skipped
+        ..note = waiting > 0
+            ? l.importSavedLocallyNote(waiting)
+            : l.importNothingNewToSync;
+      outcome.warnings.addAll(result.warnings);
+      setState(_clearXml);
+      await _showResult(outcome);
+    } catch (e) {
+      if (mounted) {
+        showAppSnackbar(context, ref, l.importFailed('$e'), isError: true);
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _busy = false;
+          _progress = null;
+        });
+      }
+    }
+  }
+
   Future<Map<String, dynamic>> _post(
       Dio dio, String path, Map<String, dynamic> body) async {
     final response = await dio.post(path, data: body);
@@ -276,17 +341,23 @@ class _ProductImportScreenState extends ConsumerState<ProductImportScreen>
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  if (o.note != null) ...[
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(Icons.cloud_upload_outlined, color: cs.primary, size: 18),
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: Text(o.note!,
+                              style: TextStyle(color: cs.onSurfaceVariant)),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                  ],
                   _ResultRow(Icons.add_circle_outline, l.created, o.created, ctx.successColor),
                   _ResultRow(Icons.edit_outlined, l.updatedLabel, o.updated, ctx.infoColor),
                   _ResultRow(Icons.skip_next_rounded, l.skippedLabel, o.skipped, ctx.warningColor),
-                  if (o.groupsCreated != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: Text(
-                        l.importGroupsSummary(o.groupsCreated!, o.groupsUpdated ?? 0),
-                        style: TextStyle(color: cs.onSurfaceVariant),
-                      ),
-                    ),
                   if (o.documentNumber != null) ...[
                     const SizedBox(height: 8),
                     Row(children: [
@@ -429,12 +500,28 @@ class _ProductImportScreenState extends ConsumerState<ProductImportScreen>
   Widget _xmlTab(AppLocalizations l, ColorScheme cs) {
     final hasFile = _xmlName != null;
     final ready = _xmlRows.where((r) => r.hasName).length;
+    final progress = _progress;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _Banner(text: _groups ? l.importGroupsXmlHint : l.importXmlHint),
-        if (!hasFile)
+        if (!_groups) const _CatalogSyncBanner(),
+        if (_xmlReading)
+          Expanded(
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: 12),
+                  Text(l.importReadingFile,
+                      style: TextStyle(color: cs.onSurfaceVariant)),
+                ],
+              ),
+            ),
+          )
+        else if (!hasFile)
           Expanded(child: _NoFile(onPick: _busy ? null : _pickXml))
         else ...[
           _FileBar(fileName: _xmlName!, onPick: _busy ? null : _pickXml),
@@ -451,19 +538,25 @@ class _ProductImportScreenState extends ConsumerState<ProductImportScreen>
           Expanded(child: _previewTable(l, cs, _xmlRows, _xmlFields)),
         ],
         _ActionBar(
-          summary: _groups
-              ? l.numberOfGroupsToImport(ready)
-              : l.numberOfProductsToImport(ready),
+          summary: progress != null
+              ? l.importSavingProgress(progress.done, progress.total)
+              : _groups
+                  ? l.numberOfGroupsToImport(ready)
+                  : l.numberOfProductsToImport(ready),
+          progress: progress == null || progress.total == 0
+              ? null
+              : progress.done / progress.total,
           label: l.importRowsAction(ready),
           busy: _busy,
-          onImport: hasFile && ready > 0 && !_busy
-              ? () => _import(
-                    rows: _xmlRows,
-                    merge: _xmlMerge,
-                    documentType: 'none',
-                    groupsFirst: _xmlGroups,
-                    onDone: _clearXml,
-                  )
+          onImport: hasFile && ready > 0 && !_busy && !_xmlReading
+              ? _groups
+                  ? () => _import(
+                        rows: _xmlRows,
+                        merge: _xmlMerge,
+                        documentType: 'none',
+                        onDone: _clearXml,
+                      )
+                  : _importXmlLocally
               : null,
         ),
       ],
@@ -600,69 +693,77 @@ class _ProductImportScreenState extends ConsumerState<ProductImportScreen>
     final heading = TextStyle(fontWeight: FontWeight.w600, color: cs.onSurface);
     final hint = TextStyle(fontSize: 12, color: cs.onSurfaceVariant);
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: cs.surfaceContainerLow,
+    // A Material, not a decorated Container: the radio tiles below paint their
+    // tap ink on the nearest Material, and a coloured box in between hid it
+    // (and tripped ListTile's "ink splashes may be invisible" assertion).
+    return Material(
+      color: cs.surfaceContainerLow,
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: cs.outlineVariant),
+        side: BorderSide(color: cs.outlineVariant),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(l.duplicatesQuestion, style: heading),
-          const SizedBox(height: 8),
-          // The server has two behaviours, not four: "skip" wins whenever it is
-          // asked for, and neither flag also means skip. So one choice, not two
-          // switches that could both be on.
-          SegmentedButton<bool>(
-            segments: [
-              ButtonSegment(
-                value: false,
-                icon: const Icon(Icons.skip_next_rounded),
-                label: Text(l.duplicatesSkip),
-              ),
-              ButtonSegment(
-                value: true,
-                icon: const Icon(Icons.edit_outlined),
-                label: Text(l.duplicatesMerge),
-              ),
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(l.duplicatesQuestion, style: heading),
+            const SizedBox(height: 8),
+            // The server has two behaviours, not four: "skip" wins whenever it
+            // is asked for, and neither flag also means skip. So one choice,
+            // not two switches that could both be on.
+            SegmentedButton<bool>(
+              segments: [
+                ButtonSegment(
+                  value: false,
+                  icon: const Icon(Icons.skip_next_rounded),
+                  label: Text(l.duplicatesSkip),
+                ),
+                ButtonSegment(
+                  value: true,
+                  icon: const Icon(Icons.edit_outlined),
+                  label: Text(l.duplicatesMerge),
+                ),
+              ],
+              selected: {merge},
+              onSelectionChanged: _busy
+                  ? null
+                  : (s) => setState(() {
+                        if (csv) {
+                          _csvMerge = s.first;
+                        } else {
+                          _xmlMerge = s.first;
+                        }
+                      }),
+            ),
+            const SizedBox(height: 6),
+            Text(merge ? l.duplicatesMergeHint : l.duplicatesSkipHint,
+                style: hint),
+            if (csv && !_groups) ...[
+              const SizedBox(height: 20),
+              Text(l.createDocumentFromQuantity, style: heading),
+              const SizedBox(height: 4),
+              for (final (value, label) in [
+                ('inventoryCount', l.importDocInventoryCount),
+                ('purchase', l.importDocPurchase),
+                ('none', l.importDocNone),
+              ])
+                RadioListTile<String>(
+                  value: value,
+                  groupValue: quantityMatched ? _docType : 'none',
+                  onChanged: quantityMatched && !_busy
+                      ? (v) => setState(() => _docType = v!)
+                      : null,
+                  title: Text(label, style: const TextStyle(fontSize: 14)),
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                ),
+              if (!quantityMatched)
+                Text(l.importDocNeedsQuantity, style: hint),
             ],
-            selected: {merge},
-            onSelectionChanged: _busy
-                ? null
-                : (s) => setState(() {
-                      if (csv) {
-                        _csvMerge = s.first;
-                      } else {
-                        _xmlMerge = s.first;
-                      }
-                    }),
-          ),
-          const SizedBox(height: 6),
-          Text(merge ? l.duplicatesMergeHint : l.duplicatesSkipHint, style: hint),
-          if (csv && !_groups) ...[
-            const SizedBox(height: 20),
-            Text(l.createDocumentFromQuantity, style: heading),
-            const SizedBox(height: 4),
-            for (final (value, label) in [
-              ('inventoryCount', l.importDocInventoryCount),
-              ('purchase', l.importDocPurchase),
-              ('none', l.importDocNone),
-            ])
-              RadioListTile<String>(
-                value: value,
-                groupValue: quantityMatched ? _docType : 'none',
-                onChanged: quantityMatched && !_busy
-                    ? (v) => setState(() => _docType = v!)
-                    : null,
-                title: Text(label, style: const TextStyle(fontSize: 14)),
-                dense: true,
-                contentPadding: EdgeInsets.zero,
-              ),
-            if (!quantityMatched) Text(l.importDocNeedsQuantity, style: hint),
           ],
-        ],
+        ),
       ),
     );
   }
@@ -820,9 +921,10 @@ class _Outcome {
   int created = 0;
   int updated = 0;
   int skipped = 0;
-  int? groupsCreated;
-  int? groupsUpdated;
   String? documentNumber;
+
+  /// Shown above the counts: where the rows went, when that needs saying.
+  String? note;
   final List<String> errors = [];
   final List<String> warnings = [];
 
@@ -838,11 +940,159 @@ class _Outcome {
     warnings.addAll(_strings(r['warnings']));
   }
 
-  void absorbGroups(Map<String, dynamic> r) {
-    groupsCreated = _int(r['created']);
-    groupsUpdated = _int(r['updated']);
-    errors.addAll(_strings(r['errors']));
-    warnings.addAll(_strings(r['warnings']));
+}
+
+final _latestCatalogImportProvider =
+    StreamProvider.autoDispose.family<CatalogImportProgress?, int>(
+  (ref, companyId) =>
+      watchLatestCatalogImport(ref.watch(appDatabaseProvider), companyId),
+);
+
+/// Where the last XML import's upload stands: sending, waiting for the server,
+/// finished, or with rows the server refused. The upload runs inside the sync,
+/// so it carries on with this screen closed — this is only a window onto it.
+class _CatalogSyncBanner extends ConsumerWidget {
+  const _CatalogSyncBanner();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final company = ref.watch(selectedCompanyProvider);
+    if (company == null) return const SizedBox.shrink();
+    final p = ref.watch(_latestCatalogImportProvider(company.id)).value;
+    if (p == null || p.total == 0) return const SizedBox.shrink();
+
+    final l = AppLocalizations.of(context);
+    final cs = Theme.of(context).colorScheme;
+    final syncing = ref.watch(syncStateProvider).isLoading;
+    final sent = p.done + p.failed;
+    final sending = p.pending > 0;
+    final waiting = sending && p.lastError != null;
+    final (icon, color) = sending
+        ? waiting
+            ? (Icons.cloud_off_rounded, context.warningColor)
+            : (Icons.cloud_upload_outlined, cs.primary)
+        : p.failed > 0
+            ? (Icons.error_outline_rounded, context.dangerColor)
+            : (Icons.cloud_done_outlined, context.successColor);
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      padding: const EdgeInsets.fromLTRB(12, 10, 8, 6),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: cs.outlineVariant),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(icon, color: color, size: 20),
+              const SizedBox(width: 10),
+              Flexible(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      sending
+                          ? l.importSyncSending(sent, p.total)
+                          : l.importSyncComplete(p.done),
+                      style: TextStyle(
+                          fontWeight: FontWeight.w600, color: cs.onSurface),
+                    ),
+                    if (waiting)
+                      Text(l.importSyncWaiting(p.lastError!),
+                          style: TextStyle(
+                              fontSize: 12, color: cs.onSurfaceVariant)),
+                    if (p.failed > 0)
+                      Text(l.importSyncRefused(p.failed),
+                          style: TextStyle(
+                              fontSize: 12, color: context.dangerColor)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (sending)
+            Padding(
+              padding: const EdgeInsets.only(top: 8, right: 4),
+              child: LinearProgressIndicator(value: sent / p.total),
+            ),
+          if (sending || p.failed > 0)
+            Wrap(
+              alignment: WrapAlignment.end,
+              spacing: 8,
+              children: [
+                if (p.failed > 0)
+                  TextButton(
+                    style: TextButton.styleFrom(minimumSize: const Size(0, 48)),
+                    onPressed: () => _showRefused(context, ref, p.jobId),
+                    child: Text(l.importSyncDetails),
+                  ),
+                if (sending)
+                  TextButton.icon(
+                    style: TextButton.styleFrom(minimumSize: const Size(0, 48)),
+                    onPressed: syncing
+                        ? null
+                        : () => ref
+                            .read(syncStateProvider.notifier)
+                            .sync(manual: true),
+                    icon: syncing
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.sync_rounded),
+                    label: Text(l.syncNow),
+                  ),
+              ],
+            ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showRefused(
+      BuildContext context, WidgetRef ref, String jobId) async {
+    final lines =
+        await loadRefusedCatalogImportRows(ref.read(appDatabaseProvider), jobId);
+    if (!context.mounted) return;
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) {
+        final l = AppLocalizations.of(ctx);
+        return AlertDialog(
+          title: Text(l.importSyncRefusedTitle),
+          content: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 480),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  for (final line in lines)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Text('• $line', style: const TextStyle(fontSize: 13)),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(l.actionClose),
+            ),
+          ],
+        );
+      },
+    );
   }
 }
 
@@ -943,10 +1193,14 @@ class _ActionBar extends StatelessWidget {
     required this.busy,
     required this.onImport,
     this.warning,
+    this.progress,
   });
 
   final String summary;
   final String? warning;
+
+  /// 0…1 while an import is being written; null otherwise.
+  final double? progress;
   final String label;
   final bool busy;
   final VoidCallback? onImport;
@@ -976,6 +1230,11 @@ class _ActionBar extends StatelessWidget {
                   if (warning != null)
                     Text(warning!,
                         style: TextStyle(fontSize: 12, color: context.dangerColor)),
+                  if (progress != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: LinearProgressIndicator(value: progress),
+                    ),
                 ],
               ),
             ),

@@ -21,7 +21,7 @@
 /// cashier at the till, which needs a PIN for that user on this device.
 library;
 
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:pos_app/database/database_provider.dart';
@@ -84,43 +84,43 @@ Future<SecurityLevel> setSecurityLevel(
         'the server, so a missing row means the first sync has not landed.',
   );
 
-  // 🚨 The control is a SIBLING of the label, not an ancestor of it.
+  // 🚨 The control is a SIBLING of the label, not an ancestor of it, so
+  // `find.ancestor(of: tooltip, matching: <the control>)` matches nothing — and
+  // a `.first` chained onto that fails as an internal `'_found != null'`
+  // assertion rather than a readable "no control found".
   //
-  // `_RuleTile` builds `Row(children: [Flexible(Tooltip(Text(label))), SizedBox,
-  // SegmentedButton])`. So `find.ancestor(of: tooltip, matching: SegmentedButton)`
-  // asks for a segmented button that CONTAINS the tooltip — and nothing does.
-  // It matched nothing, and the `.first` chained onto it turned that into an
-  // internal `'_found != null'` assertion from deep inside the matcher rather
-  // than a readable "no segment found".
-  //
-  // The innermost Row enclosing the tooltip IS the tile, and the control lives
-  // inside it. `visitAncestorElements` walks child-upward, so `.first` is the
-  // closest Row — the tile's own, not some wider one holding every rule.
-  //
-  // Same shape as the payment-type switches, where the label and the `Switch`
-  // are siblings too.
-  final tile = enclosingRow(
-    tester,
-    find.byTooltip(keyName),
-    describe: 'the "$keyName" rule tooltip',
-  );
-
-  // 🚨 Tapped by ICON, never by the segment's label. `_RuleTile` renders
-  // `label: widget.dense ? null : Text(roleCashier)` — on a narrow window the
-  // segments are ICON-ONLY, so a text finder works on a wide monitor and finds
-  // nothing on a tablet. The icons are present in both modes.
-  final icon = level == SecurityLevel.adminOnly
-      ? Icons.lock_outline
-      : Icons.groups_outlined;
-
-  final segment = find.descendant(of: tile, matching: find.byIcon(icon));
-  if (segment.evaluate().isEmpty) {
+  // The tile is found by the KEY the grid puts on every tile,
+  // `security-rule-<raw key>`, not as "the Row around the label": on a narrow
+  // window the picker drops UNDER the label, there is no such Row, and the
+  // nearest one up the tree holds other rules' pickers too.
+  final tile = find.byKey(ValueKey('security-rule-$keyName'));
+  if (tile.evaluate().isEmpty) {
     throw TestFailure(
-      'No ${level.name} segment on the "$keyName" rule tile.\n'
+      'No tile keyed "security-rule-$keyName".\n'
       '  On screen now: ${visibleTexts(tester)}',
     );
   }
-  await tapVisible(tester, segment.first);
+
+  // The role is a dropdown: open THIS tile's picker, then pick inside its own
+  // menu. 🚨 Never a screen-wide text finder — forty tiles carry the same two
+  // words — and the option label is read from `ctx.l` here, on this screen,
+  // because the locale can still change after sign-in.
+  final dropdown = find.descendant(of: tile, matching: anyDropdownField);
+  if (dropdown.evaluate().isEmpty) {
+    throw TestFailure(
+      'No role dropdown on the "$keyName" rule tile.\n'
+      '  On screen now: ${visibleTexts(tester)}',
+    );
+  }
+  final l = ctx.l;
+  await tapVisible(tester, dropdown.first);
+  await pumpFor(tester, const Duration(milliseconds: 700));
+  await tapDropdownMenuEntry(
+    tester,
+    dropdown.first,
+    level == SecurityLevel.adminOnly ? l.roleAdmin : l.roleCashier,
+    describe: 'The "$keyName" role dropdown',
+  );
 
   // 🚨 Wait for the SUCCESS message, and do not settle for the Drift row.
   //

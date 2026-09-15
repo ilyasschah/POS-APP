@@ -128,7 +128,19 @@ String buildGroupsXml(Iterable<GroupNode> groups) {
 
 /// Every group in an XML file — a groups export, or the group skeleton of a
 /// product export — with the parent it is nested in.
-List<GroupNode> parseGroupsXml(String content) {
+List<GroupNode> parseGroupsXml(String content) =>
+    _groupsIn(XmlDocument.parse(content).rootElement);
+
+/// A products export read ONCE for both halves the import needs — the rows and
+/// the group skeleton. A 5,000-product file is megabytes of XML, and parsing it
+/// twice doubled the wait for nothing.
+({List<Map<String, dynamic>> rows, List<GroupNode> groups})
+    parseProductsXmlWithGroups(String content) {
+  final root = XmlDocument.parse(content).rootElement;
+  return (rows: _productsIn(root), groups: _groupsIn(root));
+}
+
+List<GroupNode> _groupsIn(XmlElement root) {
   final out = <GroupNode>[];
   void walk(XmlElement el, String? parent) {
     final items = el.getElement('Items');
@@ -150,7 +162,7 @@ List<GroupNode> parseGroupsXml(String content) {
     }
   }
 
-  walk(XmlDocument.parse(content).rootElement, null);
+  walk(root, null);
   return out;
 }
 
@@ -263,7 +275,10 @@ String buildProductsXml(
 ///
 /// A flag the file does not carry is sent as null — "say nothing" — rather than
 /// false, so an older or foreign file never switches products off.
-List<Map<String, dynamic>> parseProductsXml(String content) {
+List<Map<String, dynamic>> parseProductsXml(String content) =>
+    _productsIn(XmlDocument.parse(content).rootElement);
+
+List<Map<String, dynamic>> _productsIn(XmlElement root) {
   final rows = <Map<String, dynamic>>[];
   void walk(XmlElement el, List<String> path) {
     final items = el.getElement('Items');
@@ -279,7 +294,7 @@ List<Map<String, dynamic>> parseProductsXml(String content) {
     }
   }
 
-  walk(XmlDocument.parse(content).rootElement, const []);
+  walk(root, const []);
   return rows;
 }
 

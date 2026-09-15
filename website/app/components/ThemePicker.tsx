@@ -1,9 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { POS_ACCENTS, DEFAULT_ACCENT, applyAccent, parseHex } from "../theme";
-
-const STORAGE_KEY = "octopus-accent";
+import { POS_ACCENTS, DEFAULT_ACCENT, ACCENT_STORAGE_KEY, applyAccent, savedAccent } from "../theme";
 
 /**
  * Repaints the whole site from one colour — the page's central claim, made
@@ -31,13 +29,8 @@ export default function ThemePicker({
   const [accent, setAccent] = useState<string>(DEFAULT_ACCENT);
 
   useEffect(() => {
-    let saved: string | null = null;
-    try {
-      saved = localStorage.getItem(STORAGE_KEY);
-    } catch {
-      // Private mode, or site data blocked. The brand default is a fine answer.
-    }
-    if (saved && parseHex(saved)) {
+    const saved = savedAccent();
+    if (saved) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setAccent(saved);
       applyAccent(saved);
@@ -48,7 +41,7 @@ export default function ThemePicker({
     setAccent(next);
     applyAccent(next);
     try {
-      localStorage.setItem(STORAGE_KEY, next);
+      localStorage.setItem(ACCENT_STORAGE_KEY, next);
     } catch {
       // Not being able to remember the choice is not a reason to refuse it.
     }

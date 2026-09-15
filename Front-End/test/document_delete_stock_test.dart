@@ -1,7 +1,8 @@
 // Deleting a document gives back the stock its lines moved — on this till, at
-// once — by the server's rule for deleting a line: a Purchase takes back what
-// it received, a Stock Return and a Loss & Damage put back what they removed,
-// and nothing else is touched.
+// once — by the server's rule for deleting a line: the move its type's
+// stockDirection made (1 in, 2 out, 0 none), the other way; an inventory count's
+// variance rather than its whole count; and nothing for a POS document, whose
+// stock checkout, refund and void move themselves.
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -18,6 +19,9 @@ const kMintTea = 100; // counted in pieces
 const kSaffron = 101; // sold by the gram, stocked in kilograms
 const kUntracked = 102; // never stocked on this till
 
+/// An id no seeded type uses — a type this till has not pulled yet.
+const kUnpulledType = 99;
+
 void main() {
   late AppDatabase db;
   var seq = 0;
@@ -25,6 +29,23 @@ void main() {
 
   setUp(() async {
     db = AppDatabase.forTesting(NativeDatabase.memory());
+    // The server's seeded StockDirection, as SyncManager.pullDocumentTypes
+    // brings it.
+    for (final (id, direction) in [
+      (DocumentTypes.purchase, 1),
+      (DocumentTypes.sales, 2),
+      (DocumentTypes.inventoryCount, 1),
+      (DocumentTypes.refund, 1),
+      (DocumentTypes.stockReturn, 2),
+      (DocumentTypes.lossAndDamage, 2),
+      (DocumentTypes.proforma, 0),
+    ]) {
+      await db.into(db.documentTypesTable).insert(DocumentTypesTableCompanion(
+            id: Value(id),
+            name: Value('Type $id'),
+            stockDirection: Value(direction),
+          ));
+    }
     for (final (id, uom) in [
       (kMintTea, kUomPieces),
       (kSaffron, kUomGram),
@@ -67,7 +88,8 @@ void main() {
       (await stockRow(productId, warehouseId)).quantity;
 
   /// A document in Main. By default the server has it and every line of it —
-  /// the ordinary shape of anything a delete reaches.
+  /// the ordinary shape of anything a delete reaches — and it is a manual one,
+  /// with no POS order number.
   Future<String> document(
     int type,
     List<(int, double)> lines, {
@@ -75,6 +97,8 @@ void main() {
     String syncStatus = SyncStatuses.synced,
     int? lineServerId = 1,
     String lineStatus = SyncStatuses.synced,
+    String? orderNumber,
+    double? expected,
   }) async {
     final localId = 'doc-${seq++}';
     await db.into(db.documentsTable).insert(DocumentsTableCompanion(
@@ -84,6 +108,7 @@ void main() {
           documentTypeId: Value(type),
           userId: const Value(1),
           warehouseId: const Value(kMain),
+          orderNumber: Value(orderNumber),
           date: Value(now),
           syncStatus: Value(syncStatus),
           lastModified: Value(now),
@@ -95,6 +120,7 @@ void main() {
             serverId: Value(lineServerId),
             productId: Value(product),
             quantity: Value(quantity),
+            expectedQuantity: Value(expected),
             unitPrice: const Value(0),
             total: const Value(0),
             syncStatus: Value(lineStatus),
@@ -112,6 +138,33 @@ void main() {
       expect(await stockOf(kMintTea), 15);
     });
 
+    test('a Sale puts back what it sold', () async {
+      final doc = await document(DocumentTypes.sales, [(kMintTea, 5)]);
+
+      await db.deleteDocumentLocal(doc);
+
+      expect(await stockOf(kMintTea), 30);
+    });
+
+    test('a Refund takes back what it restocked', () async {
+      final doc = await document(DocumentTypes.refund, [(kMintTea, 5)]);
+
+      await db.deleteDocumentLocal(doc);
+
+      expect(await stockOf(kMintTea), 20);
+    });
+
+    test('a Refund this till recorded negative still takes back what it restocked',
+        () async {
+      // A refund rung up here stores its lines negative, like its money; the
+      // server holds them positive and reverses them as a restock.
+      final doc = await document(DocumentTypes.refund, [(kMintTea, -5)]);
+
+      await db.deleteDocumentLocal(doc);
+
+      expect(await stockOf(kMintTea), 20);
+    });
+
     test('a Stock Return puts back what it sent to the vendor', () async {
       final doc = await document(DocumentTypes.stockReturn, [(kMintTea, 4)]);
 
@@ -122,6 +175,18 @@ void main() {
 
     test('a Loss & Damage puts back what it wrote off', () async {
       final doc = await document(DocumentTypes.lossAndDamage, [(kMintTea, 3)]);
+
+      await db.deleteDocumentLocal(doc);
+
+      expect(await stockOf(kMintTea), 28);
+    });
+
+    test('an Inventory Count undoes its variance, not the whole count',
+        () async {
+      // 22 found where the system held 25: the count took 3 out.
+      final doc = await document(
+          DocumentTypes.inventoryCount, [(kMintTea, 22)],
+          expected: 25);
 
       await db.deleteDocumentLocal(doc);
 
@@ -158,20 +223,57 @@ void main() {
   });
 
   group('and gives back nothing', () {
+    test('for a proforma — a quote moves no goods', () async {
+      final doc = await document(DocumentTypes.proforma, [(kMintTea, 5)]);
+
+      await db.deleteDocumentLocal(doc);
+
+      expect(await stockOf(kMintTea), 25);
+    });
+
     for (final (name, type) in [
-      ('a sale', DocumentTypes.sales),
-      ('a refund', DocumentTypes.refund),
-      ('an inventory count', DocumentTypes.inventoryCount),
-      ('a proforma', DocumentTypes.proforma),
+      ('sale', DocumentTypes.sales),
+      ('refund', DocumentTypes.refund),
     ]) {
-      test('for $name — its lines never moved stock on delete', () async {
-        final doc = await document(type, [(kMintTea, 5)]);
+      test('for a POS $name — checkout, refund and void own its stock',
+          () async {
+        final doc =
+            await document(type, [(kMintTea, 5)], orderNumber: '#42');
 
         await db.deleteDocumentLocal(doc);
 
         expect(await stockOf(kMintTea), 25);
       });
     }
+
+    test('for a count that agreed with the system', () async {
+      final doc = await document(
+          DocumentTypes.inventoryCount, [(kMintTea, 25)],
+          expected: 25);
+
+      await db.deleteDocumentLocal(doc);
+
+      expect(await stockOf(kMintTea), 25);
+    });
+
+    test('for a count line that recorded no expected stock', () async {
+      // The push sends `expectedQuantity ?? quantity`, so the server saw a
+      // count that agreed and moved nothing.
+      final doc =
+          await document(DocumentTypes.inventoryCount, [(kMintTea, 40)]);
+
+      await db.deleteDocumentLocal(doc);
+
+      expect(await stockOf(kMintTea), 25);
+    });
+
+    test('for a type this till has not pulled yet', () async {
+      final doc = await document(kUnpulledType, [(kMintTea, 5)]);
+
+      await db.deleteDocumentLocal(doc);
+
+      expect(await stockOf(kMintTea), 25);
+    });
 
     test('for a line that never reached the server', () async {
       // The server applies a line's stock when it receives it; this one it

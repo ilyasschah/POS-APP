@@ -4,6 +4,7 @@ import '../core/formatters.dart';
 import '../core/json_utils.dart';
 import '../models/dashboard.dart';
 import '../models/document.dart';
+import '../models/document_lookups.dart';
 import '../models/pos_session.dart';
 import '../models/product.dart';
 import '../models/stock.dart';
@@ -100,6 +101,8 @@ class OctopusApi {
     return {'companyId': id};
   }
 
+  static final Options _json = Options(contentType: Headers.jsonContentType);
+
   // --- Auth ---------------------------------------------------------------
 
   /// `POST /Auth/Login` — the only unauthenticated call.
@@ -115,7 +118,7 @@ class OctopusApi {
       final response = await _dio.post<dynamic>(
         '/Auth/Login',
         data: {'Email': email, 'Password': password, 'DeviceId': null},
-        options: Options(contentType: Headers.jsonContentType),
+        options: _json,
         cancelToken: cancelToken,
       );
 
@@ -206,7 +209,7 @@ class OctopusApi {
         '/Products/Update',
         queryParameters: _companyQuery,
         data: product.toUpdateJson(newPrice: price, newCost: cost),
-        options: Options(contentType: Headers.jsonContentType),
+        options: _json,
         cancelToken: cancelToken,
       );
     });
@@ -266,6 +269,209 @@ class OctopusApi {
       );
       return asList(response.data, DocumentLineItem.fromJson);
     });
+  }
+
+  /// `GET /DocumentType/GetAll` — global master data, no `companyId`.
+  Future<List<DocumentTypeOption>> fetchDocumentTypes({
+    CancelToken? cancelToken,
+  }) {
+    return _guard(() async {
+      final response = await _dio.get<dynamic>(
+        '/DocumentType/GetAll',
+        cancelToken: cancelToken,
+      );
+      return asList(response.data, DocumentTypeOption.fromJson);
+    });
+  }
+
+  /// `GET /Customer/GetAllCustomers` — customers and suppliers in one list.
+  /// Singular `Customer`, and the action is not `GetAll`.
+  Future<List<CustomerOption>> fetchCustomers({CancelToken? cancelToken}) {
+    return _guard(() async {
+      final response = await _dio.get<dynamic>(
+        '/Customer/GetAllCustomers',
+        queryParameters: _companyQuery,
+        cancelToken: cancelToken,
+      );
+      return asList(response.data, CustomerOption.fromJson);
+    });
+  }
+
+  Future<List<WarehouseOption>> fetchWarehouses({CancelToken? cancelToken}) {
+    return _guard(() async {
+      final response = await _dio.get<dynamic>(
+        '/Warehouses/GetAll',
+        queryParameters: _companyQuery,
+        cancelToken: cancelToken,
+      );
+      return asList(response.data, WarehouseOption.fromJson);
+    });
+  }
+
+  /// `GET /Taxes/GetAllTaxes` — the action is not `GetAll` here either.
+  Future<List<TaxOption>> fetchTaxes({CancelToken? cancelToken}) {
+    return _guard(() async {
+      final response = await _dio.get<dynamic>(
+        '/Taxes/GetAllTaxes',
+        queryParameters: _companyQuery,
+        cancelToken: cancelToken,
+      );
+      return asList(response.data, TaxOption.fromJson);
+    });
+  }
+
+  /// `GET /Document/GetNextNumber` — `26-220-000001` for a Refund.
+  ///
+  /// 🚨 Not a peek: every call advances the server's counter for that type, so
+  /// only ask when a number is actually going to be shown.
+  Future<String> fetchNextDocumentNumber({
+    required int documentTypeId,
+    CancelToken? cancelToken,
+  }) {
+    return _guard(() async {
+      final response = await _dio.get<dynamic>(
+        '/Document/GetNextNumber',
+        queryParameters: {..._companyQuery, 'documentTypeId': documentTypeId},
+        cancelToken: cancelToken,
+      );
+      final number = asString(response.data).trim();
+      if (number.isEmpty) {
+        throw const ApiException('The server did not return a document number.');
+      }
+      return number;
+    });
+  }
+
+  /// `POST /Document/Add` — answers `{ message, data: { id } }`.
+  Future<int> createDocument(Map<String, dynamic> body) {
+    return _guard(() async {
+      final response = await _dio.post<dynamic>(
+        '/Document/Add',
+        queryParameters: _companyQuery,
+        data: body,
+        options: _json,
+      );
+      return _createdId(response.data, 'document');
+    });
+  }
+
+  /// `PATCH /Document/Update` — only the fields present change.
+  Future<void> updateDocument(Map<String, dynamic> body) {
+    return _guard(() async {
+      await _dio.patch<dynamic>(
+        '/Document/Update',
+        queryParameters: _companyQuery,
+        data: body,
+        options: _json,
+      );
+    });
+  }
+
+  /// `DELETE /Document/Delete` — the server gives back the stock its lines
+  /// moved, and its lines, taxes and payments go with it.
+  Future<void> deleteDocument({required int id}) {
+    return _guard(() async {
+      await _dio.delete<dynamic>(
+        '/Document/Delete',
+        queryParameters: {'id': id, ..._companyQuery},
+      );
+    });
+  }
+
+  /// `POST /DocumentItems/Add` — this is what moves the line's stock.
+  Future<int> addDocumentItem(Map<String, dynamic> body) {
+    return _guard(() async {
+      final response = await _dio.post<dynamic>(
+        '/DocumentItems/Add',
+        queryParameters: _companyQuery,
+        data: body,
+        options: _json,
+      );
+      return _createdId(response.data, 'line');
+    });
+  }
+
+  /// `PATCH /DocumentItems/Update` — moves only the difference in stock.
+  Future<void> updateDocumentItem(Map<String, dynamic> body) {
+    return _guard(() async {
+      await _dio.patch<dynamic>(
+        '/DocumentItems/Update',
+        queryParameters: _companyQuery,
+        data: body,
+        options: _json,
+      );
+    });
+  }
+
+  /// `DELETE /DocumentItems/Delete` — gives back the stock the line moved.
+  Future<void> deleteDocumentItem({required int id}) {
+    return _guard(() async {
+      await _dio.delete<dynamic>(
+        '/DocumentItems/Delete',
+        queryParameters: {'id': id, ..._companyQuery},
+      );
+    });
+  }
+
+  /// The ids of the taxes on one line (`GET /DocumentItemTaxes/GetByDocumentItemId`).
+  Future<List<int>> fetchDocumentItemTaxIds({
+    required int documentItemId,
+    CancelToken? cancelToken,
+  }) {
+    return _guard(() async {
+      final response = await _dio.get<dynamic>(
+        '/DocumentItemTaxes/GetByDocumentItemId',
+        queryParameters: {'documentItemId': documentItemId, ..._companyQuery},
+        cancelToken: cancelToken,
+      );
+      return asList(response.data, (json) => asInt(json['taxId']));
+    });
+  }
+
+  /// `POST /DocumentItemTaxes/Add` — the server then rewrites the line's price
+  /// and total with the tax in them.
+  Future<void> addDocumentItemTax({
+    required int documentItemId,
+    required int taxId,
+  }) {
+    return _guard(() async {
+      await _dio.post<dynamic>(
+        '/DocumentItemTaxes/Add',
+        queryParameters: _companyQuery,
+        data: {'documentItemId': documentItemId, 'taxId': taxId},
+        options: _json,
+      );
+    });
+  }
+
+  Future<void> deleteDocumentItemTax({
+    required int documentItemId,
+    required int taxId,
+  }) {
+    return _guard(() async {
+      await _dio.delete<dynamic>(
+        '/DocumentItemTaxes/Delete',
+        queryParameters: {
+          'documentItemId': documentItemId,
+          'taxId': taxId,
+          ..._companyQuery,
+        },
+      );
+    });
+  }
+
+  /// The id of a row the server just created, from either `{ id }` or
+  /// `{ data: { id } }`, in either casing.
+  static int _createdId(Object? body, String what) {
+    Object? source = body;
+    if (source is Map && (source['data'] ?? source['Data']) is Map) {
+      source = source['data'] ?? source['Data'];
+    }
+    final id = source is Map ? asIntOrNull(source['id'] ?? source['Id']) : null;
+    if (id == null || id <= 0) {
+      throw ApiException('The server did not return the new $what.');
+    }
+    return id;
   }
 
   // --- POS sessions -------------------------------------------------------
@@ -348,7 +554,7 @@ class OctopusApi {
         '/Users/AdminResetPassword',
         queryParameters: _companyQuery,
         data: {'userId': userId, 'newPassword': newPassword},
-        options: Options(contentType: Headers.jsonContentType),
+        options: _json,
         cancelToken: cancelToken,
       );
     });

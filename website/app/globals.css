@@ -331,6 +331,29 @@ a {
   flex-shrink: 0;
 }
 
+.site-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  height: 64px;
+}
+
+.site-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  min-width: 0;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.site-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
 .grid {
   display: grid;
   gap: 1.25rem;
@@ -423,12 +446,41 @@ a {
   }
 }
 
-/* Below 780px the inline links crowd the mark and the CTA. Drop them — every
-   destination is reachable by scrolling, and the demo CTA is the only one that
-   matters on a phone. */
-@media (max-width: 780px) {
-  .nav-link {
+.nav-link[aria-current="page"] {
+  color: var(--text);
+  font-weight: 500;
+}
+
+/* Below 960px the section links crowd the mark and the CTA (French runs the
+   longest). Drop them: every section is reachable by scrolling, and the demo
+   CTA is the one that matters on a phone. Help stays, because it is another
+   page and no amount of scrolling ever reaches it. */
+@media (max-width: 960px) {
+  .nav-section {
     display: none;
+  }
+}
+
+/* The narrowest phones cannot fit the wordmark beside "Réserver une démo". The
+   name steps out of view (the mark stays, and assistive tech still reads it)
+   and the CTA tightens. */
+@media (max-width: 420px) {
+  .site-brand-name {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .site-nav-links {
+    gap: 0.875rem;
+  }
+
+  .nav-cta {
+    padding: 0.625rem 1rem;
+    font-size: 0.875rem;
   }
 }
 
@@ -1546,6 +1598,407 @@ details > summary > span[aria-hidden] {
 @media (prefers-reduced-motion: reduce) {
   .footer-nav a,
   .langpick select {
+    transition: none;
+  }
+}
+
+/* ============================================================================
+   Help centre (/help)
+
+   The home page's system pointed at reading instead of selling: the same
+   ground, cards and chips, with guides as numbered steps. Words the operator
+   will see on the terminal are set as quiet chips (.ui-label), so the page can
+   be matched to the screen in front of them.
+   ========================================================================== */
+.help-hero {
+  padding-block: clamp(3rem, 8vw, 5.5rem) clamp(2rem, 5vw, 3rem);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.help-hero h1 {
+  max-width: 20ch;
+}
+
+.help-lede {
+  margin-top: 1.25rem;
+}
+
+.help-search {
+  position: relative;
+  max-width: 36rem;
+  margin-top: 2rem;
+}
+
+.help-search svg {
+  position: absolute;
+  inset-inline-start: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-faint);
+  pointer-events: none;
+}
+
+.help-search input {
+  width: 100%;
+  min-height: 3.25rem;
+  padding-block: 0.75rem;
+  padding-inline: 2.875rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-sm);
+  color: var(--text);
+  font: inherit;
+  transition: border-color 120ms var(--ease-out);
+}
+
+.help-search input::placeholder {
+  color: var(--text-faint);
+}
+
+.help-search input:focus-visible {
+  border-color: var(--accent);
+}
+
+.help-search-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 1rem;
+  min-height: 1.75rem;
+  margin-top: 0.75rem;
+  color: var(--text-muted);
+  font-size: 0.9375rem;
+}
+
+/* ---- topic cards ---- */
+.help-topics {
+  padding-top: clamp(2.5rem, 6vw, 4rem);
+}
+
+.help-topics ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.help-topic {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  height: 100%;
+}
+
+.help-topic-title {
+  margin-top: 0.75rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+}
+
+.help-topic-summary {
+  color: var(--text-muted);
+  font-size: 0.9375rem;
+}
+
+.help-topic-count {
+  margin-top: auto;
+  padding-top: 0.5rem;
+  color: var(--accent-ink);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+/* ---- guides ---- */
+.help-body {
+  display: grid;
+  grid-template-columns: minmax(0, 13rem) minmax(0, 1fr);
+  gap: clamp(2rem, 5vw, 4rem);
+  align-items: start;
+  padding-block: clamp(3rem, 7vw, 5rem);
+}
+
+.help-toc {
+  position: sticky;
+  top: calc(64px + 1.5rem);
+}
+
+.help-toc-title {
+  margin-bottom: 0.75rem;
+  color: var(--text-faint);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.help-toc ul {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-inline-start: 1px solid var(--border);
+}
+
+.help-toc a {
+  display: block;
+  margin-inline-start: -1px;
+  padding: 0.5rem 0.875rem;
+  border-inline-start: 2px solid transparent;
+  color: var(--text-muted);
+  font-size: 0.9375rem;
+  line-height: 1.4;
+  transition:
+    color 120ms var(--ease-out),
+    border-color 120ms var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .help-toc a:hover {
+    color: var(--text);
+    border-inline-start-color: var(--accent);
+  }
+}
+
+.help-sections {
+  display: grid;
+  gap: clamp(3.5rem, 8vw, 5.5rem);
+  min-width: 0;
+}
+
+/* Anchors land below the sticky header, not under it. */
+.help-section,
+.help-article {
+  scroll-margin-top: calc(64px + 1.5rem);
+}
+
+.help-section-head {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.help-section-head h2 {
+  font-size: clamp(1.625rem, 3vw, 2.25rem);
+}
+
+.help-section-head p {
+  max-width: var(--measure);
+  margin-top: 0.5rem;
+  color: var(--text-muted);
+}
+
+.help-articles {
+  display: grid;
+  gap: 1rem;
+}
+
+/* A guide with a real capture puts it beside the steps; one without is prose
+   alone, capped at the measure. Never a placeholder standing in for a screen. */
+.help-article.has-shot {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: 1.5rem 2.5rem;
+  align-items: start;
+}
+
+.help-article h3 {
+  font-size: 1.1875rem;
+  line-height: 1.3;
+}
+
+.help-article-summary {
+  max-width: var(--measure);
+  margin-top: 0.5rem;
+  color: var(--text-muted);
+  font-size: 0.9375rem;
+}
+
+.help-steps {
+  display: grid;
+  gap: 0.75rem;
+  max-width: var(--measure);
+  margin: 1.25rem 0 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+}
+
+.help-steps li {
+  position: relative;
+  padding-inline-start: 2.25rem;
+  counter-increment: step;
+  font-size: 0.9375rem;
+}
+
+/* The step number wears the icon chip's tint, so a guide reads as one of the
+   site's own components rather than a browser default list. */
+.help-steps li::before {
+  content: counter(step);
+  position: absolute;
+  inset-inline-start: 0;
+  top: 0.125rem;
+  display: grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 11%, var(--ground));
+  color: var(--accent-ink);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.help-note {
+  max-width: var(--measure);
+  margin-top: 1.25rem;
+  padding: 0.875rem 1rem;
+  border-inline-start: 3px solid var(--accent);
+  border-start-end-radius: 10px;
+  border-end-end-radius: 10px;
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: 0.9375rem;
+}
+
+.help-note strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* A word the operator will see on the terminal. Set apart enough to spot,
+   quiet enough that a sentence does not turn into a row of buttons. */
+.ui-label {
+  padding: 0.0625rem 0.375rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface-high);
+  color: var(--text);
+  font-size: 0.9em;
+  font-weight: 500;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+.help-shot {
+  margin: 0;
+}
+
+.help-shot img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.help-shot figcaption {
+  margin-top: 0.625rem;
+  color: var(--text-faint);
+  font-size: 0.8125rem;
+}
+
+/* ---- troubleshooting ---- */
+.help-faq summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  cursor: pointer;
+  list-style: none;
+}
+
+.help-faq summary h3 {
+  font-size: 1.0625rem;
+  font-weight: 500;
+}
+
+.help-faq summary > span[aria-hidden] {
+  flex-shrink: 0;
+  color: var(--accent-ink);
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.help-faq .help-article-summary {
+  margin-top: 0.875rem;
+}
+
+/* A troubleshooting capture is a cropped error message, not a whole screen,
+   so it stays small under the fix instead of stretching across the card. */
+.help-faq .help-shot {
+  max-width: 440px;
+  margin-top: 1.25rem;
+}
+
+/* ---- still stuck ---- */
+.help-stuck-wrap {
+  padding-bottom: clamp(3rem, 8vw, 5rem);
+}
+
+.help-stuck {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem 3rem;
+  padding: clamp(1.75rem, 5vw, 3rem);
+}
+
+.help-stuck h2 {
+  font-size: clamp(1.625rem, 3vw, 2.25rem);
+}
+
+.help-stuck .lede {
+  max-width: 52ch;
+  margin-top: 0.75rem;
+  font-size: 1rem;
+}
+
+.help-stuck-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.875rem;
+}
+
+/* One column below 1024px: the topic cards above already map the page, so the
+   sticky index would only repeat them in a narrower strip. */
+@media (max-width: 1024px) {
+  .help-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .help-toc {
+    display: none;
+  }
+
+  .help-article.has-shot {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .help-article {
+    padding: 1.25rem;
+  }
+
+  .help-section-head .glyph {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .help-search input,
+  .help-toc a {
     transition: none;
   }
 }

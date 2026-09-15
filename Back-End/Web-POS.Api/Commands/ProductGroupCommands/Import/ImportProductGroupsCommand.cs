@@ -104,6 +104,7 @@ namespace Api.Commands.ProductGroupCommands.Import
             result.Skipped = applied.Skipped;
             result.Errors.AddRange(applied.Errors);
             result.Warnings.AddRange(applied.Warnings);
+            result.Groups = applied.Groups;
             return result;
         }
 
@@ -192,6 +193,15 @@ namespace Api.Commands.ProductGroupCommands.Import
             }
 
             await _db.SaveChangesAsync(ct);
+
+            // Every group the import named, with the id it has now — skipped ones
+            // included, since they exist too.
+            r.Groups = plan
+                .SelectMany(p => p.Parent == null ? new[] { p.Name } : new[] { p.Name, p.Parent })
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Select(name => groups[Key(name)])
+                .Select(g => new ImportedGroupRef { Name = g.Name, Id = g.Id, ParentGroupId = g.ParentGroupId })
+                .ToList();
             return r;
         }
 

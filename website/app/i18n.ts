@@ -40,7 +40,7 @@ type Faq = { q: string; a: string };
 type Tier = { name: string; price: string; note: string; points: string[] };
 
 export type Dict = {
-  nav: { features: string; platforms: string; pricing: string; demo: string };
+  nav: { features: string; platforms: string; pricing: string; help: string; demo: string };
   hero: {
     eyebrow: string; h1: string; lede: string; cta: string; cta2: string;
     slides: Record<SlideId, string>;
@@ -73,7 +73,7 @@ export type Dict = {
 };
 
 const en: Dict = {
-  nav: { features: "Features", platforms: "Platforms", pricing: "Pricing", demo: "Book a demo" },
+  nav: { features: "Features", platforms: "Platforms", pricing: "Pricing", help: "Help", demo: "Book a demo" },
   hero: {
     eyebrow: "The complete point of sale",
     h1: "Everything your counter needs. Shaped the way you work.",
@@ -193,7 +193,7 @@ const en: Dict = {
 };
 
 const fr: Dict = {
-  nav: { features: "Fonctions", platforms: "Plateformes", pricing: "Tarifs", demo: "Réserver une démo" },
+  nav: { features: "Fonctions", platforms: "Plateformes", pricing: "Tarifs", help: "Aide", demo: "Réserver une démo" },
   hero: {
     eyebrow: "Le point de vente complet",
     h1: "Tout ce dont votre comptoir a besoin. À votre façon.",
@@ -269,8 +269,8 @@ const fr: Dict = {
     lede: "Des licences à vie payées une seule fois, sans abonnement mensuel ni commission.",
     cta: "Nous contacter pour acheter",
     tiers: [
-      { name: "Licence Standard", price: "500 DH", note: "À vie · un seul site", points: ["100 % hors ligne en priorité (aucun Internet nécessaire)", "Système d’affichage cuisine (KDS) et écran client", "Prise de commandes sur tablette par les serveurs", "Codes-barres et menu locaux", "Sauvegarde automatique de la base locale", "Un magasin / un appareil POS"] },
-      { name: "Licence Pro", price: "700 DH", note: "À vie · prête pour plusieurs sites", points: ["Tout le contenu de Standard, plus :", "Application mobile du tableau de bord propriétaire (surveillance à distance)", "Synchronisation multi-magasins et multi-appareils POS", "Multi-entrepôts et contrôle avancé du stock"] },
+      { name: "Licence Standard", price: "500 DH", note: "Paiement unique · À vie · exploitation locale pour un seul site", points: ["100 % hors ligne en priorité (aucun Internet nécessaire)", "Système d’affichage cuisine (KDS) et écran client", "Prise de commandes sur tablette par les serveurs", "Codes-barres et menu locaux", "Sauvegarde automatique de la base locale", "Un magasin / un appareil POS"] },
+      { name: "Licence Pro", price: "700 DH", note: "Paiement unique · À vie · gestion avancée et croissance multi-sites", points: ["Tout le contenu de Standard, plus :", "Application mobile du tableau de bord propriétaire (surveillance à distance)", "Synchronisation multi-magasins et multi-appareils POS", "Multi-entrepôts et contrôle avancé du stock"] },
     ],
   },
   faq: {
@@ -313,7 +313,7 @@ const fr: Dict = {
 };
 
 const ar: Dict = {
-  nav: { features: "المزايا", platforms: "المنصات", pricing: "الأسعار", demo: "احجز عرضًا" },
+  nav: { features: "المزايا", platforms: "المنصات", pricing: "الأسعار", help: "المساعدة", demo: "احجز عرضًا" },
   hero: {
     eyebrow: "نقطة البيع المتكاملة",
     h1: "كل ما يحتاجه صندوقك. وبالشكل الذي يناسبك.",
@@ -387,10 +387,10 @@ const ar: Dict = {
   pricing: {
     eyebrow: "تراخيص مدى الحياة", h2: "دفعة واحدة. ملكك مدى الحياة.",
     lede: "تراخيص مدى الحياة تُدفع مرة واحدة، بلا اشتراك شهري أو رسوم على المعاملات.",
-    cta: "تواصل معنا",
+    cta: "تواصل معنا للشراء",
     tiers: [
-      { name: "الترخيص القياسي", price: "500 د.م.", note: "مدى الحياة · موقع واحد", points: ["يعمل دون اتصال 100% (لا حاجة إلى الإنترنت)", "نظام شاشة المطبخ (KDS) وشاشة العميل", "أخذ الطلبات عبر جهاز لوحي للنادل", "رموز شريطية وقائمة محلية", "نسخ احتياطي تلقائي لقاعدة البيانات المحلية", "متجر واحد / جهاز POS واحد"] },
-      { name: "الترخيص الاحترافي", price: "700 د.م.", note: "مدى الحياة · جاهز لعدة مواقع", points: ["كل ما في القياسي، بالإضافة إلى:", "تطبيق لوحة تحكم المالك على الهاتف (مراقبة عن بُعد)", "مزامنة عدة متاجر وعدة أجهزة POS", "عدة مستودعات وتحكم متقدم بالمخزون"] },
+      { name: "الترخيص القياسي", price: "500 د.م.", note: "دفعة واحدة · مدى الحياة · تشغيل محلي لموقع واحد", points: ["يعمل دون اتصال 100% (لا حاجة إلى الإنترنت)", "نظام شاشة المطبخ (KDS) وشاشة العميل", "أخذ الطلبات عبر جهاز لوحي للنادل", "رموز شريطية وقائمة محلية", "نسخ احتياطي تلقائي لقاعدة البيانات المحلية", "متجر واحد / جهاز POS واحد"] },
+      { name: "الترخيص الاحترافي", price: "700 د.م.", note: "دفعة واحدة · مدى الحياة · إدارة متقدمة والتوسع لعدة مواقع", points: ["كل ما في القياسي، بالإضافة إلى:", "تطبيق لوحة تحكم المالك على الهاتف (مراقبة عن بُعد)", "مزامنة عدة متاجر وعدة أجهزة POS", "عدة مستودعات وتحكم متقدم بالمخزون"] },
     ],
   },
   faq: {

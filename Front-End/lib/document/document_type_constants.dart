@@ -28,6 +28,14 @@ abstract final class DocumentCategories {
   static const int loss      = 4;
 }
 
+/// `DocumentType.StockDirection` — which way a type's lines move goods. Mirrors
+/// the server's column; every stock rule reads it rather than a list of ids.
+abstract final class StockDirections {
+  static const int none       = 0;
+  static const int intoStock  = 1;
+  static const int outOfStock = 2;
+}
+
 /// Paid-status values stored on the document record.
 abstract final class PaidStatus {
   static const int unpaid  = 0;

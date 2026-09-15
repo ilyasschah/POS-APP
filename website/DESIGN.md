@@ -209,7 +209,16 @@ shift shade between the two.
 
 **Nav** — sticky, `backdrop-filter: blur(12px)`, background at 80% alpha,
 bottom hairline that fades in only once the page has scrolled past 8px. At rest
-the header floats on the page ground with no rule at all.
+the header floats on the page ground with no rule at all. One component
+(`SiteHeader`) serves every page, labelled from the page's dictionary. Below
+960px the section links drop out; **Help** and the demo CTA stay, because
+scrolling never reaches another page. No hamburger drawer.
+
+**Help centre** (`/help`) — guides as cards with numbered steps whose counters
+wear the icon-chip tint; on-screen words as `.ui-label` chips; troubleshooting
+as disclosures. Copy lives in `app/help/content.ts` in all three languages, with
+UI words copied from the app's own `.arb` translations. A guide shows a figure
+only when a REAL capture exists — never a placeholder.
 
 **Focus** — `2px solid --accent`, `outline-offset: 2px`. Never removed.
 
@@ -312,7 +321,8 @@ Per the animation decision framework: **most things should not animate.**
 - No gradient text on headings.
 - No autoplaying video or parallax.
 - No cookie banner theatre — the site sets no cookies. (`localStorage` holds
-  the chosen accent and nothing else; it never leaves the browser.)
+  the chosen accent, `sessionStorage` the chosen language for the tab, and
+  nothing else; neither ever leaves the browser.)
 - Don't animate anything a visitor sees on every scroll.
 - No icon library, no icon font, no emoji standing in for an icon.
 - **Never hardcode an accent hex in a component.** Everything reads the tokens,

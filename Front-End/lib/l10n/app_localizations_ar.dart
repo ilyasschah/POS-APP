@@ -688,6 +688,30 @@ class AppLocalizationsAr extends AppLocalizations {
   String get selectDocumentType => 'اختر نوع المستند';
 
   @override
+  String get documentTypePickerHint =>
+      'يحدد النوع طريقة ترقيم المستند وما إذا كان يحرك المخزون.';
+
+  @override
+  String get documentTypePickerStockIn => 'يضيف إلى المخزون';
+
+  @override
+  String get documentTypePickerStockOut => 'يخصم من المخزون';
+
+  @override
+  String get documentTypePickerNoStock => 'بدون حركة مخزون';
+
+  @override
+  String get documentTypePickerConfirm => 'استخدام هذا النوع';
+
+  @override
+  String get documentTypePickerCategoryEmpty =>
+      'لا توجد أنواع مستندات في هذه الفئة.';
+
+  @override
+  String get documentTypePickerNoneYet =>
+      'لا توجد أنواع مستندات على هذا الجهاز بعد. قم بالمزامنة مع الخادم لتنزيلها.';
+
+  @override
   String get selectReport => 'اختر تقريراً';
 
   @override
@@ -8016,6 +8040,55 @@ class AppLocalizationsAr extends AppLocalizations {
   String taxInUseByDocuments(String name) {
     return 'لا يمكن حذف «$name» — فهي مستخدمة في مبيعات أو مستندات موجودة يجب أن تحتفظ بالضريبة التي صدرت بها. عطّلها بدلًا من ذلك.';
   }
+
+  @override
+  String get importReadingFile => 'جارٍ قراءة الملف…';
+
+  @override
+  String importSavingProgress(int done, int total) {
+    return 'جارٍ الحفظ على هذا الجهاز: $done من $total';
+  }
+
+  @override
+  String importSavedLocallyNote(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'يُرسَل $count منتجًا',
+      one: 'يُرسَل منتج واحد',
+    );
+    return 'تم الحفظ على هذا الجهاز وهو جاهز للاستخدام. $_temp0 إلى الخادم في الخلفية — ويستمر الإرسال بعد إعادة التشغيل أو انقطاع الاتصال.';
+  }
+
+  @override
+  String get importNothingNewToSync =>
+      'تم الحفظ على هذا الجهاز. لا جديد لإرساله إلى الخادم.';
+
+  @override
+  String importSyncSending(int sent, int total) {
+    return 'جارٍ الإرسال إلى الخادم: $sent من $total منتج';
+  }
+
+  @override
+  String importSyncWaiting(String message) {
+    return 'في انتظار الخادم — سيُستأنف الإرسال تلقائيًا. آخر خطأ: $message';
+  }
+
+  @override
+  String importSyncComplete(int count) {
+    return 'آخر استيراد: $count منتج على الخادم';
+  }
+
+  @override
+  String importSyncRefused(int count) {
+    return 'رفض الخادم $count';
+  }
+
+  @override
+  String get importSyncRefusedTitle => 'رفضها الخادم';
+
+  @override
+  String get importSyncDetails => 'التفاصيل';
 
   @override
   String taxesNotDeletedInUse(int count, String names) {

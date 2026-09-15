@@ -1565,6 +1565,71 @@ class ProductTaxesTable extends Table {
   Set<Column> get primaryKey => {productId, taxId};
 }
 
+// ============================================================================
+// CATALOG IMPORT OUTBOX (schema v70) — an XML product import lands in the local
+// catalogue first and reaches the server afterwards, in batches, from the sync's
+// push phase (`lib/sync/catalog_import_sync.dart`).
+//
+// 🚨 Why it exists: the import used to POST every row in ONE request, and the
+// server imports row by row — a 5,000-product file ran far past the client's
+// receive timeout ("Server took too long to respond") and nothing was saved
+// locally either. Rows now wait here until the server acknowledges them, so an
+// offline till, a failed batch or an app restart only delays the upload.
+// ============================================================================
+
+class CatalogImportJobsTable extends Table {
+  @override
+  String get tableName => 'catalog_import_jobs';
+
+  TextColumn get id => text()(); // UUID
+  IntColumn get companyId => integer()();
+  TextColumn get fileName => text().nullable()();
+  BoolColumn get mergeDuplicates => boolean()();
+  // The file's group skeleton (colour, rank, parent) for /ProductGroups/ImportBulk,
+  // sent once before the product rows.
+  TextColumn get groupsJson => text().withDefault(const Constant('[]'))();
+  BoolColumn get groupsSent => boolean().withDefault(const Constant(false))();
+  // 'importing' (still being written locally) → 'pending' → 'completed'
+  TextColumn get status => text().withDefault(const Constant('importing'))();
+  IntColumn get totalRows => integer().withDefault(const Constant(0))();
+  // Failed upload attempts, and the last reason — shown on the import screen.
+  IntColumn get attempts => integer().withDefault(const Constant(0))();
+  TextColumn get lastError => text().nullable()();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get completedAt => dateTime().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+@TableIndex(name: 'idx_catalog_import_rows_status', columns: {#companyId, #status})
+@TableIndex(name: 'idx_catalog_import_rows_product', columns: {#localProductId})
+class CatalogImportRowsTable extends Table {
+  @override
+  String get tableName => 'catalog_import_rows';
+
+  TextColumn get jobId => text()();
+  IntColumn get rowIndex => integer()();
+  IntColumn get companyId => integer()();
+  // Lower-cased trimmed name — the key the server matches products on, and the
+  // one a repeated import is de-duplicated by.
+  TextColumn get nameKey => text()();
+  // The local product the row wrote: a temp (negative) id until the server
+  // acknowledges the row, then the real one (remapProductId keeps it current).
+  IntColumn get localProductId => integer().nullable()();
+  // One /Products/ImportBulk row, as JSON.
+  TextColumn get payload => text()();
+  // 'pending' | 'done' | 'failed' | 'cancelled'
+  TextColumn get status => text().withDefault(const Constant('pending'))();
+  // The server's word on the row: created | updated | skipped | ignored | error.
+  // NULL on a 'done' row means an older API that reports no per-row outcome.
+  TextColumn get outcome => text().nullable()();
+  TextColumn get message => text().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {jobId, rowIndex};
+}
+
 // Void reasons — pull-only master data so the void dialog (during checkout)
 // and the admin list work offline.
 class VoidReasonsTable extends Table {
@@ -1806,6 +1871,8 @@ class ZReportPaymentSummariesTable extends Table {
     StockControlsTable,
     ProductTaxesTable,
     DiscountLinesTable,
+    CatalogImportJobsTable,
+    CatalogImportRowsTable,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -1821,7 +1888,7 @@ class AppDatabase extends _$AppDatabase {
   /// Restore validation needs it before Drift is touched: a backup whose
   /// `user_version` is higher came from a newer build, and Drift migrates
   /// forward only, so opening it here would corrupt it.
-  static const int expectedSchemaVersion = 69;
+  static const int expectedSchemaVersion = 70;
 
   @override
   int get schemaVersion => expectedSchemaVersion;
@@ -2759,6 +2826,19 @@ class AppDatabase extends _$AppDatabase {
                 'CREATE INDEX IF NOT EXISTS idx_document_items_product_id'
                 ' ON document_items (product_id)');
           }
+
+          // v70: the catalog import outbox. Two new tables — nothing existing
+          // is touched, so nothing is backfilled.
+          if (from < 70) {
+            await m.createTable(catalogImportJobsTable);
+            await m.createTable(catalogImportRowsTable);
+            await customStatement(
+                'CREATE INDEX IF NOT EXISTS idx_catalog_import_rows_status'
+                ' ON catalog_import_rows (company_id, status)');
+            await customStatement(
+                'CREATE INDEX IF NOT EXISTS idx_catalog_import_rows_product'
+                ' ON catalog_import_rows (local_product_id)');
+          }
         },
         beforeOpen: (details) async {
           // Enforce FK constraints (off by default in SQLite).
@@ -3539,9 +3619,12 @@ class AppDatabase extends _$AppDatabase {
   /// delete is pushed.
   ///
   /// The server's rule for deleting a line (`DocumentItemService.
-  /// ReverseStockAsync`): a Purchase takes back what it received; a Stock
-  /// Return and a Loss & Damage put back what they removed. Any other type is
-  /// left alone — deleting a sale's document does not restock it, here or there.
+  /// ReverseStockAsync`): the move the line made, the other way. The type's
+  /// `stockDirection` says which way (1 in, 2 out, 0 none) and an inventory
+  /// count moved only its variance (counted − expected). A POS document — one
+  /// with an order number — is left alone: checkout, refund and void move its
+  /// stock, never its lines, here or there. A type this till has not pulled
+  /// yet gives nothing back; the pull that brings it brings the server's figure.
   ///
   /// 🚨 Only lines the SERVER holds (a `serverId`). The server applies a line's
   /// stock when the line reaches it, and this till's stock only learns of it
@@ -3556,12 +3639,18 @@ class AppDatabase extends _$AppDatabase {
   /// which this already equals; in the rare window where a line was pushed but
   /// its stock not pulled yet, that same pull is what corrects it.
   Future<void> _reverseDocumentStock(DocumentsTableData doc) async {
-    final direction = switch (doc.documentTypeId) {
-      DocumentTypes.purchase => -1.0,
-      DocumentTypes.stockReturn || DocumentTypes.lossAndDamage => 1.0,
+    if (doc.orderNumber != null && doc.orderNumber!.isNotEmpty) return;
+
+    final type = await (select(documentTypesTable)
+          ..where((t) => t.id.equals(doc.documentTypeId))
+          ..limit(1))
+        .getSingleOrNull();
+    final sign = switch (type?.stockDirection) {
+      StockDirections.intoStock => 1.0,
+      StockDirections.outOfStock => -1.0,
       _ => 0.0,
     };
-    if (direction == 0) return;
+    if (sign == 0) return;
 
     final lines = await (select(documentItemsTable)
           ..where((t) => t.documentId.equals(doc.localId))
@@ -3577,6 +3666,17 @@ class AppDatabase extends _$AppDatabase {
     };
 
     for (final line in lines) {
+      // What the line moved when the server took it: its quantity — or, on a
+      // count, its variance. The push sends `expectedQuantity ?? quantity`, so
+      // a count line that recorded no expected stock moved nothing. A line's
+      // sign is not a direction: a refund rung up here stores its lines
+      // negative while the server holds them positive (see StockMoveMatrix).
+      final moved = doc.documentTypeId == DocumentTypes.inventoryCount
+          ? snapToStorage(
+              line.quantity - (line.expectedQuantity ?? line.quantity))
+          : line.quantity.abs();
+      if (moved == 0) continue;
+
       final stock = await (select(stocksTable)
             ..where((t) => t.productId.equals(line.productId))
             ..where((t) => t.warehouseId.equals(doc.warehouseId))
@@ -3588,11 +3688,11 @@ class AppDatabase extends _$AppDatabase {
       if (stock == null) continue;
 
       // A line is counted in the product's unit, stock in the reference unit —
-      // the same conversion the server's AdjustStockAsync makes.
+      // the same conversion the server's AdjustStockAsync makes. Reversed: the
+      // opposite of the move the line made.
       final product = products[line.productId];
-      final delta = direction *
-          uomToReference(line.quantity, product?.uomId,
-              packSize: product?.packSize);
+      final delta = -sign *
+          uomToReference(moved, product?.uomId, packSize: product?.packSize);
       await (update(stocksTable)..where((t) => t.id.equals(stock.id))).write(
         StocksTableCompanion(
           quantity: Value(snapToStorage(stock.quantity + delta)),
@@ -3868,6 +3968,8 @@ class AppDatabase extends _$AppDatabase {
         d.local_id           AS document_local_id,
         d.number             AS document_number,
         d.document_type_id   AS document_type_id,
+        dt.stock_direction   AS stock_direction,
+        dt.document_category_id AS document_category_id,
         COALESCE(d.stock_date, d.date) AS move_date,
         di.product_id        AS product_id,
         p.name               AS product_name,
@@ -3888,8 +3990,9 @@ class AppDatabase extends _$AppDatabase {
       LEFT JOIN products p ON p.id = di.product_id
       LEFT JOIN warehouses w ON w.id = d.warehouse_id
       LEFT JOIN users u ON u.id = d.user_id
+      LEFT JOIN document_types dt ON dt.id = d.document_type_id
       WHERE d.company_id = ?
-        AND d.document_type_id IN (${StockMoveMatrix.movingDocumentTypes.join(', ')})
+        AND dt.stock_direction IN (${StockDirections.intoStock}, ${StockDirections.outOfStock})
         AND d.sync_status <> 'pending_delete'
         AND di.sync_status <> 'pending_delete'
         AND COALESCE(p.is_service, 0) = 0
@@ -3905,6 +4008,7 @@ class AppDatabase extends _$AppDatabase {
         warehousesTable,
         usersTable,
         barcodesTable,
+        documentTypesTable,
       },
     );
   }
@@ -3914,8 +4018,12 @@ class AppDatabase extends _$AppDatabase {
     // Drift hands a stored instant back in local time; the history carries UTC.
     final date = row.read<DateTime>('move_date').toUtc();
     final documentTypeId = row.read<int>('document_type_id');
+    // Which way, and to where, is the TYPE's to say — its direction and its
+    // category as the server defines them — never a list of type ids here.
     final route = StockMoveMatrix.resolve(
       documentTypeId: documentTypeId,
+      stockDirection: row.read<int>('stock_direction'),
+      documentCategoryId: row.readNullable<int>('document_category_id'),
       quantity: row.read<double>('quantity'),
       expectedQuantity: row.readNullable<double>('expected_quantity'),
       date: date,
@@ -5440,39 +5548,65 @@ class AppDatabase extends _$AppDatabase {
   /// Cascades a product's temp→real id swap to every product-keyed local table
   /// so offline-created taxes / stock rules / barcodes / stock rows push with
   /// the real product id. Called inside pushPendingProductOps' create swap.
-  Future<void> remapProductId(int tempId, int realId) async {
-    await (update(barcodesTable)..where((t) => t.productId.equals(tempId)))
-        .write(BarcodesTableCompanion(productId: Value(realId)));
-    await (update(productTaxesTable)..where((t) => t.productId.equals(tempId)))
-        .write(ProductTaxesTableCompanion(productId: Value(realId)));
-    await (update(stockControlsTable)..where((t) => t.productId.equals(tempId)))
-        .write(StockControlsTableCompanion(productId: Value(realId)));
-    await (update(stocksTable)..where((t) => t.productId.equals(tempId)))
-        .write(StocksTableCompanion(productId: Value(realId)));
+  Future<void> remapProductId(int tempId, int realId) =>
+      remapProductIds({tempId: realId});
+
+  /// [remapProductId] for many products at once: one UPDATE per table per slice
+  /// instead of one per product per table. The XML import's upload swaps up to
+  /// 250 temp ids per acknowledged batch, and several of these columns carry no
+  /// index — per product, that was 250 scans of `pos_order_items` a batch.
+  Future<void> remapProductIds(Map<int, int> tempToReal) async {
+    final pairs = [
+      for (final e in tempToReal.entries)
+        if (e.key != e.value) e,
+    ];
+    // Slices keep the statement well under SQLite's bound-variable limit.
+    for (var start = 0; start < pairs.length; start += 400) {
+      final end = start + 400 < pairs.length ? start + 400 : pairs.length;
+      await _remapProductIdSlice(Map.fromEntries(pairs.sublist(start, end)));
+    }
+  }
+
+  Future<void> _remapProductIdSlice(Map<int, int> ids) async {
+    Future<void> remap(TableInfo<Table, dynamic> table, String column) =>
+        customUpdate(
+          'UPDATE ${table.actualTableName} SET $column = CASE $column '
+          '${List.filled(ids.length, 'WHEN ? THEN ?').join(' ')} END '
+          'WHERE $column IN (${List.filled(ids.length, '?').join(', ')})',
+          variables: [
+            for (final e in ids.entries) ...[
+              Variable.withInt(e.key),
+              Variable.withInt(e.value),
+            ],
+            for (final id in ids.keys) Variable.withInt(id),
+          ],
+          updates: {table},
+          updateKind: UpdateKind.update,
+        );
+
+    await remap(barcodesTable, 'product_id');
+    await remap(productTaxesTable, 'product_id');
+    await remap(stockControlsTable, 'product_id');
+    await remap(stocksTable, 'product_id');
     // Modifier groups attached to an offline product. /Modifiers/SetProductGroups
     // sends the productId, so a link still pointing at the temp id would 400 —
     // and the till's own lookup (modifierGroupsForProductDirect) keys on
     // productId too, so the customise sheet would stop opening for the product
     // the moment it got its real id.
-    await (update(productModifierGroupsTable)
-          ..where((t) => t.productId.equals(tempId)))
-        .write(ProductModifierGroupsTableCompanion(productId: Value(realId)));
+    await remap(productModifierGroupsTable, 'product_id');
     // Promotion built offline that targets an offline product: /Promotions/Add
     // sends items[].productId, so repoint it before pushPendingPromotionOps.
-    await (update(promotionItemsTable)
-          ..where((t) => t.productId.equals(tempId)))
-        .write(PromotionItemsTableCompanion(productId: Value(realId)));
+    await remap(promotionItemsTable, 'product_id');
     // Queued stock move/reassign whose newProductId is an offline product.
-    await (update(pendingStockOpsTable)
-          ..where((t) => t.productId.equals(tempId)))
-        .write(PendingStockOpsTableCompanion(productId: Value(realId)));
+    await remap(pendingStockOpsTable, 'product_id');
     // Transactional references: an offline product sold/added in an offline
     // order or document must repoint at the real id, otherwise BatchSync /
     // document push 400s on a productId the server never saw.
-    await (update(posOrderItemsTable)..where((t) => t.productId.equals(tempId)))
-        .write(PosOrderItemsTableCompanion(productId: Value(realId)));
-    await (update(documentItemsTable)..where((t) => t.productId.equals(tempId)))
-        .write(DocumentItemsTableCompanion(productId: Value(realId)));
+    await remap(posOrderItemsTable, 'product_id');
+    await remap(documentItemsTable, 'product_id');
+    // An XML import row still waiting for the server follows its product, so
+    // the upload never mistakes a product pushed on its own for a deleted one.
+    await remap(catalogImportRowsTable, 'local_product_id');
 
     // Queued offline voids store their items as a JSON blob, so a column UPDATE
     // can't reach the temp productId inside. Rewrite each pending blob in place
@@ -5485,8 +5619,8 @@ class AppDatabase extends _$AppDatabase {
       if (decoded is! List) continue;
       var changed = false;
       for (final item in decoded) {
-        if (item is Map && item['productId'] == tempId) {
-          item['productId'] = realId;
+        if (item is Map && ids.containsKey(item['productId'])) {
+          item['productId'] = ids[item['productId']];
           changed = true;
         }
       }
@@ -5514,6 +5648,10 @@ class AppDatabase extends _$AppDatabase {
     await (update(productsTable)
           ..where((t) => t.productGroupId.equals(tempId)))
         .write(ProductsTableCompanion(productGroupId: Value(realId)));
+    // A sub-group created offline under it (an imported tree is several deep).
+    await (update(productGroupsTable)
+          ..where((t) => t.parentGroupId.equals(tempId)))
+        .write(ProductGroupsTableCompanion(parentGroupId: Value(realId)));
   }
 
   // ─── Offline document numbering ────────────────────────────────────────────

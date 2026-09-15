@@ -7,7 +7,9 @@ using Api.Models;
 using Api.Queries.ProductGroupsQuery;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using System.Diagnostics;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Api.Tests;
 
@@ -37,9 +39,11 @@ public class CatalogImportTests : IDisposable
     private readonly SqliteConnection _connection;
     private readonly DbContextOptions<AppDbContext> _options;
     private readonly int _company;
+    private readonly ITestOutputHelper _output;
 
-    public CatalogImportTests()
+    public CatalogImportTests(ITestOutputHelper output)
     {
+        _output = output;
         _connection = new SqliteConnection("DataSource=:memory:");
         _connection.Open();
         _options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
@@ -709,5 +713,116 @@ public class CatalogImportTests : IDisposable
         Assert.Equal("Hot", parents["Tea"]);
         using var read = Db();
         Assert.Equal("#0000FF", read.ProductGroups.Single(g => g.Name == "Drinks").Color);
+    }
+
+    // ═══ Batched, resumable upload (the POS's local-first XML import) ═══════
+    //
+    // The POS used to POST a whole XML file in one request and a 5,000-product
+    // file timed out. It now imports locally and uploads in batches, resending a
+    // batch whose response it lost — which only works if every row says where it
+    // landed, and a resend never creates anything twice.
+
+    [Fact]
+    public async Task Every_row_reports_its_outcome_and_the_product_it_landed_on()
+    {
+        await ImportProducts(new ImportProductRow { Name = "Cola" });
+
+        var result = await ImportProducts(merge: false, skip: true,
+            new ImportProductRow { Name = "Tea" },
+            new ImportProductRow { Name = "  " },
+            new ImportProductRow { Name = "cola" },
+            new ImportProductRow { Name = "Bad", Code = new string('x', 101) });
+
+        using var db = Db();
+        var ids = db.Products.AsNoTracking().ToDictionary(p => p.Name, p => p.Id);
+        Assert.Equal([0, 1, 2, 3], result.Rows.Select(r => r.Index));
+        Assert.Equal(["created", "ignored", "skipped", "error"], result.Rows.Select(r => r.Outcome));
+        Assert.Equal(ids["Tea"], result.Rows[0].ProductId);
+        Assert.Null(result.Rows[1].ProductId);
+        Assert.Equal(ids["Cola"], result.Rows[2].ProductId);
+        Assert.Null(result.Rows[3].ProductId);
+        Assert.Contains("SKU", result.Rows[3].Message);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task A_batch_sent_twice_creates_nothing_twice(bool merge)
+    {
+        ImportProductRow[] Batch() =>
+        [
+            new() { Name = "Tea", ProductGroupPath = ["Drinks", "Hot"], Barcodes = ["111"], TaxRate = null },
+            new() { Name = "Cola", ProductGroupPath = ["Drinks", "Cold"], Barcodes = ["222"] },
+            new() { Name = "Water", Barcodes = ["333"] },
+        ];
+
+        var first = await ImportProducts(merge, skip: !merge, Batch());
+        // The response was lost: the client cannot know the batch landed, so it sends it again.
+        var second = await ImportProducts(merge, skip: !merge, Batch());
+
+        Assert.Equal(3, first.Created);
+        Assert.Equal(0, second.Created);
+        Assert.Equal(merge ? 3 : 0, second.Updated);
+        Assert.Equal(merge ? 0 : 3, second.Skipped);
+        Assert.Empty(second.Warnings);
+        Assert.Equal(first.Rows.Select(r => r.ProductId), second.Rows.Select(r => r.ProductId));
+
+        using var db = Db();
+        Assert.Equal(3, db.Products.Count());
+        Assert.Equal(3, db.Barcodes.Count());
+        Assert.Equal(3, db.ProductGroups.Count()); // Drinks, Hot, Cold
+    }
+
+    [Fact]
+    public async Task A_group_import_reports_the_id_of_every_group_it_names()
+    {
+        AddGroup("Food");
+
+        // Food is skipped, Hot created, and Drinks created because Hot names it.
+        var result = await ImportGroups(merge: false, skip: true, G("Food"), G("Hot", parent: "Drinks"));
+
+        using var db = Db();
+        var ids = db.ProductGroups.AsNoTracking().ToDictionary(g => g.Name, g => g.Id);
+        Assert.Equal(
+            ids.OrderBy(kv => kv.Key),
+            result.Groups.ToDictionary(g => g.Name, g => g.Id).OrderBy(kv => kv.Key));
+        Assert.Equal(ids["Drinks"], result.Groups.Single(g => g.Name == "Hot").ParentGroupId);
+    }
+
+    [Fact]
+    public async Task Five_thousand_products_import_in_batches_without_a_duplicate()
+    {
+        const int total = 5000, batchSize = 250;
+        var rows = Enumerable.Range(0, total).Select(i => new ImportProductRow
+        {
+            Name = $"Product {i:D5}",
+            ProductGroupPath = ["Catalogue", $"Group {i % 50:D2}"],
+            Barcodes = [$"20{i:D11}"],
+            Price = 10 + i % 7,
+        }).ToList();
+
+        var clock = Stopwatch.StartNew();
+        var slowest = TimeSpan.Zero;
+        for (var start = 0; start < total; start += batchSize)
+        {
+            var batch = Stopwatch.StartNew();
+            var result = await ImportProducts(merge: true, skip: false, rows.Skip(start).Take(batchSize).ToArray());
+            if (batch.Elapsed > slowest) slowest = batch.Elapsed;
+            Assert.Equal(batchSize, result.Created);
+            Assert.Empty(result.Errors);
+        }
+        var elapsed = clock.Elapsed;
+
+        // One batch resent mid-way, as after a response lost to a dropped connection.
+        var resent = await ImportProducts(merge: true, skip: false, rows.Skip(2500).Take(batchSize).ToArray());
+
+        _output.WriteLine(
+            $"{total} products in {total / batchSize} batches of {batchSize} (SQLite in-memory): " +
+            $"{elapsed.TotalSeconds:F1}s total, slowest batch {slowest.TotalMilliseconds:F0}ms");
+        Assert.Equal(batchSize, resent.Updated);
+        using var db = Db();
+        Assert.Equal(total, db.Products.Count());
+        Assert.Equal(total, db.Barcodes.Count());
+        Assert.Equal(51, db.ProductGroups.Count());
     }
 }

@@ -195,6 +195,30 @@ namespace Api.Models
         /// does not have. These used to vanish without a word.
         /// </summary>
         public List<string> Warnings { get; set; } = [];
+
+        /// <summary>
+        /// What happened to each row, by its position in the request. Lets a
+        /// client that sends a large import in batches know exactly which rows
+        /// landed and under which product id — including a batch it resends after
+        /// losing the first response, where the rows come back "updated" or
+        /// "skipped" with the id the first attempt created.
+        /// </summary>
+        public List<ImportProductRowResult> Rows { get; set; } = [];
+    }
+
+    public class ImportProductRowResult
+    {
+        /// <summary>0-based position in <see cref="ImportProductsRequest.Rows"/>.</summary>
+        public int Index { get; set; }
+
+        /// <summary>created | updated | skipped | error | ignored (a row with no name).</summary>
+        public string Outcome { get; set; } = "";
+
+        /// <summary>The product the row created, updated or was skipped for.</summary>
+        public int? ProductId { get; set; }
+
+        /// <summary>Why the row failed, or what it lost (warnings), if anything.</summary>
+        public string? Message { get; set; }
     }
 
     public class CreateProductRequest

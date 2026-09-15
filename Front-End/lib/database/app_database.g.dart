@@ -39613,6 +39613,1304 @@ class DiscountLinesTableCompanion
   }
 }
 
+class $CatalogImportJobsTableTable extends CatalogImportJobsTable
+    with TableInfo<$CatalogImportJobsTableTable, CatalogImportJobsTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CatalogImportJobsTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _companyIdMeta = const VerificationMeta(
+    'companyId',
+  );
+  @override
+  late final GeneratedColumn<int> companyId = GeneratedColumn<int>(
+    'company_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _fileNameMeta = const VerificationMeta(
+    'fileName',
+  );
+  @override
+  late final GeneratedColumn<String> fileName = GeneratedColumn<String>(
+    'file_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _mergeDuplicatesMeta = const VerificationMeta(
+    'mergeDuplicates',
+  );
+  @override
+  late final GeneratedColumn<bool> mergeDuplicates = GeneratedColumn<bool>(
+    'merge_duplicates',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("merge_duplicates" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _groupsJsonMeta = const VerificationMeta(
+    'groupsJson',
+  );
+  @override
+  late final GeneratedColumn<String> groupsJson = GeneratedColumn<String>(
+    'groups_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('[]'),
+  );
+  static const VerificationMeta _groupsSentMeta = const VerificationMeta(
+    'groupsSent',
+  );
+  @override
+  late final GeneratedColumn<bool> groupsSent = GeneratedColumn<bool>(
+    'groups_sent',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("groups_sent" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('importing'),
+  );
+  static const VerificationMeta _totalRowsMeta = const VerificationMeta(
+    'totalRows',
+  );
+  @override
+  late final GeneratedColumn<int> totalRows = GeneratedColumn<int>(
+    'total_rows',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _attemptsMeta = const VerificationMeta(
+    'attempts',
+  );
+  @override
+  late final GeneratedColumn<int> attempts = GeneratedColumn<int>(
+    'attempts',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _lastErrorMeta = const VerificationMeta(
+    'lastError',
+  );
+  @override
+  late final GeneratedColumn<String> lastError = GeneratedColumn<String>(
+    'last_error',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _completedAtMeta = const VerificationMeta(
+    'completedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> completedAt = GeneratedColumn<DateTime>(
+    'completed_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    companyId,
+    fileName,
+    mergeDuplicates,
+    groupsJson,
+    groupsSent,
+    status,
+    totalRows,
+    attempts,
+    lastError,
+    createdAt,
+    completedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'catalog_import_jobs';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<CatalogImportJobsTableData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('company_id')) {
+      context.handle(
+        _companyIdMeta,
+        companyId.isAcceptableOrUnknown(data['company_id']!, _companyIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_companyIdMeta);
+    }
+    if (data.containsKey('file_name')) {
+      context.handle(
+        _fileNameMeta,
+        fileName.isAcceptableOrUnknown(data['file_name']!, _fileNameMeta),
+      );
+    }
+    if (data.containsKey('merge_duplicates')) {
+      context.handle(
+        _mergeDuplicatesMeta,
+        mergeDuplicates.isAcceptableOrUnknown(
+          data['merge_duplicates']!,
+          _mergeDuplicatesMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_mergeDuplicatesMeta);
+    }
+    if (data.containsKey('groups_json')) {
+      context.handle(
+        _groupsJsonMeta,
+        groupsJson.isAcceptableOrUnknown(data['groups_json']!, _groupsJsonMeta),
+      );
+    }
+    if (data.containsKey('groups_sent')) {
+      context.handle(
+        _groupsSentMeta,
+        groupsSent.isAcceptableOrUnknown(data['groups_sent']!, _groupsSentMeta),
+      );
+    }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    }
+    if (data.containsKey('total_rows')) {
+      context.handle(
+        _totalRowsMeta,
+        totalRows.isAcceptableOrUnknown(data['total_rows']!, _totalRowsMeta),
+      );
+    }
+    if (data.containsKey('attempts')) {
+      context.handle(
+        _attemptsMeta,
+        attempts.isAcceptableOrUnknown(data['attempts']!, _attemptsMeta),
+      );
+    }
+    if (data.containsKey('last_error')) {
+      context.handle(
+        _lastErrorMeta,
+        lastError.isAcceptableOrUnknown(data['last_error']!, _lastErrorMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('completed_at')) {
+      context.handle(
+        _completedAtMeta,
+        completedAt.isAcceptableOrUnknown(
+          data['completed_at']!,
+          _completedAtMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  CatalogImportJobsTableData map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CatalogImportJobsTableData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      companyId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}company_id'],
+      )!,
+      fileName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}file_name'],
+      ),
+      mergeDuplicates: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}merge_duplicates'],
+      )!,
+      groupsJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}groups_json'],
+      )!,
+      groupsSent: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}groups_sent'],
+      )!,
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      )!,
+      totalRows: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}total_rows'],
+      )!,
+      attempts: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}attempts'],
+      )!,
+      lastError: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}last_error'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      completedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}completed_at'],
+      ),
+    );
+  }
+
+  @override
+  $CatalogImportJobsTableTable createAlias(String alias) {
+    return $CatalogImportJobsTableTable(attachedDatabase, alias);
+  }
+}
+
+class CatalogImportJobsTableData extends DataClass
+    implements Insertable<CatalogImportJobsTableData> {
+  final String id;
+  final int companyId;
+  final String? fileName;
+  final bool mergeDuplicates;
+  final String groupsJson;
+  final bool groupsSent;
+  final String status;
+  final int totalRows;
+  final int attempts;
+  final String? lastError;
+  final DateTime createdAt;
+  final DateTime? completedAt;
+  const CatalogImportJobsTableData({
+    required this.id,
+    required this.companyId,
+    this.fileName,
+    required this.mergeDuplicates,
+    required this.groupsJson,
+    required this.groupsSent,
+    required this.status,
+    required this.totalRows,
+    required this.attempts,
+    this.lastError,
+    required this.createdAt,
+    this.completedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['company_id'] = Variable<int>(companyId);
+    if (!nullToAbsent || fileName != null) {
+      map['file_name'] = Variable<String>(fileName);
+    }
+    map['merge_duplicates'] = Variable<bool>(mergeDuplicates);
+    map['groups_json'] = Variable<String>(groupsJson);
+    map['groups_sent'] = Variable<bool>(groupsSent);
+    map['status'] = Variable<String>(status);
+    map['total_rows'] = Variable<int>(totalRows);
+    map['attempts'] = Variable<int>(attempts);
+    if (!nullToAbsent || lastError != null) {
+      map['last_error'] = Variable<String>(lastError);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    if (!nullToAbsent || completedAt != null) {
+      map['completed_at'] = Variable<DateTime>(completedAt);
+    }
+    return map;
+  }
+
+  CatalogImportJobsTableCompanion toCompanion(bool nullToAbsent) {
+    return CatalogImportJobsTableCompanion(
+      id: Value(id),
+      companyId: Value(companyId),
+      fileName: fileName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(fileName),
+      mergeDuplicates: Value(mergeDuplicates),
+      groupsJson: Value(groupsJson),
+      groupsSent: Value(groupsSent),
+      status: Value(status),
+      totalRows: Value(totalRows),
+      attempts: Value(attempts),
+      lastError: lastError == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastError),
+      createdAt: Value(createdAt),
+      completedAt: completedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(completedAt),
+    );
+  }
+
+  factory CatalogImportJobsTableData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CatalogImportJobsTableData(
+      id: serializer.fromJson<String>(json['id']),
+      companyId: serializer.fromJson<int>(json['companyId']),
+      fileName: serializer.fromJson<String?>(json['fileName']),
+      mergeDuplicates: serializer.fromJson<bool>(json['mergeDuplicates']),
+      groupsJson: serializer.fromJson<String>(json['groupsJson']),
+      groupsSent: serializer.fromJson<bool>(json['groupsSent']),
+      status: serializer.fromJson<String>(json['status']),
+      totalRows: serializer.fromJson<int>(json['totalRows']),
+      attempts: serializer.fromJson<int>(json['attempts']),
+      lastError: serializer.fromJson<String?>(json['lastError']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      completedAt: serializer.fromJson<DateTime?>(json['completedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'companyId': serializer.toJson<int>(companyId),
+      'fileName': serializer.toJson<String?>(fileName),
+      'mergeDuplicates': serializer.toJson<bool>(mergeDuplicates),
+      'groupsJson': serializer.toJson<String>(groupsJson),
+      'groupsSent': serializer.toJson<bool>(groupsSent),
+      'status': serializer.toJson<String>(status),
+      'totalRows': serializer.toJson<int>(totalRows),
+      'attempts': serializer.toJson<int>(attempts),
+      'lastError': serializer.toJson<String?>(lastError),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'completedAt': serializer.toJson<DateTime?>(completedAt),
+    };
+  }
+
+  CatalogImportJobsTableData copyWith({
+    String? id,
+    int? companyId,
+    Value<String?> fileName = const Value.absent(),
+    bool? mergeDuplicates,
+    String? groupsJson,
+    bool? groupsSent,
+    String? status,
+    int? totalRows,
+    int? attempts,
+    Value<String?> lastError = const Value.absent(),
+    DateTime? createdAt,
+    Value<DateTime?> completedAt = const Value.absent(),
+  }) => CatalogImportJobsTableData(
+    id: id ?? this.id,
+    companyId: companyId ?? this.companyId,
+    fileName: fileName.present ? fileName.value : this.fileName,
+    mergeDuplicates: mergeDuplicates ?? this.mergeDuplicates,
+    groupsJson: groupsJson ?? this.groupsJson,
+    groupsSent: groupsSent ?? this.groupsSent,
+    status: status ?? this.status,
+    totalRows: totalRows ?? this.totalRows,
+    attempts: attempts ?? this.attempts,
+    lastError: lastError.present ? lastError.value : this.lastError,
+    createdAt: createdAt ?? this.createdAt,
+    completedAt: completedAt.present ? completedAt.value : this.completedAt,
+  );
+  CatalogImportJobsTableData copyWithCompanion(
+    CatalogImportJobsTableCompanion data,
+  ) {
+    return CatalogImportJobsTableData(
+      id: data.id.present ? data.id.value : this.id,
+      companyId: data.companyId.present ? data.companyId.value : this.companyId,
+      fileName: data.fileName.present ? data.fileName.value : this.fileName,
+      mergeDuplicates: data.mergeDuplicates.present
+          ? data.mergeDuplicates.value
+          : this.mergeDuplicates,
+      groupsJson: data.groupsJson.present
+          ? data.groupsJson.value
+          : this.groupsJson,
+      groupsSent: data.groupsSent.present
+          ? data.groupsSent.value
+          : this.groupsSent,
+      status: data.status.present ? data.status.value : this.status,
+      totalRows: data.totalRows.present ? data.totalRows.value : this.totalRows,
+      attempts: data.attempts.present ? data.attempts.value : this.attempts,
+      lastError: data.lastError.present ? data.lastError.value : this.lastError,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      completedAt: data.completedAt.present
+          ? data.completedAt.value
+          : this.completedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CatalogImportJobsTableData(')
+          ..write('id: $id, ')
+          ..write('companyId: $companyId, ')
+          ..write('fileName: $fileName, ')
+          ..write('mergeDuplicates: $mergeDuplicates, ')
+          ..write('groupsJson: $groupsJson, ')
+          ..write('groupsSent: $groupsSent, ')
+          ..write('status: $status, ')
+          ..write('totalRows: $totalRows, ')
+          ..write('attempts: $attempts, ')
+          ..write('lastError: $lastError, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('completedAt: $completedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    companyId,
+    fileName,
+    mergeDuplicates,
+    groupsJson,
+    groupsSent,
+    status,
+    totalRows,
+    attempts,
+    lastError,
+    createdAt,
+    completedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CatalogImportJobsTableData &&
+          other.id == this.id &&
+          other.companyId == this.companyId &&
+          other.fileName == this.fileName &&
+          other.mergeDuplicates == this.mergeDuplicates &&
+          other.groupsJson == this.groupsJson &&
+          other.groupsSent == this.groupsSent &&
+          other.status == this.status &&
+          other.totalRows == this.totalRows &&
+          other.attempts == this.attempts &&
+          other.lastError == this.lastError &&
+          other.createdAt == this.createdAt &&
+          other.completedAt == this.completedAt);
+}
+
+class CatalogImportJobsTableCompanion
+    extends UpdateCompanion<CatalogImportJobsTableData> {
+  final Value<String> id;
+  final Value<int> companyId;
+  final Value<String?> fileName;
+  final Value<bool> mergeDuplicates;
+  final Value<String> groupsJson;
+  final Value<bool> groupsSent;
+  final Value<String> status;
+  final Value<int> totalRows;
+  final Value<int> attempts;
+  final Value<String?> lastError;
+  final Value<DateTime> createdAt;
+  final Value<DateTime?> completedAt;
+  final Value<int> rowid;
+  const CatalogImportJobsTableCompanion({
+    this.id = const Value.absent(),
+    this.companyId = const Value.absent(),
+    this.fileName = const Value.absent(),
+    this.mergeDuplicates = const Value.absent(),
+    this.groupsJson = const Value.absent(),
+    this.groupsSent = const Value.absent(),
+    this.status = const Value.absent(),
+    this.totalRows = const Value.absent(),
+    this.attempts = const Value.absent(),
+    this.lastError = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.completedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CatalogImportJobsTableCompanion.insert({
+    required String id,
+    required int companyId,
+    this.fileName = const Value.absent(),
+    required bool mergeDuplicates,
+    this.groupsJson = const Value.absent(),
+    this.groupsSent = const Value.absent(),
+    this.status = const Value.absent(),
+    this.totalRows = const Value.absent(),
+    this.attempts = const Value.absent(),
+    this.lastError = const Value.absent(),
+    required DateTime createdAt,
+    this.completedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       companyId = Value(companyId),
+       mergeDuplicates = Value(mergeDuplicates),
+       createdAt = Value(createdAt);
+  static Insertable<CatalogImportJobsTableData> custom({
+    Expression<String>? id,
+    Expression<int>? companyId,
+    Expression<String>? fileName,
+    Expression<bool>? mergeDuplicates,
+    Expression<String>? groupsJson,
+    Expression<bool>? groupsSent,
+    Expression<String>? status,
+    Expression<int>? totalRows,
+    Expression<int>? attempts,
+    Expression<String>? lastError,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? completedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (companyId != null) 'company_id': companyId,
+      if (fileName != null) 'file_name': fileName,
+      if (mergeDuplicates != null) 'merge_duplicates': mergeDuplicates,
+      if (groupsJson != null) 'groups_json': groupsJson,
+      if (groupsSent != null) 'groups_sent': groupsSent,
+      if (status != null) 'status': status,
+      if (totalRows != null) 'total_rows': totalRows,
+      if (attempts != null) 'attempts': attempts,
+      if (lastError != null) 'last_error': lastError,
+      if (createdAt != null) 'created_at': createdAt,
+      if (completedAt != null) 'completed_at': completedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CatalogImportJobsTableCompanion copyWith({
+    Value<String>? id,
+    Value<int>? companyId,
+    Value<String?>? fileName,
+    Value<bool>? mergeDuplicates,
+    Value<String>? groupsJson,
+    Value<bool>? groupsSent,
+    Value<String>? status,
+    Value<int>? totalRows,
+    Value<int>? attempts,
+    Value<String?>? lastError,
+    Value<DateTime>? createdAt,
+    Value<DateTime?>? completedAt,
+    Value<int>? rowid,
+  }) {
+    return CatalogImportJobsTableCompanion(
+      id: id ?? this.id,
+      companyId: companyId ?? this.companyId,
+      fileName: fileName ?? this.fileName,
+      mergeDuplicates: mergeDuplicates ?? this.mergeDuplicates,
+      groupsJson: groupsJson ?? this.groupsJson,
+      groupsSent: groupsSent ?? this.groupsSent,
+      status: status ?? this.status,
+      totalRows: totalRows ?? this.totalRows,
+      attempts: attempts ?? this.attempts,
+      lastError: lastError ?? this.lastError,
+      createdAt: createdAt ?? this.createdAt,
+      completedAt: completedAt ?? this.completedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (companyId.present) {
+      map['company_id'] = Variable<int>(companyId.value);
+    }
+    if (fileName.present) {
+      map['file_name'] = Variable<String>(fileName.value);
+    }
+    if (mergeDuplicates.present) {
+      map['merge_duplicates'] = Variable<bool>(mergeDuplicates.value);
+    }
+    if (groupsJson.present) {
+      map['groups_json'] = Variable<String>(groupsJson.value);
+    }
+    if (groupsSent.present) {
+      map['groups_sent'] = Variable<bool>(groupsSent.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (totalRows.present) {
+      map['total_rows'] = Variable<int>(totalRows.value);
+    }
+    if (attempts.present) {
+      map['attempts'] = Variable<int>(attempts.value);
+    }
+    if (lastError.present) {
+      map['last_error'] = Variable<String>(lastError.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (completedAt.present) {
+      map['completed_at'] = Variable<DateTime>(completedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CatalogImportJobsTableCompanion(')
+          ..write('id: $id, ')
+          ..write('companyId: $companyId, ')
+          ..write('fileName: $fileName, ')
+          ..write('mergeDuplicates: $mergeDuplicates, ')
+          ..write('groupsJson: $groupsJson, ')
+          ..write('groupsSent: $groupsSent, ')
+          ..write('status: $status, ')
+          ..write('totalRows: $totalRows, ')
+          ..write('attempts: $attempts, ')
+          ..write('lastError: $lastError, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('completedAt: $completedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $CatalogImportRowsTableTable extends CatalogImportRowsTable
+    with TableInfo<$CatalogImportRowsTableTable, CatalogImportRowsTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CatalogImportRowsTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _jobIdMeta = const VerificationMeta('jobId');
+  @override
+  late final GeneratedColumn<String> jobId = GeneratedColumn<String>(
+    'job_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _rowIndexMeta = const VerificationMeta(
+    'rowIndex',
+  );
+  @override
+  late final GeneratedColumn<int> rowIndex = GeneratedColumn<int>(
+    'row_index',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _companyIdMeta = const VerificationMeta(
+    'companyId',
+  );
+  @override
+  late final GeneratedColumn<int> companyId = GeneratedColumn<int>(
+    'company_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameKeyMeta = const VerificationMeta(
+    'nameKey',
+  );
+  @override
+  late final GeneratedColumn<String> nameKey = GeneratedColumn<String>(
+    'name_key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _localProductIdMeta = const VerificationMeta(
+    'localProductId',
+  );
+  @override
+  late final GeneratedColumn<int> localProductId = GeneratedColumn<int>(
+    'local_product_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _payloadMeta = const VerificationMeta(
+    'payload',
+  );
+  @override
+  late final GeneratedColumn<String> payload = GeneratedColumn<String>(
+    'payload',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('pending'),
+  );
+  static const VerificationMeta _outcomeMeta = const VerificationMeta(
+    'outcome',
+  );
+  @override
+  late final GeneratedColumn<String> outcome = GeneratedColumn<String>(
+    'outcome',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _messageMeta = const VerificationMeta(
+    'message',
+  );
+  @override
+  late final GeneratedColumn<String> message = GeneratedColumn<String>(
+    'message',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    jobId,
+    rowIndex,
+    companyId,
+    nameKey,
+    localProductId,
+    payload,
+    status,
+    outcome,
+    message,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'catalog_import_rows';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<CatalogImportRowsTableData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('job_id')) {
+      context.handle(
+        _jobIdMeta,
+        jobId.isAcceptableOrUnknown(data['job_id']!, _jobIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_jobIdMeta);
+    }
+    if (data.containsKey('row_index')) {
+      context.handle(
+        _rowIndexMeta,
+        rowIndex.isAcceptableOrUnknown(data['row_index']!, _rowIndexMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_rowIndexMeta);
+    }
+    if (data.containsKey('company_id')) {
+      context.handle(
+        _companyIdMeta,
+        companyId.isAcceptableOrUnknown(data['company_id']!, _companyIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_companyIdMeta);
+    }
+    if (data.containsKey('name_key')) {
+      context.handle(
+        _nameKeyMeta,
+        nameKey.isAcceptableOrUnknown(data['name_key']!, _nameKeyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameKeyMeta);
+    }
+    if (data.containsKey('local_product_id')) {
+      context.handle(
+        _localProductIdMeta,
+        localProductId.isAcceptableOrUnknown(
+          data['local_product_id']!,
+          _localProductIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('payload')) {
+      context.handle(
+        _payloadMeta,
+        payload.isAcceptableOrUnknown(data['payload']!, _payloadMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_payloadMeta);
+    }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    }
+    if (data.containsKey('outcome')) {
+      context.handle(
+        _outcomeMeta,
+        outcome.isAcceptableOrUnknown(data['outcome']!, _outcomeMeta),
+      );
+    }
+    if (data.containsKey('message')) {
+      context.handle(
+        _messageMeta,
+        message.isAcceptableOrUnknown(data['message']!, _messageMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {jobId, rowIndex};
+  @override
+  CatalogImportRowsTableData map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CatalogImportRowsTableData(
+      jobId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}job_id'],
+      )!,
+      rowIndex: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}row_index'],
+      )!,
+      companyId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}company_id'],
+      )!,
+      nameKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name_key'],
+      )!,
+      localProductId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}local_product_id'],
+      ),
+      payload: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}payload'],
+      )!,
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      )!,
+      outcome: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}outcome'],
+      ),
+      message: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}message'],
+      ),
+    );
+  }
+
+  @override
+  $CatalogImportRowsTableTable createAlias(String alias) {
+    return $CatalogImportRowsTableTable(attachedDatabase, alias);
+  }
+}
+
+class CatalogImportRowsTableData extends DataClass
+    implements Insertable<CatalogImportRowsTableData> {
+  final String jobId;
+  final int rowIndex;
+  final int companyId;
+  final String nameKey;
+  final int? localProductId;
+  final String payload;
+  final String status;
+  final String? outcome;
+  final String? message;
+  const CatalogImportRowsTableData({
+    required this.jobId,
+    required this.rowIndex,
+    required this.companyId,
+    required this.nameKey,
+    this.localProductId,
+    required this.payload,
+    required this.status,
+    this.outcome,
+    this.message,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['job_id'] = Variable<String>(jobId);
+    map['row_index'] = Variable<int>(rowIndex);
+    map['company_id'] = Variable<int>(companyId);
+    map['name_key'] = Variable<String>(nameKey);
+    if (!nullToAbsent || localProductId != null) {
+      map['local_product_id'] = Variable<int>(localProductId);
+    }
+    map['payload'] = Variable<String>(payload);
+    map['status'] = Variable<String>(status);
+    if (!nullToAbsent || outcome != null) {
+      map['outcome'] = Variable<String>(outcome);
+    }
+    if (!nullToAbsent || message != null) {
+      map['message'] = Variable<String>(message);
+    }
+    return map;
+  }
+
+  CatalogImportRowsTableCompanion toCompanion(bool nullToAbsent) {
+    return CatalogImportRowsTableCompanion(
+      jobId: Value(jobId),
+      rowIndex: Value(rowIndex),
+      companyId: Value(companyId),
+      nameKey: Value(nameKey),
+      localProductId: localProductId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(localProductId),
+      payload: Value(payload),
+      status: Value(status),
+      outcome: outcome == null && nullToAbsent
+          ? const Value.absent()
+          : Value(outcome),
+      message: message == null && nullToAbsent
+          ? const Value.absent()
+          : Value(message),
+    );
+  }
+
+  factory CatalogImportRowsTableData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CatalogImportRowsTableData(
+      jobId: serializer.fromJson<String>(json['jobId']),
+      rowIndex: serializer.fromJson<int>(json['rowIndex']),
+      companyId: serializer.fromJson<int>(json['companyId']),
+      nameKey: serializer.fromJson<String>(json['nameKey']),
+      localProductId: serializer.fromJson<int?>(json['localProductId']),
+      payload: serializer.fromJson<String>(json['payload']),
+      status: serializer.fromJson<String>(json['status']),
+      outcome: serializer.fromJson<String?>(json['outcome']),
+      message: serializer.fromJson<String?>(json['message']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'jobId': serializer.toJson<String>(jobId),
+      'rowIndex': serializer.toJson<int>(rowIndex),
+      'companyId': serializer.toJson<int>(companyId),
+      'nameKey': serializer.toJson<String>(nameKey),
+      'localProductId': serializer.toJson<int?>(localProductId),
+      'payload': serializer.toJson<String>(payload),
+      'status': serializer.toJson<String>(status),
+      'outcome': serializer.toJson<String?>(outcome),
+      'message': serializer.toJson<String?>(message),
+    };
+  }
+
+  CatalogImportRowsTableData copyWith({
+    String? jobId,
+    int? rowIndex,
+    int? companyId,
+    String? nameKey,
+    Value<int?> localProductId = const Value.absent(),
+    String? payload,
+    String? status,
+    Value<String?> outcome = const Value.absent(),
+    Value<String?> message = const Value.absent(),
+  }) => CatalogImportRowsTableData(
+    jobId: jobId ?? this.jobId,
+    rowIndex: rowIndex ?? this.rowIndex,
+    companyId: companyId ?? this.companyId,
+    nameKey: nameKey ?? this.nameKey,
+    localProductId: localProductId.present
+        ? localProductId.value
+        : this.localProductId,
+    payload: payload ?? this.payload,
+    status: status ?? this.status,
+    outcome: outcome.present ? outcome.value : this.outcome,
+    message: message.present ? message.value : this.message,
+  );
+  CatalogImportRowsTableData copyWithCompanion(
+    CatalogImportRowsTableCompanion data,
+  ) {
+    return CatalogImportRowsTableData(
+      jobId: data.jobId.present ? data.jobId.value : this.jobId,
+      rowIndex: data.rowIndex.present ? data.rowIndex.value : this.rowIndex,
+      companyId: data.companyId.present ? data.companyId.value : this.companyId,
+      nameKey: data.nameKey.present ? data.nameKey.value : this.nameKey,
+      localProductId: data.localProductId.present
+          ? data.localProductId.value
+          : this.localProductId,
+      payload: data.payload.present ? data.payload.value : this.payload,
+      status: data.status.present ? data.status.value : this.status,
+      outcome: data.outcome.present ? data.outcome.value : this.outcome,
+      message: data.message.present ? data.message.value : this.message,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CatalogImportRowsTableData(')
+          ..write('jobId: $jobId, ')
+          ..write('rowIndex: $rowIndex, ')
+          ..write('companyId: $companyId, ')
+          ..write('nameKey: $nameKey, ')
+          ..write('localProductId: $localProductId, ')
+          ..write('payload: $payload, ')
+          ..write('status: $status, ')
+          ..write('outcome: $outcome, ')
+          ..write('message: $message')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    jobId,
+    rowIndex,
+    companyId,
+    nameKey,
+    localProductId,
+    payload,
+    status,
+    outcome,
+    message,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CatalogImportRowsTableData &&
+          other.jobId == this.jobId &&
+          other.rowIndex == this.rowIndex &&
+          other.companyId == this.companyId &&
+          other.nameKey == this.nameKey &&
+          other.localProductId == this.localProductId &&
+          other.payload == this.payload &&
+          other.status == this.status &&
+          other.outcome == this.outcome &&
+          other.message == this.message);
+}
+
+class CatalogImportRowsTableCompanion
+    extends UpdateCompanion<CatalogImportRowsTableData> {
+  final Value<String> jobId;
+  final Value<int> rowIndex;
+  final Value<int> companyId;
+  final Value<String> nameKey;
+  final Value<int?> localProductId;
+  final Value<String> payload;
+  final Value<String> status;
+  final Value<String?> outcome;
+  final Value<String?> message;
+  final Value<int> rowid;
+  const CatalogImportRowsTableCompanion({
+    this.jobId = const Value.absent(),
+    this.rowIndex = const Value.absent(),
+    this.companyId = const Value.absent(),
+    this.nameKey = const Value.absent(),
+    this.localProductId = const Value.absent(),
+    this.payload = const Value.absent(),
+    this.status = const Value.absent(),
+    this.outcome = const Value.absent(),
+    this.message = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CatalogImportRowsTableCompanion.insert({
+    required String jobId,
+    required int rowIndex,
+    required int companyId,
+    required String nameKey,
+    this.localProductId = const Value.absent(),
+    required String payload,
+    this.status = const Value.absent(),
+    this.outcome = const Value.absent(),
+    this.message = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : jobId = Value(jobId),
+       rowIndex = Value(rowIndex),
+       companyId = Value(companyId),
+       nameKey = Value(nameKey),
+       payload = Value(payload);
+  static Insertable<CatalogImportRowsTableData> custom({
+    Expression<String>? jobId,
+    Expression<int>? rowIndex,
+    Expression<int>? companyId,
+    Expression<String>? nameKey,
+    Expression<int>? localProductId,
+    Expression<String>? payload,
+    Expression<String>? status,
+    Expression<String>? outcome,
+    Expression<String>? message,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (jobId != null) 'job_id': jobId,
+      if (rowIndex != null) 'row_index': rowIndex,
+      if (companyId != null) 'company_id': companyId,
+      if (nameKey != null) 'name_key': nameKey,
+      if (localProductId != null) 'local_product_id': localProductId,
+      if (payload != null) 'payload': payload,
+      if (status != null) 'status': status,
+      if (outcome != null) 'outcome': outcome,
+      if (message != null) 'message': message,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CatalogImportRowsTableCompanion copyWith({
+    Value<String>? jobId,
+    Value<int>? rowIndex,
+    Value<int>? companyId,
+    Value<String>? nameKey,
+    Value<int?>? localProductId,
+    Value<String>? payload,
+    Value<String>? status,
+    Value<String?>? outcome,
+    Value<String?>? message,
+    Value<int>? rowid,
+  }) {
+    return CatalogImportRowsTableCompanion(
+      jobId: jobId ?? this.jobId,
+      rowIndex: rowIndex ?? this.rowIndex,
+      companyId: companyId ?? this.companyId,
+      nameKey: nameKey ?? this.nameKey,
+      localProductId: localProductId ?? this.localProductId,
+      payload: payload ?? this.payload,
+      status: status ?? this.status,
+      outcome: outcome ?? this.outcome,
+      message: message ?? this.message,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (jobId.present) {
+      map['job_id'] = Variable<String>(jobId.value);
+    }
+    if (rowIndex.present) {
+      map['row_index'] = Variable<int>(rowIndex.value);
+    }
+    if (companyId.present) {
+      map['company_id'] = Variable<int>(companyId.value);
+    }
+    if (nameKey.present) {
+      map['name_key'] = Variable<String>(nameKey.value);
+    }
+    if (localProductId.present) {
+      map['local_product_id'] = Variable<int>(localProductId.value);
+    }
+    if (payload.present) {
+      map['payload'] = Variable<String>(payload.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (outcome.present) {
+      map['outcome'] = Variable<String>(outcome.value);
+    }
+    if (message.present) {
+      map['message'] = Variable<String>(message.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CatalogImportRowsTableCompanion(')
+          ..write('jobId: $jobId, ')
+          ..write('rowIndex: $rowIndex, ')
+          ..write('companyId: $companyId, ')
+          ..write('nameKey: $nameKey, ')
+          ..write('localProductId: $localProductId, ')
+          ..write('payload: $payload, ')
+          ..write('status: $status, ')
+          ..write('outcome: $outcome, ')
+          ..write('message: $message, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -39722,6 +41020,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $ProductTaxesTableTable(this);
   late final $DiscountLinesTableTable discountLinesTable =
       $DiscountLinesTableTable(this);
+  late final $CatalogImportJobsTableTable catalogImportJobsTable =
+      $CatalogImportJobsTableTable(this);
+  late final $CatalogImportRowsTableTable catalogImportRowsTable =
+      $CatalogImportRowsTableTable(this);
   late final Index idxProductsGroupId = Index(
     'idx_products_group_id',
     'CREATE INDEX idx_products_group_id ON products (product_group_id)',
@@ -39786,6 +41088,14 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     'idx_bookings_company_start',
     'CREATE INDEX idx_bookings_company_start ON bookings (company_id, start_time)',
   );
+  late final Index idxCatalogImportRowsStatus = Index(
+    'idx_catalog_import_rows_status',
+    'CREATE INDEX idx_catalog_import_rows_status ON catalog_import_rows (company_id, status)',
+  );
+  late final Index idxCatalogImportRowsProduct = Index(
+    'idx_catalog_import_rows_product',
+    'CREATE INDEX idx_catalog_import_rows_product ON catalog_import_rows (local_product_id)',
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -39849,6 +41159,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     stockControlsTable,
     productTaxesTable,
     discountLinesTable,
+    catalogImportJobsTable,
+    catalogImportRowsTable,
     idxProductsGroupId,
     idxProductsBarcode,
     idxPosOrdersSyncStatus,
@@ -39865,6 +41177,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     idxTimeClockSyncStatus,
     idxShiftsCompanyStatus,
     idxBookingsCompanyStart,
+    idxCatalogImportRowsStatus,
+    idxCatalogImportRowsProduct,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -60232,6 +61546,663 @@ typedef $$DiscountLinesTableTableProcessedTableManager =
       DiscountLinesTableData,
       PrefetchHooks Function()
     >;
+typedef $$CatalogImportJobsTableTableCreateCompanionBuilder =
+    CatalogImportJobsTableCompanion Function({
+      required String id,
+      required int companyId,
+      Value<String?> fileName,
+      required bool mergeDuplicates,
+      Value<String> groupsJson,
+      Value<bool> groupsSent,
+      Value<String> status,
+      Value<int> totalRows,
+      Value<int> attempts,
+      Value<String?> lastError,
+      required DateTime createdAt,
+      Value<DateTime?> completedAt,
+      Value<int> rowid,
+    });
+typedef $$CatalogImportJobsTableTableUpdateCompanionBuilder =
+    CatalogImportJobsTableCompanion Function({
+      Value<String> id,
+      Value<int> companyId,
+      Value<String?> fileName,
+      Value<bool> mergeDuplicates,
+      Value<String> groupsJson,
+      Value<bool> groupsSent,
+      Value<String> status,
+      Value<int> totalRows,
+      Value<int> attempts,
+      Value<String?> lastError,
+      Value<DateTime> createdAt,
+      Value<DateTime?> completedAt,
+      Value<int> rowid,
+    });
+
+class $$CatalogImportJobsTableTableFilterComposer
+    extends Composer<_$AppDatabase, $CatalogImportJobsTableTable> {
+  $$CatalogImportJobsTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get companyId => $composableBuilder(
+    column: $table.companyId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get fileName => $composableBuilder(
+    column: $table.fileName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get mergeDuplicates => $composableBuilder(
+    column: $table.mergeDuplicates,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get groupsJson => $composableBuilder(
+    column: $table.groupsJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get groupsSent => $composableBuilder(
+    column: $table.groupsSent,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get totalRows => $composableBuilder(
+    column: $table.totalRows,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get attempts => $composableBuilder(
+    column: $table.attempts,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get lastError => $composableBuilder(
+    column: $table.lastError,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get completedAt => $composableBuilder(
+    column: $table.completedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$CatalogImportJobsTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $CatalogImportJobsTableTable> {
+  $$CatalogImportJobsTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get companyId => $composableBuilder(
+    column: $table.companyId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get fileName => $composableBuilder(
+    column: $table.fileName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get mergeDuplicates => $composableBuilder(
+    column: $table.mergeDuplicates,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get groupsJson => $composableBuilder(
+    column: $table.groupsJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get groupsSent => $composableBuilder(
+    column: $table.groupsSent,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get totalRows => $composableBuilder(
+    column: $table.totalRows,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get attempts => $composableBuilder(
+    column: $table.attempts,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get lastError => $composableBuilder(
+    column: $table.lastError,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get completedAt => $composableBuilder(
+    column: $table.completedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$CatalogImportJobsTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CatalogImportJobsTableTable> {
+  $$CatalogImportJobsTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get companyId =>
+      $composableBuilder(column: $table.companyId, builder: (column) => column);
+
+  GeneratedColumn<String> get fileName =>
+      $composableBuilder(column: $table.fileName, builder: (column) => column);
+
+  GeneratedColumn<bool> get mergeDuplicates => $composableBuilder(
+    column: $table.mergeDuplicates,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get groupsJson => $composableBuilder(
+    column: $table.groupsJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get groupsSent => $composableBuilder(
+    column: $table.groupsSent,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<int> get totalRows =>
+      $composableBuilder(column: $table.totalRows, builder: (column) => column);
+
+  GeneratedColumn<int> get attempts =>
+      $composableBuilder(column: $table.attempts, builder: (column) => column);
+
+  GeneratedColumn<String> get lastError =>
+      $composableBuilder(column: $table.lastError, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get completedAt => $composableBuilder(
+    column: $table.completedAt,
+    builder: (column) => column,
+  );
+}
+
+class $$CatalogImportJobsTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $CatalogImportJobsTableTable,
+          CatalogImportJobsTableData,
+          $$CatalogImportJobsTableTableFilterComposer,
+          $$CatalogImportJobsTableTableOrderingComposer,
+          $$CatalogImportJobsTableTableAnnotationComposer,
+          $$CatalogImportJobsTableTableCreateCompanionBuilder,
+          $$CatalogImportJobsTableTableUpdateCompanionBuilder,
+          (
+            CatalogImportJobsTableData,
+            BaseReferences<
+              _$AppDatabase,
+              $CatalogImportJobsTableTable,
+              CatalogImportJobsTableData
+            >,
+          ),
+          CatalogImportJobsTableData,
+          PrefetchHooks Function()
+        > {
+  $$CatalogImportJobsTableTableTableManager(
+    _$AppDatabase db,
+    $CatalogImportJobsTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CatalogImportJobsTableTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$CatalogImportJobsTableTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$CatalogImportJobsTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<int> companyId = const Value.absent(),
+                Value<String?> fileName = const Value.absent(),
+                Value<bool> mergeDuplicates = const Value.absent(),
+                Value<String> groupsJson = const Value.absent(),
+                Value<bool> groupsSent = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<int> totalRows = const Value.absent(),
+                Value<int> attempts = const Value.absent(),
+                Value<String?> lastError = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime?> completedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CatalogImportJobsTableCompanion(
+                id: id,
+                companyId: companyId,
+                fileName: fileName,
+                mergeDuplicates: mergeDuplicates,
+                groupsJson: groupsJson,
+                groupsSent: groupsSent,
+                status: status,
+                totalRows: totalRows,
+                attempts: attempts,
+                lastError: lastError,
+                createdAt: createdAt,
+                completedAt: completedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required int companyId,
+                Value<String?> fileName = const Value.absent(),
+                required bool mergeDuplicates,
+                Value<String> groupsJson = const Value.absent(),
+                Value<bool> groupsSent = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<int> totalRows = const Value.absent(),
+                Value<int> attempts = const Value.absent(),
+                Value<String?> lastError = const Value.absent(),
+                required DateTime createdAt,
+                Value<DateTime?> completedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CatalogImportJobsTableCompanion.insert(
+                id: id,
+                companyId: companyId,
+                fileName: fileName,
+                mergeDuplicates: mergeDuplicates,
+                groupsJson: groupsJson,
+                groupsSent: groupsSent,
+                status: status,
+                totalRows: totalRows,
+                attempts: attempts,
+                lastError: lastError,
+                createdAt: createdAt,
+                completedAt: completedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$CatalogImportJobsTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $CatalogImportJobsTableTable,
+      CatalogImportJobsTableData,
+      $$CatalogImportJobsTableTableFilterComposer,
+      $$CatalogImportJobsTableTableOrderingComposer,
+      $$CatalogImportJobsTableTableAnnotationComposer,
+      $$CatalogImportJobsTableTableCreateCompanionBuilder,
+      $$CatalogImportJobsTableTableUpdateCompanionBuilder,
+      (
+        CatalogImportJobsTableData,
+        BaseReferences<
+          _$AppDatabase,
+          $CatalogImportJobsTableTable,
+          CatalogImportJobsTableData
+        >,
+      ),
+      CatalogImportJobsTableData,
+      PrefetchHooks Function()
+    >;
+typedef $$CatalogImportRowsTableTableCreateCompanionBuilder =
+    CatalogImportRowsTableCompanion Function({
+      required String jobId,
+      required int rowIndex,
+      required int companyId,
+      required String nameKey,
+      Value<int?> localProductId,
+      required String payload,
+      Value<String> status,
+      Value<String?> outcome,
+      Value<String?> message,
+      Value<int> rowid,
+    });
+typedef $$CatalogImportRowsTableTableUpdateCompanionBuilder =
+    CatalogImportRowsTableCompanion Function({
+      Value<String> jobId,
+      Value<int> rowIndex,
+      Value<int> companyId,
+      Value<String> nameKey,
+      Value<int?> localProductId,
+      Value<String> payload,
+      Value<String> status,
+      Value<String?> outcome,
+      Value<String?> message,
+      Value<int> rowid,
+    });
+
+class $$CatalogImportRowsTableTableFilterComposer
+    extends Composer<_$AppDatabase, $CatalogImportRowsTableTable> {
+  $$CatalogImportRowsTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get jobId => $composableBuilder(
+    column: $table.jobId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get rowIndex => $composableBuilder(
+    column: $table.rowIndex,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get companyId => $composableBuilder(
+    column: $table.companyId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get nameKey => $composableBuilder(
+    column: $table.nameKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get localProductId => $composableBuilder(
+    column: $table.localProductId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get payload => $composableBuilder(
+    column: $table.payload,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get outcome => $composableBuilder(
+    column: $table.outcome,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get message => $composableBuilder(
+    column: $table.message,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$CatalogImportRowsTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $CatalogImportRowsTableTable> {
+  $$CatalogImportRowsTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get jobId => $composableBuilder(
+    column: $table.jobId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get rowIndex => $composableBuilder(
+    column: $table.rowIndex,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get companyId => $composableBuilder(
+    column: $table.companyId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get nameKey => $composableBuilder(
+    column: $table.nameKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get localProductId => $composableBuilder(
+    column: $table.localProductId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get payload => $composableBuilder(
+    column: $table.payload,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get outcome => $composableBuilder(
+    column: $table.outcome,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get message => $composableBuilder(
+    column: $table.message,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$CatalogImportRowsTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CatalogImportRowsTableTable> {
+  $$CatalogImportRowsTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get jobId =>
+      $composableBuilder(column: $table.jobId, builder: (column) => column);
+
+  GeneratedColumn<int> get rowIndex =>
+      $composableBuilder(column: $table.rowIndex, builder: (column) => column);
+
+  GeneratedColumn<int> get companyId =>
+      $composableBuilder(column: $table.companyId, builder: (column) => column);
+
+  GeneratedColumn<String> get nameKey =>
+      $composableBuilder(column: $table.nameKey, builder: (column) => column);
+
+  GeneratedColumn<int> get localProductId => $composableBuilder(
+    column: $table.localProductId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get payload =>
+      $composableBuilder(column: $table.payload, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<String> get outcome =>
+      $composableBuilder(column: $table.outcome, builder: (column) => column);
+
+  GeneratedColumn<String> get message =>
+      $composableBuilder(column: $table.message, builder: (column) => column);
+}
+
+class $$CatalogImportRowsTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $CatalogImportRowsTableTable,
+          CatalogImportRowsTableData,
+          $$CatalogImportRowsTableTableFilterComposer,
+          $$CatalogImportRowsTableTableOrderingComposer,
+          $$CatalogImportRowsTableTableAnnotationComposer,
+          $$CatalogImportRowsTableTableCreateCompanionBuilder,
+          $$CatalogImportRowsTableTableUpdateCompanionBuilder,
+          (
+            CatalogImportRowsTableData,
+            BaseReferences<
+              _$AppDatabase,
+              $CatalogImportRowsTableTable,
+              CatalogImportRowsTableData
+            >,
+          ),
+          CatalogImportRowsTableData,
+          PrefetchHooks Function()
+        > {
+  $$CatalogImportRowsTableTableTableManager(
+    _$AppDatabase db,
+    $CatalogImportRowsTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CatalogImportRowsTableTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$CatalogImportRowsTableTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$CatalogImportRowsTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> jobId = const Value.absent(),
+                Value<int> rowIndex = const Value.absent(),
+                Value<int> companyId = const Value.absent(),
+                Value<String> nameKey = const Value.absent(),
+                Value<int?> localProductId = const Value.absent(),
+                Value<String> payload = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<String?> outcome = const Value.absent(),
+                Value<String?> message = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CatalogImportRowsTableCompanion(
+                jobId: jobId,
+                rowIndex: rowIndex,
+                companyId: companyId,
+                nameKey: nameKey,
+                localProductId: localProductId,
+                payload: payload,
+                status: status,
+                outcome: outcome,
+                message: message,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String jobId,
+                required int rowIndex,
+                required int companyId,
+                required String nameKey,
+                Value<int?> localProductId = const Value.absent(),
+                required String payload,
+                Value<String> status = const Value.absent(),
+                Value<String?> outcome = const Value.absent(),
+                Value<String?> message = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CatalogImportRowsTableCompanion.insert(
+                jobId: jobId,
+                rowIndex: rowIndex,
+                companyId: companyId,
+                nameKey: nameKey,
+                localProductId: localProductId,
+                payload: payload,
+                status: status,
+                outcome: outcome,
+                message: message,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$CatalogImportRowsTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $CatalogImportRowsTableTable,
+      CatalogImportRowsTableData,
+      $$CatalogImportRowsTableTableFilterComposer,
+      $$CatalogImportRowsTableTableOrderingComposer,
+      $$CatalogImportRowsTableTableAnnotationComposer,
+      $$CatalogImportRowsTableTableCreateCompanionBuilder,
+      $$CatalogImportRowsTableTableUpdateCompanionBuilder,
+      (
+        CatalogImportRowsTableData,
+        BaseReferences<
+          _$AppDatabase,
+          $CatalogImportRowsTableTable,
+          CatalogImportRowsTableData
+        >,
+      ),
+      CatalogImportRowsTableData,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -60390,4 +62361,14 @@ class $AppDatabaseManager {
       $$ProductTaxesTableTableTableManager(_db, _db.productTaxesTable);
   $$DiscountLinesTableTableTableManager get discountLinesTable =>
       $$DiscountLinesTableTableTableManager(_db, _db.discountLinesTable);
+  $$CatalogImportJobsTableTableTableManager get catalogImportJobsTable =>
+      $$CatalogImportJobsTableTableTableManager(
+        _db,
+        _db.catalogImportJobsTable,
+      );
+  $$CatalogImportRowsTableTableTableManager get catalogImportRowsTable =>
+      $$CatalogImportRowsTableTableTableManager(
+        _db,
+        _db.catalogImportRowsTable,
+      );
 }

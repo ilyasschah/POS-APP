@@ -36,6 +36,7 @@ import 'package:pos_app/database/database_provider.dart';
 import 'package:pos_app/session/session_provider.dart';
 import 'package:pos_app/sync/sync_notifier.dart';
 import 'package:pos_app/stock/stock_provider.dart';
+import 'package:pos_app/settings/device_identity.dart';
 
 final documentCategoriesProvider =
     StreamProvider.autoDispose<List<DocumentCategory>>((ref) {
@@ -187,6 +188,11 @@ class _DocumentEditorDialogState extends ConsumerState<_DocumentEditorDialog> {
 
   int? _selectedDocTypeId;
   String? _selectedDocTypeName;
+  String? _selectedDocTypeCode;
+
+  /// The number this dialog filled in. While the field still shows it, the
+  /// number follows the type; one the operator typed is theirs and is kept.
+  String? _autoNumber;
   int? _selectedCustomerId;
   int? _selectedUserId;
   int? _selectedWarehouseId;
@@ -278,9 +284,17 @@ class _DocumentEditorDialogState extends ConsumerState<_DocumentEditorDialog> {
     super.dispose();
   }
 
-  Future<String> _fetchNextDocumentNumber(int documentTypeId) async {
+  /// The next number in the type's own series — `26-220-000001` for a Refund —
+  /// so a document created here reads like every other of its type.
+  ///
+  /// The server issues it when it can be reached. Offline, this terminal's
+  /// series for the same code does (`POS1-220-000004`, the counter checkout and
+  /// the refund flow already share) — never a `DOC-…` number that says nothing
+  /// about the type.
+  Future<String> _fetchNextDocumentNumber(int documentTypeId, String? code) async {
+    final companyId = ref.read(selectedCompanyProvider)?.id ?? 0;
+    final db = ref.read(appDatabaseProvider);
     try {
-      final companyId = ref.read(selectedCompanyProvider)?.id ?? 0;
       final dio = createDio();
       final response = await dio.get(
         '/Document/GetNextNumber',
@@ -291,10 +305,15 @@ class _DocumentEditorDialogState extends ConsumerState<_DocumentEditorDialog> {
       );
       return response.data as String;
     } catch (_) {
-      // Fallback: timestamp-based number so the user can still proceed
-      final now = DateTime.now();
-      final yy = now.year.toString().substring(2);
-      return 'DOC-$yy${now.millisecondsSinceEpoch}';
+      final typeCode = code?.trim() ?? '';
+      if (typeCode.isEmpty || companyId == 0) {
+        return 'DOC-${DateTime.now().millisecondsSinceEpoch}';
+      }
+      return db.nextDocumentNumber(
+        companyId: companyId,
+        deviceName: await getDeviceName(),
+        docTypeCode: typeCode,
+      );
     }
   }
 
@@ -472,7 +491,9 @@ class _DocumentEditorDialogState extends ConsumerState<_DocumentEditorDialog> {
         final localId = const Uuid().v4();
         var number = _numberCtrl.text.trim();
         if (number.isEmpty) {
-          number = 'DOC-${DateTime.now().millisecondsSinceEpoch}';
+          // A cleared number still gets one in the type's own series.
+          number = await _fetchNextDocumentNumber(
+              _selectedDocTypeId!, _selectedDocTypeCode);
         }
 
         await db.createManualDocument(DocumentsTableCompanion(
@@ -634,18 +655,34 @@ class _DocumentEditorDialogState extends ConsumerState<_DocumentEditorDialog> {
           onSelectDocType: () async {
             final result = await showDialog<DocumentType>(
               context: context,
-              builder: (_) => const _SelectDocumentTypeDialog(),
+              builder: (_) => _SelectDocumentTypeDialog(
+                initialTypeId: _selectedDocTypeId,
+              ),
             );
             if (result != null) {
+              final typeChanged = result.id != _selectedDocTypeId;
               setState(() {
                 _selectedDocTypeId = result.id;
                 _selectedDocTypeName = "${result.code} - ${result.name}";
+                _selectedDocTypeCode = result.code;
                 _selectedWarehouseId ??=
                     ref.read(selectedWarehouseProvider)?.id;
               });
-              if (_numberCtrl.text.isEmpty) {
-                final nextNumber = await _fetchNextDocumentNumber(result.id);
-                if (mounted) setState(() => _numberCtrl.text = nextNumber);
+              // 🚨 The number carries the type's code (26-220-…), so it must
+              // follow the type. It used to be fetched only while the field was
+              // empty: pick Sales, switch to Refund, and the refund kept its
+              // 200 number. A number the operator typed is theirs and stays.
+              final current = _numberCtrl.text.trim();
+              final numberIsOurs = current.isEmpty || current == _autoNumber;
+              if (numberIsOurs && (typeChanged || current.isEmpty)) {
+                final nextNumber =
+                    await _fetchNextDocumentNumber(result.id, result.code);
+                if (mounted) {
+                  setState(() {
+                    _numberCtrl.text = nextNumber;
+                    _autoNumber = nextNumber;
+                  });
+                }
               }
             }
           },
@@ -975,8 +1012,18 @@ class _DocumentEditorDialogState extends ConsumerState<_DocumentEditorDialog> {
 }
 
 // --- DOCUMENT TYPE SELECTOR ---
+
+/// Picks the type a document is created as.
+///
+/// Each option leads with its series code: it is what the people keeping these
+/// books say out loud ("a 120"), and it is what the document number is built
+/// from. Under the name sits the one consequence the name does not spell out —
+/// whether the document moves stock in, out, or not at all.
 class _SelectDocumentTypeDialog extends ConsumerStatefulWidget {
-  const _SelectDocumentTypeDialog();
+  const _SelectDocumentTypeDialog({this.initialTypeId});
+
+  /// The type already on the document — reopening the picker lands on it.
+  final int? initialTypeId;
 
   @override
   ConsumerState<_SelectDocumentTypeDialog> createState() =>
@@ -985,104 +1032,584 @@ class _SelectDocumentTypeDialog extends ConsumerStatefulWidget {
 
 class _SelectDocumentTypeDialogState
     extends ConsumerState<_SelectDocumentTypeDialog> {
-  int? _selectedCategoryId;
-  DocumentType? _selectedType;
+  int? _categoryId;
+  DocumentType? _selected;
+  bool _seeded = false;
+
+  /// Below this body width the category rail turns into a row of chips above
+  /// the options — measured on the dialog body, never the window.
+  static const double _railMinBodyWidth = 600;
+  static const double _railWidth = 208;
+
+  void _close([DocumentType? type]) => Navigator.of(context).pop(type);
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     final asyncCategories = ref.watch(documentCategoriesProvider);
     final asyncTypes = ref.watch(allDocumentTypesProvider);
 
-    return AlertDialog(
-      title: Text(AppLocalizations.of(context).selectDocumentType),
-      contentPadding: EdgeInsets.zero,
-      content: SizedBox(
-        width: 520,
-        height: 380,
-        child: asyncCategories.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => Center(child: Text(AppLocalizations.of(context).errorWithMessage(e.toString()))),
-          data: (categories) => asyncTypes.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Center(child: Text(AppLocalizations.of(context).errorWithMessage(e.toString()))),
-            data: (types) {
-              if (_selectedCategoryId == null && categories.isNotEmpty) {
-                _selectedCategoryId = categories.first.id;
-              }
-              final filteredTypes = types
-                  .where((t) => t.documentCategoryId == _selectedCategoryId)
-                  .toList();
-              return Row(
+    Widget failed(Object e) => _DocTypeMessage(
+      icon: Icons.error_outline_rounded,
+      color: context.dangerColor,
+      text: l.errorWithMessage(e.toString()),
+    );
+    const loading = Center(child: CircularProgressIndicator());
+
+    final body = asyncCategories.when(
+      loading: () => loading,
+      error: (e, _) => failed(e),
+      data: (categories) => asyncTypes.when(
+        loading: () => loading,
+        error: (e, _) => failed(e),
+        data: (types) => _picker(categories, types),
+      ),
+    );
+
+    // The designed size on a roomy monitor, most of the viewport on a small
+    // tablet, never past its edges.
+    final width = context.dialogWidth(840);
+    final height = math.min(600.0, context.dialogMaxHeight(fraction: 0.9));
+
+    return Dialog(
+      backgroundColor: cs.surface,
+      insetPadding: const EdgeInsets.all(16),
+      clipBehavior: Clip.antiAlias,
+      child: SizedBox(
+        width: width,
+        height: height,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 22, 24, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Container(
-                    width: 160,
-                    decoration: BoxDecoration(
-                      border: Border(
-                        right: BorderSide(
-                          color: Theme.of(context).dividerColor,
-                        ),
+                  Semantics(
+                    header: true,
+                    child: Text(
+                      l.selectDocumentType,
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
-                    child: ListView(
-                      children: categories
-                          .map(
-                            (cat) => ListTile(
-                              dense: true,
-                              title: Text(cat.name),
-                              selected: _selectedCategoryId == cat.id,
-                              selectedTileColor: Theme.of(
-                                context,
-                              ).colorScheme.secondary,
-                              selectedColor: Theme.of(
-                                context,
-                              ).colorScheme.onSecondary,
-                              onTap: () => setState(() {
-                                _selectedCategoryId = cat.id;
-                                _selectedType = null;
-                              }),
-                            ),
-                          )
-                          .toList(),
-                    ),
                   ),
-                  Expanded(
-                    child: ListView(
-                      children: filteredTypes
-                          .map(
-                            (t) => ListTile(
-                              dense: true,
-                              title: Text("${t.code} - ${t.name}"),
-                              selected: _selectedType?.id == t.id,
-                              selectedTileColor: Theme.of(
-                                context,
-                              ).colorScheme.secondary,
-                              selectedColor: Theme.of(
-                                context,
-                              ).colorScheme.onSecondary,
-                              onTap: () => setState(() => _selectedType = t),
-                            ),
-                          )
-                          .toList(),
+                  const SizedBox(height: 4),
+                  Text(
+                    l.documentTypePickerHint,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: cs.onSurfaceVariant,
                     ),
                   ),
                 ],
-              );
-            },
+              ),
+            ),
+            const Divider(height: 1),
+            Expanded(child: body),
+            const Divider(height: 1),
+            _footer(l, theme),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _picker(List<DocumentCategory> categories, List<DocumentType> types) {
+    final l = AppLocalizations.of(context);
+    if (categories.isEmpty || types.isEmpty) {
+      return _DocTypeMessage(
+        icon: Icons.cloud_download_outlined,
+        text: l.documentTypePickerNoneYet,
+      );
+    }
+
+    // Seeded once, on the first data: the document's current type and its
+    // category when there is one, the first category otherwise.
+    if (!_seeded) {
+      _seeded = true;
+      final current = types
+          .where((t) => t.id == widget.initialTypeId)
+          .firstOrNull;
+      _selected = current;
+      _categoryId = current?.documentCategoryId;
+    }
+    if (!categories.any((c) => c.id == _categoryId)) {
+      _categoryId = categories.first.id;
+    }
+
+    final counts = <int, int>{};
+    for (final t in types) {
+      final id = t.documentCategoryId;
+      if (id != null) counts[id] = (counts[id] ?? 0) + 1;
+    }
+    final shown = types
+        .where((t) => t.documentCategoryId == _categoryId)
+        .toList();
+
+    // Switching category keeps the selection: the footer still names it, so
+    // browsing never silently throws a choice away.
+    void openCategory(int id) => setState(() => _categoryId = id);
+
+    final grid = shown.isEmpty
+        ? _DocTypeMessage(
+            icon: Icons.inbox_outlined,
+            text: l.documentTypePickerCategoryEmpty,
+          )
+        : _DocTypeGrid(
+            types: shown,
+            selectedId: _selected?.id,
+            onSelect: (t) => setState(() => _selected = t),
+          );
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth >= _railMinBodyWidth) {
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SizedBox(
+                width: _railWidth,
+                child: ListView(
+                  padding: const EdgeInsets.all(8),
+                  children: [
+                    for (final c in categories)
+                      _DocCategoryRailItem(
+                        name: c.name,
+                        count: counts[c.id] ?? 0,
+                        selected: c.id == _categoryId,
+                        onTap: () => openCategory(c.id),
+                      ),
+                  ],
+                ),
+              ),
+              const VerticalDivider(width: 1),
+              Expanded(child: grid),
+            ],
+          );
+        }
+        final theme = Theme.of(context);
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SizedBox(
+              height: 64,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                itemCount: categories.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                itemBuilder: (context, i) {
+                  final c = categories[i];
+                  return ChoiceChip(
+                    selected: c.id == _categoryId,
+                    showCheckmark: false,
+                    onSelected: (_) => openCategory(c.id),
+                    label: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(c.name),
+                        const SizedBox(width: 8),
+                        Text(
+                          '${counts[c.id] ?? 0}',
+                          style: theme.textTheme.labelLarge?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                            fontFeatures: const [FontFeature.tabularFigures()],
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+            const Divider(height: 1),
+            Expanded(child: grid),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _footer(AppLocalizations l, ThemeData theme) {
+    final selected = _selected;
+    final buttons = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        TextButton(
+          style: TextButton.styleFrom(minimumSize: const Size(96, 48)),
+          onPressed: () => _close(),
+          child: Text(l.actionCancel),
+        ),
+        const SizedBox(width: 12),
+        FilledButton.icon(
+          style: FilledButton.styleFrom(minimumSize: const Size(0, 48)),
+          onPressed: selected == null ? null : () => _close(selected),
+          icon: const Icon(Icons.check_rounded),
+          label: Text(l.documentTypePickerConfirm),
+        ),
+      ],
+    );
+
+    return Padding(
+      padding: const EdgeInsetsDirectional.fromSTEB(24, 12, 16, 12),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final code = (selected?.code ?? '').trim();
+          return Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              // The chosen type, named beside the button that commits it —
+              // dropped when the footer is too narrow to hold both.
+              if (selected != null && constraints.maxWidth >= 480)
+                Flexible(
+                  child: Semantics(
+                    liveRegion: true,
+                    child: Text.rich(
+                      TextSpan(
+                        children: [
+                          if (code.isNotEmpty)
+                            TextSpan(
+                              text: '$code  ',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontFeatures: [FontFeature.tabularFigures()],
+                              ),
+                            ),
+                          TextSpan(text: selected.name),
+                        ],
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodyLarge,
+                    ),
+                  ),
+                )
+              else
+                const SizedBox.shrink(),
+              const SizedBox(width: 12),
+              buttons,
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// One category in the picker's rail: its name and how many types it holds.
+class _DocCategoryRailItem extends StatelessWidget {
+  const _DocCategoryRailItem({
+    required this.name,
+    required this.count,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String name;
+  final int count;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final ink = selected ? cs.primary : cs.onSurface;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Semantics(
+        button: true,
+        selected: selected,
+        child: Material(
+          color: selected ? cs.primary.withValues(alpha: 0.12) : cs.surface,
+          borderRadius: BorderRadius.circular(12),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: onTap,
+            focusColor: cs.primary.withValues(alpha: 0.18),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 52),
+              child: Padding(
+                padding: const EdgeInsetsDirectional.fromSTEB(16, 10, 14, 10),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Flexible(
+                      flex: 3,
+                      child: Text(
+                        name,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          color: ink,
+                          fontWeight: selected
+                              ? FontWeight.w700
+                              : FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '$count',
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        color: selected ? cs.primary : cs.onSurfaceVariant,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(null),
-          child: Text(AppLocalizations.of(context).actionCancel),
+    );
+  }
+}
+
+/// The types of one category, in as many columns as fit at [_minTileWidth]
+/// (Ilyass Style §2) — measured on the pane, never the window.
+class _DocTypeGrid extends StatelessWidget {
+  const _DocTypeGrid({
+    required this.types,
+    required this.selectedId,
+    required this.onSelect,
+  });
+
+  final List<DocumentType> types;
+  final int? selectedId;
+  final ValueChanged<DocumentType> onSelect;
+
+  static const double _pad = 16;
+  static const double _gap = 12;
+  static const double _minTileWidth = 250;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final inner = constraints.maxWidth - _pad * 2;
+        final perRow = ((inner + _gap) / (_minTileWidth + _gap))
+            .floor()
+            .clamp(1, 3);
+        final tileWidth = (inner - _gap * (perRow - 1)) / perRow;
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(_pad),
+          child: Wrap(
+            spacing: _gap,
+            runSpacing: _gap,
+            children: [
+              for (final t in types)
+                SizedBox(
+                  key: ValueKey(t.id),
+                  width: tileWidth,
+                  child: _DocTypeTile(
+                    type: t,
+                    selected: t.id == selectedId,
+                    onTap: () => onSelect(t),
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// One document type: its series code set like a ledger number, its name, and
+/// what it does to stock.
+class _DocTypeTile extends StatefulWidget {
+  const _DocTypeTile({
+    required this.type,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final DocumentType type;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  State<_DocTypeTile> createState() => _DocTypeTileState();
+}
+
+class _DocTypeTileState extends State<_DocTypeTile> {
+  bool _focused = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final type = widget.type;
+    final selected = widget.selected;
+    final code = (type.code ?? '').trim();
+
+    final (IconData dirIcon, Color dirColor, String dirLabel) =
+        switch (type.stockDirection) {
+          StockDirections.intoStock => (
+            Icons.move_to_inbox_outlined,
+            context.successColor,
+            l.documentTypePickerStockIn,
+          ),
+          2 => (
+            Icons.outbox_outlined,
+            context.warningColor,
+            l.documentTypePickerStockOut,
+          ),
+          _ => (
+            Icons.remove_rounded,
+            cs.onSurfaceVariant,
+            l.documentTypePickerNoStock,
+          ),
+        };
+
+    // A ring for the keyboard only — a finger on a tablet already sees what it
+    // touched, and the selected tile has its own border.
+    final ring =
+        _focused &&
+        FocusManager.instance.highlightMode == FocusHighlightMode.traditional;
+    final strong = selected || ring;
+
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: [if (code.isNotEmpty) code, type.name, dirLabel].join(', '),
+      excludeSemantics: true,
+      child: Material(
+        color: selected ? cs.primary.withValues(alpha: 0.08) : cs.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: BorderSide(
+            color: strong ? cs.primary : cs.outlineVariant,
+            width: strong ? 2 : 1,
+          ),
         ),
-        ElevatedButton(
-          onPressed: _selectedType == null
-              ? null
-              : () => Navigator.of(context).pop(_selectedType),
-          child: Text(AppLocalizations.of(context).actionOk),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: widget.onTap,
+          onFocusChange: (f) => setState(() => _focused = f),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 88),
+            child: IntrinsicHeight(
+              child: Padding(
+                padding: const EdgeInsetsDirectional.fromSTEB(12, 12, 14, 12),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Container(
+                      constraints: const BoxConstraints(minWidth: 64),
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: selected
+                            ? cs.primary
+                            : cs.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        code.isEmpty ? '–' : code,
+                        maxLines: 1,
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          fontFeatures: const [FontFeature.tabularFigures()],
+                          color: selected ? cs.onPrimary : cs.onSurface,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            type.name,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              Icon(dirIcon, size: 16, color: dirColor),
+                              const SizedBox(width: 6),
+                              Flexible(
+                                child: Text(
+                                  dirLabel,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: cs.onSurfaceVariant,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Not colour alone: the chosen tile also carries a check.
+                    if (selected) ...[
+                      const SizedBox(width: 8),
+                      Icon(
+                        Icons.check_circle_rounded,
+                        size: 22,
+                        color: cs.primary,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ),
         ),
-      ],
+      ),
+    );
+  }
+}
+
+/// A centred icon and one line of direction, for a picker with nothing to show.
+class _DocTypeMessage extends StatelessWidget {
+  const _DocTypeMessage({required this.icon, required this.text, this.color});
+
+  final IconData icon;
+  final String text;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final muted = theme.colorScheme.onSurfaceVariant;
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 360),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 40, color: color ?? muted),
+              const SizedBox(height: 12),
+              Text(
+                text,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodyLarge?.copyWith(color: muted),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

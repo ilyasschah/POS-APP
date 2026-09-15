@@ -88,10 +88,10 @@ namespace Api.Services
         /// <summary>
         /// Deletes a document and gives back the stock its lines moved — exactly
         /// what deleting each line one by one gives back
-        /// (<see cref="DocumentItemService.ReverseStockAsync"/>). A Purchase takes
-        /// back what it received; a Stock Return and a Loss &amp; Damage put back
-        /// what they removed; a sale or a refund is left as deleting its lines
-        /// leaves it. Without this the lines vanished with the document (they
+        /// (<see cref="DocumentItemService.ReverseStockAsync"/>): the move its type's
+        /// StockDirection made, the other way, and a count's variance. A POS
+        /// document (with an OrderNumber) and a Proforma moved nothing through
+        /// their lines and get nothing back. Without this the lines vanished with the document (they
         /// cascade) while their stock stayed, so stock on hand stopped adding up
         /// to the moves that are left.
         /// </summary>

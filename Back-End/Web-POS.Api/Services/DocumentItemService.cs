@@ -10,6 +10,10 @@ namespace Api.Services
 {
     public class DocumentItemService
     {
+        // DocumentType.StockDirection values, as seeded by GlobalDefaultsSeeder.
+        private const int StockDirectionIn = 1;
+        private const int StockDirectionOut = 2;
+
         private readonly DocumentItemRepository _itemRepository;
         private readonly ProductRepository _productRepository;
         private readonly DocumentRepository _documentRepository;
@@ -55,18 +59,13 @@ namespace Api.Services
 
             await _itemRepository.AddAsync(entity);
 
-            // Add stock for purchase documents — no IsService exclusion:
-            // buying something always puts it in stock regardless of product type
-            if (document.DocumentTypeId == DocumentTypeConstants.Purchase)
-                await AdjustStockAsync(document.WarehouseId, request.ProductId, companyId, request.Quantity);
-
-            // Stock return sends goods back to supplier → subtract from stock
-            if (document.DocumentTypeId == DocumentTypeConstants.StockReturn)
-                await AdjustStockAsync(document.WarehouseId, request.ProductId, companyId, -request.Quantity);
-
-            // Loss and damage removes items from stock
-            if (document.DocumentTypeId == DocumentTypeConstants.LossAndDamage)
-                await AdjustStockAsync(document.WarehouseId, request.ProductId, companyId, -request.Quantity);
+            // The document type decides which way the line's goods go. No IsService
+            // exclusion: a line on a stock document moves what it says whatever the
+            // product type — buying something always puts it in stock.
+            var moved = await StockSignAsync(document)
+                        * Moved(document.DocumentTypeId, request.Quantity, request.ExpectedQuantity);
+            if (moved != 0)
+                await AdjustStockAsync(document.WarehouseId, request.ProductId, companyId, moved);
 
             return MapperDocumentItem.MapToDto(entity);
         }
@@ -77,6 +76,7 @@ namespace Api.Services
             if (entity == null) throw new KeyNotFoundException("Item not found.");
 
             decimal oldQuantity = entity.Quantity;
+            decimal oldExpected = entity.ExpectedQuantity;
 
             int targetDocId = request.DocumentId ?? entity.DocumentId;
             if (request.DocumentId.HasValue && request.DocumentId.Value != entity.DocumentId)
@@ -93,6 +93,7 @@ namespace Api.Services
             }
 
             decimal calcQuantity = request.Quantity ?? entity.Quantity;
+            decimal calcExpected = request.ExpectedQuantity ?? entity.ExpectedQuantity;
             decimal calcPbt = request.PriceBeforeTax ?? entity.PriceBeforeTax;
             decimal calcPrice = request.Price ?? entity.Price;
             decimal calcDisc = request.Discount ?? entity.Discount;
@@ -121,23 +122,25 @@ namespace Api.Services
 
             entity.UpdateDetails(
                 targetDocId, targetProdId, calcQuantity,
-                request.ExpectedQuantity ?? entity.ExpectedQuantity, calcPbt, calcPrice,
+                calcExpected, calcPbt, calcPrice,
                 calcDisc, calcDiscType, request.ProductCost ?? entity.ProductCost,
                 pbtd, pad, total, total, request.DiscountApplyRule ?? entity.DiscountApplyRule);
 
             var result = await _itemRepository.UpdateAsync(entity);
 
-            // Delta stock adjustment for purchase and stock return documents
-            decimal delta = calcQuantity - oldQuantity;
-            if (delta != 0)
+            // Delta logic: only what the line moves now minus what it moved before,
+            // so an edit never applies the whole line a second time.
+            if (calcQuantity != oldQuantity || calcExpected != oldExpected)
             {
                 var doc = await _documentRepository.GetByIdAsync(targetDocId, companyId);
-                if (doc != null && doc.DocumentTypeId == DocumentTypeConstants.Purchase)
-                    await AdjustStockAsync(doc.WarehouseId, targetProdId, companyId, delta);
-                else if (doc != null && doc.DocumentTypeId == DocumentTypeConstants.StockReturn)
-                    await AdjustStockAsync(doc.WarehouseId, targetProdId, companyId, -delta);
-                else if (doc != null && doc.DocumentTypeId == DocumentTypeConstants.LossAndDamage)
-                    await AdjustStockAsync(doc.WarehouseId, targetProdId, companyId, -delta);
+                if (doc != null)
+                {
+                    var delta = await StockSignAsync(doc)
+                                * (Moved(doc.DocumentTypeId, calcQuantity, calcExpected)
+                                   - Moved(doc.DocumentTypeId, oldQuantity, oldExpected));
+                    if (delta != 0)
+                        await AdjustStockAsync(doc.WarehouseId, targetProdId, companyId, delta);
+                }
             }
 
             return result;
@@ -155,10 +158,9 @@ namespace Api.Services
         }
 
         /// <summary>
-        /// Gives back the stock one line moved — what removing it must undo. A
-        /// Purchase takes back what it received; a Stock Return and a Loss &amp;
-        /// Damage put back what they removed. No other type moves stock through
-        /// its lines here, so there is nothing to give back.
+        /// Gives back the stock one line moved — what removing it must undo: the
+        /// same move, the other way. A line that moved nothing (a POS document's,
+        /// a Proforma's, a count that agreed) gives nothing back.
         /// </summary>
         /// <remarks>
         /// Deleting one line and deleting a whole document
@@ -167,13 +169,57 @@ namespace Api.Services
         /// </remarks>
         public async Task ReverseStockAsync(Document doc, DocumentItem item, int companyId)
         {
-            if (doc.DocumentTypeId == DocumentTypeConstants.Purchase)
-                await AdjustStockAsync(doc.WarehouseId, item.ProductId, companyId, -item.Quantity);
-            else if (doc.DocumentTypeId == DocumentTypeConstants.StockReturn)
-                await AdjustStockAsync(doc.WarehouseId, item.ProductId, companyId, item.Quantity);
-            else if (doc.DocumentTypeId == DocumentTypeConstants.LossAndDamage)
-                await AdjustStockAsync(doc.WarehouseId, item.ProductId, companyId, item.Quantity);
+            var moved = await StockSignAsync(doc)
+                        * Moved(doc.DocumentTypeId, item.Quantity, item.ExpectedQuantity);
+            if (moved != 0)
+                await AdjustStockAsync(doc.WarehouseId, item.ProductId, companyId, -moved);
         }
+
+        /// <summary>
+        /// Which way a line of <paramref name="doc"/> moves goods: +1 into its
+        /// warehouse, −1 out of it, 0 not at all. Read from the document type's
+        /// <see cref="DocumentType.StockDirection"/> (1 in, 2 out, 0 none) rather
+        /// than a list of type ids, so every type the table defines is honoured.
+        /// </summary>
+        /// <remarks>
+        /// 🚨 A POS document — one carrying an OrderNumber — is always 0. Its stock
+        /// is moved by the flow that wrote it (checkout, refund, void), never
+        /// through its lines here: moving it again would take a sale out twice,
+        /// and deleting a voided sale would restock what the void already had.
+        /// </remarks>
+        private async Task<decimal> StockSignAsync(Document doc)
+        {
+            if (!string.IsNullOrEmpty(doc.OrderNumber)) return 0m;
+
+            var direction = await _db.DocumentTypes
+                .Where(t => t.Id == doc.DocumentTypeId)
+                .Select(t => t.StockDirection)
+                .FirstOrDefaultAsync();
+
+            return direction switch
+            {
+                StockDirectionIn => 1m,
+                StockDirectionOut => -1m,
+                _ => 0m,
+            };
+        }
+
+        /// <summary>
+        /// How much of a line moves, in the product's unit, before its sign: its
+        /// quantity — or, on an inventory count, its variance (counted − expected).
+        /// A count corrects stock to what was found; adding everything counted
+        /// would double the shelf.
+        /// </summary>
+        /// <remarks>
+        /// A line's sign is not a direction — the type's StockDirection is. A
+        /// refund rung up on a till records its lines negative, like the money it
+        /// gives back, and still brought the goods back in. Only a count's
+        /// variance is signed. The terminal's Stock Moves reads lines the same way.
+        /// </remarks>
+        private static decimal Moved(int documentTypeId, decimal quantity, decimal expectedQuantity) =>
+            documentTypeId == DocumentTypeConstants.InventoryCount
+                ? quantity - expectedQuantity
+                : Math.Abs(quantity);
 
         /// <summary>
         /// Applies <paramref name="delta"/>, expressed in the PRODUCT's unit, to

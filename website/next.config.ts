@@ -18,7 +18,7 @@ const nextConfig: NextConfig = {
   // blocks cross-origin requests to /__nextjs_font/* and other dev-only
   // resources unless the host is named here. Dev-only — it has no effect on a
   // production build.
-  allowedDevOrigins: ["100.114.12.38"],
+  allowedDevOrigins: ["100.114.12.38", "localhost", "127.0.0.1","192.168.11.103"],
 };
 
 export default nextConfig;

@@ -1,0 +1,221 @@
+SCREENSHOTS FOR THE HELP CENTRE (/help)
+=======================================
+
+Every guide on the help page can show ONE screenshot. Take the screens below,
+save each one with EXACTLY the file name given, and put it in:
+
+    website/public/help/
+
+The help page shows a picture only for guides that have one. A guide without
+a screenshot shows no picture and no placeholder, so you can add them one at
+a time, in any order.
+
+[x] = already done      [ ] = still to take
+Priority: 1 = take first, 2 = next, 3 = nice to have
+
+
+HOW TO TAKE THEM
+----------------
+- App in ENGLISH, LIGHT theme, the default BLUE accent colour.
+  (If you take one in French or Arabic, say so when wiring it in, so the
+  caption says "shown in French".)
+- Use demo data only. No real customer names, phone numbers or emails.
+- Windows: Win + Shift + S, then "Rectangle", then save as PNG.
+- CROP to the part of the screen the guide talks about. A small form in the
+  middle of a big empty window becomes unreadable on the page
+  (device-registration.png had to be cropped for that reason).
+- Wide screens: keep the window about 1280 x 800 so text stays readable.
+- PNG only. File names are lowercase with dashes, exactly as written below.
+
+
+WHEN THE FILES ARE IN THE FOLDER
+--------------------------------
+Easiest: tell Claude "wire the new help screenshots". It adds each file to
+its guide in all three languages.
+
+By hand: open website/app/help/content.ts, find the guide by its id (listed
+below as "guide id"), and add a shot entry to that guide in EACH of the three
+language blocks (en, fr, ar):
+
+    shot: {
+      src: "/help/sale-screen.png",
+      width: 1280,    <- the image's width in pixels
+      height: 800,    <- the image's height in pixels
+      alt: "What the picture shows, for screen readers.",
+      caption: "Short caption shown under the picture.",
+    },
+
+(To find width and height: right-click the file > Properties > Details.)
+Then rebuild the site: npm run build
+
+
+=============================================================================
+1. GETTING STARTED
+=============================================================================
+
+[x] device-registration.png                      guide id: register-terminal
+    Device Registration screen (email, password, LINK DEVICE). DONE.
+
+[ ] data-source-choice.png                       guide id: data-source
+    Priority 3
+    Onboarding slide "Set up this terminal": the two choices
+    "Sync with the cloud" and "Restore from a backup".
+
+[x] terminal-setup.png                           guide id: name-terminal
+    "Set up your terminal": name, theme, accent, text size, keyboard. DONE
+    (taken in French; retake in English if you want it to match).
+
+[ ] business-type.png                            guide id: business-type
+    Priority 3
+    Onboarding slide where you choose the business type, with the tables /
+    bookings switches visible (pick a restaurant so they show).
+
+
+=============================================================================
+2. SELLING AT THE TILL
+=============================================================================
+
+[ ] pin-sign-in.png                              guide id: sign-in
+    Priority 2
+    Sign-in screen with the user tiles and the PIN entry.
+
+[ ] opening-control.png                          guide id: open-register
+    Priority 1
+    The "Opening Control" dialog, with an opening float typed in.
+
+[ ] sale-screen.png                              guide id: make-sale
+    Priority 1
+    Main sales screen: products on one side, a cart with 3-4 items and the
+    total on the other.
+
+[ ] floor-plan.png                               guide id: tables-orders
+    Priority 2
+    "Floor Plan" with a few tables, at least one of them busy with an order.
+
+[ ] refund-dialog.png                            guide id: refund
+    Priority 2
+    Sales history with the Refund dialog open on a sale.
+
+[ ] cash-in-out.png                              guide id: cash-in-out
+    Priority 3
+    The "Cash In / Out" dialog with an amount and a reason filled in.
+
+[ ] closing-register.png                         guide id: close-register
+    Priority 1
+    The "Closing Register" dialog: each payment method with Expected /
+    Counted / Difference, the cash count filled in.
+
+
+=============================================================================
+3. OFFLINE AND SYNC
+=============================================================================
+
+[ ] offline-pending-sync.png                     guide id: selling-offline
+    Priority 2
+    Sales screen with the internet OFF and one or two sales made, so the
+    sync button shows its pending-count badge. Crop around the badge and a
+    bit of the screen.
+
+[ ] sync-status-panel.png                        guide id: sync-status
+    Priority 2
+    The sync status panel (tap the sync button): the list of what is
+    pending and what is synced, with the "Sync now" button.
+
+[ ] database-backup-settings.png                 guide id: backups
+    Priority 3
+    Settings > "Database & Backup": the automatic backup interval and the
+    backup location.
+
+
+=============================================================================
+4. MANAGEMENT
+=============================================================================
+
+[ ] product-editor.png                           guide id: products
+    Priority 2
+    The product editor with price, category, tax and barcode filled in.
+
+[ ] stock-warehouses.png                         guide id: stock
+    Priority 3
+    The Stock screen, ideally with one product showing as unassigned in a
+    warehouse.
+
+[ ] customer-loyalty.png                         guide id: customers
+    Priority 3
+    A customer with a loyalty card, or the Loyalty Cards list.
+
+[ ] security-rules.png                           guide id: users-security
+    Priority 1
+    "Security Rules": a few rules, some set to Cashier and some to Admin.
+
+[ ] reports.png                                  guide id: reports
+    Priority 3
+    A report (sales by product works well) with some demo numbers.
+
+
+=============================================================================
+5. PRINTERS AND DISPLAYS
+=============================================================================
+
+[ ] printer-settings.png                         guide id: receipt-printer
+    Priority 1
+    "Printer settings" on the receipt printer, with "Connection" set to
+    "Network printer (Wi-Fi / LAN)", an IP address, port 9100 and the
+    paper size visible.
+
+[ ] kitchen-display-settings.png                 guide id: kitchen-display
+    Priority 2
+    Settings > "Kitchen Display" with a KDS IP address added.
+
+[ ] customer-display-qr.png                      guide id: customer-display
+    Priority 3
+    Settings > "Customer display" switched on, with its QR code showing.
+
+[ ] weighing-scale-settings.png                  guide id: scales
+    Priority 3
+    Settings > "Weighing Scale" on the Windows till: COM port, speed and the
+    live reading. (Windows only; skip if no scale is connected.)
+
+
+=============================================================================
+6. TROUBLESHOOTING
+=============================================================================
+These show inside the question once it is opened. Crop tightly around the
+message; a whole screen is too much here.
+
+[ ] printer-error.png                            guide id: printer-unreachable
+    Priority 2
+    The error after a sale with the network printer switched off: the
+    message that names the printer's address and port.
+
+[ ] could-not-reach-server.png                   guide id: not-syncing
+    Priority 3
+    The "Could not reach the server" message.
+
+[ ] terminal-name-taken.png                      guide id: name-taken
+    Priority 3
+    Terminal set-up with a name already used by another terminal, showing
+    the "already used by another terminal" error.
+
+[ ] subscription-inactive.png                    guide id: subscription
+    Priority 3
+    The "Subscription inactive" screen. Only if you can trigger it on a test
+    company; do NOT expire a real customer.
+
+[ ] register-switch-blocked.png                  guide id: switch-register
+    Priority 3
+    "Choose register" with a session still open, showing the "Close this
+    register's session before switching" message.
+
+[ ] cashier-refused.png                          guide id: cashier-refused
+    Priority 3
+    Signed in as a cashier, trying an admin-only action: the "Access Denied"
+    message.
+
+
+=============================================================================
+TOTAL: 29 guides, 2 done, 27 to take.
+Start with the five Priority 1 shots:
+  opening-control.png, sale-screen.png, closing-register.png,
+  security-rules.png, printer-settings.png
+=============================================================================

@@ -57,6 +57,24 @@ void main() {
             lastModified: Value(now),
           ));
     }
+    // The server's seeded types — the history reads each one's direction and
+    // category from here.
+    for (final (id, category, direction) in [
+      (DocumentTypes.purchase, DocumentCategories.expenses, 1),
+      (DocumentTypes.sales, DocumentCategories.sales, 2),
+      (DocumentTypes.inventoryCount, DocumentCategories.inventory, 1),
+      (DocumentTypes.refund, DocumentCategories.sales, 1),
+      (DocumentTypes.stockReturn, DocumentCategories.expenses, 2),
+      (DocumentTypes.lossAndDamage, DocumentCategories.loss, 2),
+      (DocumentTypes.proforma, DocumentCategories.sales, 0),
+    ]) {
+      await db.into(db.documentTypesTable).insert(DocumentTypesTableCompanion(
+            id: Value(id),
+            name: Value('Type $id'),
+            documentCategoryId: Value(category),
+            stockDirection: Value(direction),
+          ));
+    }
     await db.into(db.barcodesTable).insert(const BarcodesTableCompanion(
           localId: Value('bc-1'),
           productId: Value(kMintTea),
@@ -167,6 +185,48 @@ void main() {
       3.0,
     ));
     expect(count.isIncoming, isFalse);
+  });
+
+  test('a refund comes in from Customers, however its lines were signed',
+      () async {
+    // Rung up on this till: lines stored negative, like the money given back.
+    final local = await addDocument(DocumentTypes.refund,
+        date: t0, number: 'POS1-220-000001');
+    await addLine(local, kMintTea, -2);
+    // Pulled from the server: the same kind of line, positive.
+    final pulled = await addDocument(DocumentTypes.refund,
+        date: t0.add(const Duration(hours: 1)), number: '26-220-000001');
+    await addLine(pulled, kMintTea, 3);
+
+    final page = await read();
+
+    for (final move in page.lines) {
+      expect((move.from, move.to),
+          (StockLocationKind.customers, StockLocationKind.warehouse));
+      expect(move.isIncoming, isTrue);
+    }
+    expect(page.lines.map((m) => m.quantity), [3.0, 2.0]);
+  });
+
+  test('a type moves the way its stock_direction says, not by its id',
+      () async {
+    // A type the server added: written off to Scrap, out of stock.
+    await db.into(db.documentTypesTable).insert(const DocumentTypesTableCompanion(
+          id: Value(42),
+          name: Value('Breakage'),
+          documentCategoryId: Value(DocumentCategories.loss),
+          stockDirection: Value(StockDirections.outOfStock),
+        ));
+    final breakage = await addDocument(42, date: t0);
+    await addLine(breakage, kMintTea, 4);
+    // A type this till has not pulled yet has no direction to show.
+    final unknown = await addDocument(77, date: t0);
+    await addLine(unknown, kMintTea, 9);
+
+    final move = (await read()).lines.single;
+
+    expect((move.documentTypeId, move.from, move.to, move.quantity),
+        (42, StockLocationKind.warehouse, StockLocationKind.scrap, 4.0));
   });
 
   test('service products, deleted lines and deleted documents are left out',

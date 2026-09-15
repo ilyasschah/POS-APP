@@ -22,6 +22,10 @@ export type GlyphName =
   | "loyalty"
   | "refunds"
   | "hardware"
+  // Help centre
+  | "receipt"
+  | "sync"
+  | "lifebuoy"
   // Platforms
   | "desktop"
   | "tablet"
@@ -44,6 +48,38 @@ const PATHS: Record<GlyphName, ReactNode> = {
       <circle cx="8" cy="8.75" r="2.25" />
       <rect x="13" y="6.5" width="5.5" height="4.5" rx="1.25" />
       <circle cx="8" cy="15.75" r="2.25" />
+    </>
+  ),
+
+  /* A till roll torn off: three printed lines over a torn edge. */
+  receipt: (
+    <>
+      <path d="M6 3.25h12v17.5l-2-1.25-2 1.25-2-1.25-2 1.25-2-1.25-2 1.25z" />
+      <path d="M9 8h6" />
+      <path d="M9 11.5h6" />
+      <path d="M9 15h3.5" />
+    </>
+  ),
+
+  /* Two arcs chasing each other: queued work going out, fresh data coming in. */
+  sync: (
+    <>
+      <path d="M4.75 12a7.25 7.25 0 0 1 12.38-5.13" />
+      <path d="M17.25 3v4h-4" />
+      <path d="M19.25 12a7.25 7.25 0 0 1-12.38 5.13" />
+      <path d="M6.75 21v-4h4" />
+    </>
+  ),
+
+  /* A life ring: help when something has gone wrong, not a question mark. */
+  lifebuoy: (
+    <>
+      <circle cx="12" cy="12" r="8.75" />
+      <circle cx="12" cy="12" r="3.5" />
+      <path d="M5.8 5.8l3.7 3.7" />
+      <path d="M14.5 14.5l3.7 3.7" />
+      <path d="M18.2 5.8l-3.7 3.7" />
+      <path d="M9.5 14.5l-3.7 3.7" />
     </>
   ),
 

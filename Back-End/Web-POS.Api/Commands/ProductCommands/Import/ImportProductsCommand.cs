@@ -54,22 +54,32 @@ namespace Api.Commands.ProductCommands.Import
             // Only rows that were committed feed the document.
             var processedItems = new List<(Product product, decimal? quantity, decimal? taxRate, bool taxIsFixed, bool? isTaxInclusive, decimal? countedFrom)>();
 
-            foreach (var row in req.Rows)
+            for (var index = 0; index < req.Rows.Count; index++)
             {
-                if (string.IsNullOrWhiteSpace(row.Name)) continue;
+                var row = req.Rows[index];
+                if (string.IsNullOrWhiteSpace(row.Name))
+                {
+                    result.Rows.Add(new ImportProductRowResult { Index = index, Outcome = "ignored" });
+                    continue;
+                }
                 var label = row.Name.Trim();
 
                 var invalid = Validate(row);
                 if (invalid != null)
                 {
                     result.Errors.Add($"'{Short(label)}': {invalid}");
+                    result.Rows.Add(new ImportProductRowResult { Index = index, Outcome = "error", Message = invalid });
                     continue;
                 }
 
-                var isDuplicate = cache.Products.ContainsKey(Key(label));
+                var isDuplicate = cache.Products.TryGetValue(Key(label), out var duplicate);
                 if (isDuplicate && (req.SkipDuplicates || !req.MergeDuplicates))
                 {
                     result.Skipped++;
+                    result.Rows.Add(new ImportProductRowResult
+                    {
+                        Index = index, Outcome = "skipped", ProductId = duplicate!.Id,
+                    });
                     continue;
                 }
 
@@ -89,7 +99,9 @@ namespace Api.Commands.ProductCommands.Import
                 catch (Exception ex)
                 {
                     await journal.RollBackAsync(_db, ct);
-                    result.Errors.Add($"'{Short(label)}': {Innermost(ex).Message}");
+                    var reason = Innermost(ex).Message;
+                    result.Errors.Add($"'{Short(label)}': {reason}");
+                    result.Rows.Add(new ImportProductRowResult { Index = index, Outcome = "error", Message = reason });
                     continue;
                 }
 
@@ -97,6 +109,13 @@ namespace Api.Commands.ProductCommands.Import
                 if (journal.Outcome == RowOutcome.Created) result.Created++;
                 else result.Updated++;
                 result.Warnings.AddRange(journal.Warnings.Select(w => $"'{Short(label)}': {w}"));
+                result.Rows.Add(new ImportProductRowResult
+                {
+                    Index = index,
+                    Outcome = journal.Outcome == RowOutcome.Created ? "created" : "updated",
+                    ProductId = journal.Product!.Id,
+                    Message = journal.Warnings.Count == 0 ? null : string.Join("; ", journal.Warnings),
+                });
                 processedItems.Add((journal.Product!, row.Quantity, row.TaxRate, row.TaxIsFixed ?? false, row.IsTaxInclusivePrice, journal.CountedFrom));
             }
 

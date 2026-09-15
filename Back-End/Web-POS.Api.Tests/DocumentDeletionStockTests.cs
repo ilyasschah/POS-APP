@@ -11,12 +11,15 @@ using Xunit;
 namespace Api.Tests;
 
 /// <summary>
-/// Deleting a document gives back the stock its lines moved — exactly what
-/// deleting each of its lines one by one gives back.
+/// A document line moves stock the way its type's StockDirection says (1 in,
+/// 2 out, 0 none), and deleting a document gives back exactly what deleting each
+/// of its lines one by one gives back.
 ///
 /// <para>Before 2026-09-11 the lines cascaded away with the document while
 /// their stock stayed where they had put it, so stock on hand stopped adding up
-/// to the Stock Moves history that was left.</para>
+/// to the Stock Moves history that was left. Before 2026-09-15 only Purchase,
+/// Stock Return and Loss &amp; Damage moved anything: a manual Sale, Refund or
+/// Inventory Count showed in that history as a move that never happened.</para>
 ///
 /// <para>Every line here is added through <see cref="DocumentItemService"/>,
 /// the way the API adds one, because that is also what moves its stock in the
@@ -63,9 +66,11 @@ public class DocumentDeletionStockTests : IDisposable
                  {
                      (DocumentTypeConstants.Purchase, "Purchase", "100", 1, 1),
                      (DocumentTypeConstants.Sales, "Sales", "200", 2, 2),
+                     (DocumentTypeConstants.InventoryCount, "Inventory Count", "300", 3, 1),
                      (DocumentTypeConstants.Refund, "Refund", "220", 2, 1),
                      (DocumentTypeConstants.StockReturn, "Stock Return", "120", 1, 2),
                      (DocumentTypeConstants.LossAndDamage, "Loss And Damage", "400", 4, 2),
+                     (DocumentTypeConstants.Proforma, "Proforma", "230", 2, 0),
                  })
         {
             var type = DocumentType.Create(name, code, category, stockDirection: direction);
@@ -134,7 +139,8 @@ public class DocumentDeletionStockTests : IDisposable
     private static DocumentService Documents(AppDbContext db) =>
         new(new DocumentRepository(db), Items(db), db);
 
-    private int NewDocument(int typeId)
+    /// <summary>A document in Main — a manual one unless it carries a POS order number.</summary>
+    private int NewDocument(int typeId, string? orderNumber = null)
     {
         using var db = Db();
         var document = Document.Create(
@@ -143,13 +149,19 @@ public class DocumentDeletionStockTests : IDisposable
             companyId: _company,
             documentTypeId: typeId,
             warehouseId: _warehouse,
-            total: 0);
+            total: 0,
+            orderNumber: orderNumber);
         db.Documents.Add(document);
         db.SaveChanges();
         return document.Id;
     }
 
-    private async Task AddLine(int documentId, int productId, decimal quantity)
+    /// <summary>
+    /// Adds a line the way the terminal pushes one: expecting exactly what it
+    /// carries, unless it is a count that recorded the stock it was counted
+    /// against.
+    /// </summary>
+    private async Task AddLine(int documentId, int productId, decimal quantity, decimal? expected = null)
     {
         await using var db = Db();
         await Items(db).CreateAsync(new CreateDocumentItemRequest
@@ -157,10 +169,16 @@ public class DocumentDeletionStockTests : IDisposable
             DocumentId = documentId,
             ProductId = productId,
             Quantity = quantity,
-            ExpectedQuantity = quantity,
+            ExpectedQuantity = expected ?? quantity,
             Price = 10m,
             PriceBeforeTax = 10m,
         }, _company);
+    }
+
+    private int LineOf(int documentId)
+    {
+        using var db = Db();
+        return db.DocumentItems.Single(i => i.DocumentId == documentId).Id;
     }
 
     private async Task DeleteDocument(int documentId)
@@ -179,6 +197,8 @@ public class DocumentDeletionStockTests : IDisposable
 
     [Theory]
     [InlineData(DocumentTypeConstants.Purchase, 110)]      // received 10
+    [InlineData(DocumentTypeConstants.Sales, 90)]          // sold 10
+    [InlineData(DocumentTypeConstants.Refund, 110)]        // took 10 back from a customer
     [InlineData(DocumentTypeConstants.StockReturn, 90)]    // sent 10 back to the vendor
     [InlineData(DocumentTypeConstants.LossAndDamage, 90)]  // wrote 10 off
     public async Task Deleting_a_document_gives_back_what_its_lines_moved(int typeId, int afterLine)
@@ -222,13 +242,48 @@ public class DocumentDeletionStockTests : IDisposable
         Assert.Equal(7m, StockOf(_tea, _annex));
     }
 
-    [Theory]
-    [InlineData(DocumentTypeConstants.Sales)]
-    [InlineData(DocumentTypeConstants.Refund)]
-    public async Task A_document_whose_lines_move_no_stock_gives_none_back(int typeId)
+    [Fact]
+    public async Task An_inventory_count_moves_its_variance_not_everything_counted()
     {
-        var doc = NewDocument(typeId);
+        // 97 found where the system held 100: three short.
+        var doc = NewDocument(DocumentTypeConstants.InventoryCount);
+        await AddLine(doc, _tea, 97m, expected: 100m);
+        Assert.Equal(97m, StockOf(_tea));
+
+        await DeleteDocument(doc);
+
+        Assert.Equal(100m, StockOf(_tea));
+    }
+
+    [Fact]
+    public async Task A_count_that_agreed_with_the_system_moves_nothing()
+    {
+        var doc = NewDocument(DocumentTypeConstants.InventoryCount);
+        await AddLine(doc, _tea, 100m, expected: 100m);
+
+        Assert.Equal(100m, StockOf(_tea));
+    }
+
+    [Fact]
+    public async Task A_lines_sign_is_not_a_direction()
+    {
+        // A refund rung up on a till records its lines negative, like the money
+        // it gives back. The goods still came back in.
+        var doc = NewDocument(DocumentTypeConstants.Refund);
+        await AddLine(doc, _tea, -3m);
+        Assert.Equal(103m, StockOf(_tea));
+
+        await DeleteDocument(doc);
+
+        Assert.Equal(100m, StockOf(_tea));
+    }
+
+    [Fact]
+    public async Task A_proforma_moves_nothing_and_gives_nothing_back()
+    {
+        var doc = NewDocument(DocumentTypeConstants.Proforma);
         await AddLine(doc, _tea, 10m);
+        Assert.Equal(100m, StockOf(_tea));
 
         await DeleteDocument(doc);
 
@@ -237,16 +292,45 @@ public class DocumentDeletionStockTests : IDisposable
         Assert.False(db.Documents.Any(d => d.Id == doc));
     }
 
+    [Theory]
+    [InlineData(DocumentTypeConstants.Sales)]
+    [InlineData(DocumentTypeConstants.Refund)]
+    public async Task A_POS_documents_lines_never_move_stock_here(int typeId)
+    {
+        // Checkout, refund and void move a POS document's stock themselves.
+        // Moving it again through its lines would count the sale twice, and
+        // deleting a voided sale would restock what the void already restocked.
+        var doc = NewDocument(typeId, orderNumber: "#42");
+        await AddLine(doc, _tea, 10m);
+        Assert.Equal(100m, StockOf(_tea));
+
+        await DeleteDocument(doc);
+
+        Assert.Equal(100m, StockOf(_tea));
+    }
+
+    [Fact]
+    public async Task Editing_a_line_moves_only_the_difference()
+    {
+        var doc = NewDocument(DocumentTypeConstants.Sales);
+        await AddLine(doc, _tea, 10m);
+        Assert.Equal(90m, StockOf(_tea));
+
+        await using (var db = Db())
+            await Items(db).UpdateAsync(new UpdateDocumentItemRequest { Id = LineOf(doc), Quantity = 4m }, _company);
+        Assert.Equal(96m, StockOf(_tea));
+
+        await DeleteDocument(doc);
+        Assert.Equal(100m, StockOf(_tea));
+    }
+
     [Fact]
     public async Task Deleting_the_document_agrees_with_deleting_its_lines_one_by_one()
     {
         var byLine = NewDocument(DocumentTypeConstants.LossAndDamage);
         await AddLine(byLine, _tea, 6m);
         await using (var db = Db())
-        {
-            var lineId = db.DocumentItems.Single(i => i.DocumentId == byLine).Id;
-            await Items(db).DeleteAsync(lineId, _company);
-        }
+            await Items(db).DeleteAsync(LineOf(byLine), _company);
         var afterLineDelete = StockOf(_tea);
 
         var whole = NewDocument(DocumentTypeConstants.LossAndDamage);

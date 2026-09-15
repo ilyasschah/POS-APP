@@ -283,3 +283,21 @@ export function applyAccent(seed: string): void {
   const tokens = deriveAccentTokens(seed);
   keys.forEach((key) => root.style.setProperty(TOKEN_VARS[key], tokens[key]));
 }
+
+/** Where the visitor's chosen accent is remembered, across pages and visits. */
+export const ACCENT_STORAGE_KEY = "octopus-accent";
+
+/**
+ * The remembered accent, or null. Call it from an effect, never during render:
+ * localStorage does not exist on the server, and reading it in render is the
+ * hydration mismatch that has already taken out this dev server once.
+ */
+export function savedAccent(): string | null {
+  try {
+    const saved = localStorage.getItem(ACCENT_STORAGE_KEY);
+    return saved && parseHex(saved) ? saved : null;
+  } catch {
+    // Private mode, or site data blocked. The brand default is a fine answer.
+    return null;
+  }
+}

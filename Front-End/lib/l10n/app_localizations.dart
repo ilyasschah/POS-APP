@@ -1372,6 +1372,48 @@ abstract class AppLocalizations {
   /// **'Select document type'**
   String get selectDocumentType;
 
+  /// No description provided for @documentTypePickerHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The type decides how the document is numbered and whether it moves stock.'**
+  String get documentTypePickerHint;
+
+  /// No description provided for @documentTypePickerStockIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Adds stock'**
+  String get documentTypePickerStockIn;
+
+  /// No description provided for @documentTypePickerStockOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Removes stock'**
+  String get documentTypePickerStockOut;
+
+  /// No description provided for @documentTypePickerNoStock.
+  ///
+  /// In en, this message translates to:
+  /// **'No stock movement'**
+  String get documentTypePickerNoStock;
+
+  /// No description provided for @documentTypePickerConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Use this type'**
+  String get documentTypePickerConfirm;
+
+  /// No description provided for @documentTypePickerCategoryEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No document types in this category.'**
+  String get documentTypePickerCategoryEmpty;
+
+  /// No description provided for @documentTypePickerNoneYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No document types on this device yet. Sync with the server to download them.'**
+  String get documentTypePickerNoneYet;
+
   /// No description provided for @selectReport.
   ///
   /// In en, this message translates to:
@@ -14287,6 +14329,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'“{name}” can\'t be deleted — it appears in existing sales or documents, which must keep the tax they were issued with. Disable it instead.'**
   String taxInUseByDocuments(String name);
+
+  /// No description provided for @importReadingFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading the file…'**
+  String get importReadingFile;
+
+  /// No description provided for @importSavingProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving on this device: {done} of {total}'**
+  String importSavingProgress(int done, int total);
+
+  /// No description provided for @importSavedLocallyNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved on this device and ready to use. {count, plural, =1{1 product is} other{{count} products are}} being sent to the server in the background — this carries on after a restart or a lost connection.'**
+  String importSavedLocallyNote(int count);
+
+  /// No description provided for @importNothingNewToSync.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved on this device. Nothing new to send to the server.'**
+  String get importNothingNewToSync;
+
+  /// No description provided for @importSyncSending.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending to the server: {sent} of {total} products'**
+  String importSyncSending(int sent, int total);
+
+  /// No description provided for @importSyncWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for the server — the upload resumes on its own. Last error: {message}'**
+  String importSyncWaiting(String message);
+
+  /// No description provided for @importSyncComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Last import: {count} products on the server'**
+  String importSyncComplete(int count);
+
+  /// No description provided for @importSyncRefused.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} refused by the server'**
+  String importSyncRefused(int count);
+
+  /// No description provided for @importSyncRefusedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Refused by the server'**
+  String get importSyncRefusedTitle;
+
+  /// No description provided for @importSyncDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Details'**
+  String get importSyncDetails;
 
   /// No description provided for @taxesNotDeletedInUse.
   ///

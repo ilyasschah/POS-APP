@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:pos_app/company/company_provider.dart';
@@ -146,6 +148,13 @@ class SyncNotifier extends AsyncNotifier<List<String>> {
         }
       },
     );
+
+    // A large XML import uploads in time-boxed slices so it never holds the
+    // rest of the sync back. When a slice ends with rows still to send, go round
+    // again now rather than wait for the next save or timer.
+    if (ref.read(syncManagerProvider).catalogImport.hasMoreWork) {
+      Timer(const Duration(seconds: 1), () => sync());
+    }
   }
 }
 

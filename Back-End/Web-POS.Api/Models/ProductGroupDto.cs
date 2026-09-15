@@ -61,6 +61,21 @@
         public int Skipped { get; set; }
         public List<string> Errors { get; set; } = [];
         public List<string> Warnings { get; set; } = [];
+
+        /// <summary>
+        /// Every group the import named — rows and the parents they point at —
+        /// with its id, whether it was created, merged or skipped. Lets a client
+        /// that built the same groups offline swap its temporary ids for these.
+        /// Empty when the import could not be saved.
+        /// </summary>
+        public List<ImportedGroupRef> Groups { get; set; } = [];
+    }
+
+    public class ImportedGroupRef
+    {
+        public string Name { get; set; } = "";
+        public int Id { get; set; }
+        public int? ParentGroupId { get; set; }
     }
 
     public class UpdateProductGroupRequest

@@ -154,7 +154,3 @@ build different from the one you run today.
 [--] STILL OWED ON SECURITY: a server-side per-user audit,
      and a per-user salt on the local PIN.
 
-
-
-
-the SECURITY rules screen doesnt show the lables good and they are not resposive 

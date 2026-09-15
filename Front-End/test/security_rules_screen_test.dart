@@ -16,6 +16,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pos_app/company/company_model.dart';
 import 'package:pos_app/company/company_provider.dart';
+import 'package:pos_app/core/ilyass_dropdown.dart';
+import 'package:pos_app/core/unified_search_bar.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:pos_app/security/security_key_model.dart';
 import 'package:pos_app/security/security_key_provider.dart';
@@ -56,7 +58,11 @@ void main() {
 
   tearDown(() => container.dispose());
 
-  Future<void> pump(WidgetTester tester, {Size size = const Size(1400, 900)}) async {
+  Future<void> pump(
+    WidgetTester tester, {
+    Size size = const Size(1400, 900),
+    Locale locale = const Locale('en'),
+  }) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
@@ -64,16 +70,24 @@ void main() {
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
-        child: const MaterialApp(
-          locale: Locale('en'),
+        child: MaterialApp(
+          locale: locale,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: [Locale('en')],
-          home: SecurityRulesScreen(),
+          supportedLocales: const [Locale('en'), Locale('fr')],
+          home: const SecurityRulesScreen(),
         ),
       ),
     );
     await tester.pumpAndSettle();
   }
+
+  // 🚨 Scoped to the search bar. Every rule tile carries a role dropdown, and a
+  // Material 3 dropdown is built on a TextField too — a bare
+  // `find.byType(TextField)` matches one per rule plus the search.
+  final searchField = find.descendant(
+    of: find.byType(UnifiedSearchBar),
+    matching: find.byType(TextField),
+  );
 
   testWidgets('every rule is on screen, under its own section', (tester) async {
     // Tall enough that all four sections are laid out at once — a ListView
@@ -105,7 +119,7 @@ void main() {
       (tester) async {
     await pump(tester);
 
-    await tester.enterText(find.byType(TextField), 'refund');
+    await tester.enterText(searchField, 'refund');
     await tester.pumpAndSettle();
 
     expect(find.text('Refund'), findsOneWidget);
@@ -118,7 +132,7 @@ void main() {
     // call the rule — and the only spelling that works in every language.
     await pump(tester);
 
-    await tester.enterText(find.byType(TextField), 'CashDrawer');
+    await tester.enterText(searchField, 'CashDrawer');
     await tester.pumpAndSettle();
 
     expect(find.text('Open cash drawer'), findsOneWidget);
@@ -128,31 +142,40 @@ void main() {
   testWidgets('a search that matches nothing says so', (tester) async {
     await pump(tester);
 
-    await tester.enterText(find.byType(TextField), 'zzzz');
+    await tester.enterText(searchField, 'zzzz');
     await tester.pumpAndSettle();
 
     expect(find.text('No results for these filters'), findsOneWidget);
     expect(find.text('"zzzz"'), findsOneWidget);
   });
 
-  testWidgets('the Cashier/Admin words never wrap inside the control',
+  testWidgets('the role picker is never narrower than its own words',
       (tester) async {
-    // 🚨 The bug this pins, seen on a 1366px till at three columns: the
-    // control was a `Flexible(flex: 2)`, so it got a fifth of the tile — and a
-    // SegmentedButton too narrow for its words does not ellipsize them, it
-    // wraps them ONE CHARACTER PER LINE ("Ca sh ie r"). The control is a
-    // fixed-size thing and must be measured before the label, never after.
-    await pump(tester, size: const Size(1400, 1600));
+    // 🚨 Two bugs this pins. First a SegmentedButton given a fifth of the tile
+    // wrapped its words one character per line ("Ca sh ie r"). Then a dropdown
+    // in a fixed 150/178px box: that fits "Admin" but not "Administrateur", and
+    // a dropdown field does not ellipsize — it SCROLLS the text inside itself,
+    // so the French till read "Administra" with no sign anything was hidden.
+    // The picker is sized by its longest option and measured before the label.
+    for (final size in const [Size(1400, 1600), Size(420, 1600)]) {
+      await pump(tester, size: size, locale: const Locale('fr'));
 
-    final label = find.text('Cashier').first;
-    expect(tester.getSize(label).height, lessThan(24),
-        reason: 'one line of labelLarge; four stacked characters is ~60');
+      final fields = find.descendant(
+        of: find.byType(IlyassDropdown<int>),
+        matching: find.byType(EditableText),
+      );
+      final count = fields.evaluate().length;
+      expect(count, _rules.length, reason: 'one role picker per rule');
 
-    // And the control was measured before the label, not squeezed into what
-    // was left: a fifth of a ~360px tile is ~140, its natural width is ~200.
-    final control = tester.getSize(find.byType(SegmentedButton<int>).first);
-    expect(control.width, greaterThan(170));
-    expect(tester.takeException(), isNull);
+      for (var i = 0; i < count; i++) {
+        final editable =
+            tester.state<EditableTextState>(fields.at(i)).renderEditable;
+        expect(editable.maxScrollExtent, 0,
+            reason: '${size.width}px window: "${editable.text?.toPlainText()}" '
+                'is scrolled inside its own field');
+      }
+      expect(tester.takeException(), isNull);
+    }
   });
 
   testWidgets('the column count comes from the width, not a breakpoint',
@@ -166,8 +189,9 @@ void main() {
     final narrow = tester.getSize(find.byKey(tile)).width;
 
     // 🚨 The old grid was a fixed widthFactor: 0.5, so this ratio was 2.0 at
-    // every window size. One column at 700px, three inside the 1200px cap.
+    // every window size. One column at 700px; two inside the 1200px cap, where
+    // a third would leave no room for a rule label beside the role picker.
     expect(narrow, greaterThan(600));
-    expect(wide, lessThan(450));
+    expect(wide, inInclusiveRange(500, 620));
   });
 }

@@ -688,6 +688,30 @@ class AppLocalizationsEn extends AppLocalizations {
   String get selectDocumentType => 'Select document type';
 
   @override
+  String get documentTypePickerHint =>
+      'The type decides how the document is numbered and whether it moves stock.';
+
+  @override
+  String get documentTypePickerStockIn => 'Adds stock';
+
+  @override
+  String get documentTypePickerStockOut => 'Removes stock';
+
+  @override
+  String get documentTypePickerNoStock => 'No stock movement';
+
+  @override
+  String get documentTypePickerConfirm => 'Use this type';
+
+  @override
+  String get documentTypePickerCategoryEmpty =>
+      'No document types in this category.';
+
+  @override
+  String get documentTypePickerNoneYet =>
+      'No document types on this device yet. Sync with the server to download them.';
+
+  @override
   String get selectReport => 'Select report';
 
   @override
@@ -7985,6 +8009,55 @@ class AppLocalizationsEn extends AppLocalizations {
   String taxInUseByDocuments(String name) {
     return '“$name” can\'t be deleted — it appears in existing sales or documents, which must keep the tax they were issued with. Disable it instead.';
   }
+
+  @override
+  String get importReadingFile => 'Reading the file…';
+
+  @override
+  String importSavingProgress(int done, int total) {
+    return 'Saving on this device: $done of $total';
+  }
+
+  @override
+  String importSavedLocallyNote(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count products are',
+      one: '1 product is',
+    );
+    return 'Saved on this device and ready to use. $_temp0 being sent to the server in the background — this carries on after a restart or a lost connection.';
+  }
+
+  @override
+  String get importNothingNewToSync =>
+      'Saved on this device. Nothing new to send to the server.';
+
+  @override
+  String importSyncSending(int sent, int total) {
+    return 'Sending to the server: $sent of $total products';
+  }
+
+  @override
+  String importSyncWaiting(String message) {
+    return 'Waiting for the server — the upload resumes on its own. Last error: $message';
+  }
+
+  @override
+  String importSyncComplete(int count) {
+    return 'Last import: $count products on the server';
+  }
+
+  @override
+  String importSyncRefused(int count) {
+    return '$count refused by the server';
+  }
+
+  @override
+  String get importSyncRefusedTitle => 'Refused by the server';
+
+  @override
+  String get importSyncDetails => 'Details';
 
   @override
   String taxesNotDeletedInUse(int count, String names) {

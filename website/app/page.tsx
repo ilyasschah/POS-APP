@@ -1,88 +1,24 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Image from "next/image";
 import Reveal from "./components/Reveal";
 import PosDemo from "./components/PosDemo";
 import Glyph from "./components/Glyph";
 import HeroSlides from "./components/HeroSlides";
 import ThemePicker from "./components/ThemePicker";
-import { DICTS, LANGS, dirOf, detectLang, type Lang } from "./i18n";
+import SiteHeader from "./components/SiteHeader";
+import SiteFooter from "./components/SiteFooter";
+import { DICTS } from "./i18n";
+import { useSiteLang } from "./useSiteLang";
 
 export default function Home() {
-  // Starts at English so the SSR'd HTML is deterministic — crawlers index the
-  // English copy, and server and client agree at hydration.
-  const [lang, setLang] = useState<Lang>("en");
-  // Whether the visitor has chosen for themselves. Once they have, the browser
-  // preference must never overrule them.
-  const [chosen, setChosen] = useState(false);
-  // The header hairline is earned, not permanent: at rest the nav floats on the
-  // page ground, and the rule only appears once there is content behind it to
-  // separate. Starts false on both server and client, so nothing to reconcile.
-  const [scrolled, setScrolled] = useState(false);
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 8);
-    onScroll();
-    // A deep link (/#pricing) jumps the page after this effect has run, and an
-    // instant jump can land without emitting a scroll event the listener would
-    // catch. Without this re-check, arriving on a deep link paints a header
-    // with no hairline over content that is already scrolled past.
-    const raf = requestAnimationFrame(onScroll);
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener("scroll", onScroll);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (chosen) return;
-    const guess = detectLang(navigator.languages ?? [navigator.language]);
-    // Reading the browser's language IS synchronising with an external system,
-    // which is what an effect is for. It cannot move into a lazy initialiser:
-    // that runs during render and would produce different markup on the client
-    // than the server sent — the hydration mismatch that crashed this dev
-    // server once already.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (guess !== "en") setLang(guess);
-  }, [chosen]);
-
-  function pick(next: Lang) {
-    setChosen(true);
-    setLang(next);
-  }
+  // English on the first render, then the visitor's own — see useSiteLang.
+  const { lang, dir, pick } = useSiteLang();
   const t = DICTS[lang];
-  const dir = dirOf(lang);
 
   return (
     <div dir={dir} lang={lang}>
-      <header className="site-header" data-scrolled={scrolled}>
-        <nav
-          className="shell"
-          aria-label="Main"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            height: "64px",
-          }}
-        >
-          <a href="#top" style={{ display: "flex", alignItems: "center", gap: "0.625rem" }}>
-            <Mark />
-            <span style={{ fontWeight: 600, letterSpacing: "-0.01em" }}>Octopus POS</span>
-          </a>
-
-          <div style={{ display: "flex", alignItems: "center", gap: "1.25rem" }}>
-            <a href="#features" className="nav-link">{t.nav.features}</a>
-            <a href="#platforms" className="nav-link">{t.nav.platforms}</a>
-            <a href="#customise" className="nav-link">{t.theme.eyebrow}</a>
-            <a href="#pricing" className="nav-link">{t.nav.pricing}</a>
-
-            <a href="#contact" className="btn btn-primary">{t.nav.demo}</a>
-          </div>
-        </nav>
-      </header>
+      <SiteHeader t={t} page="home" />
 
       <main id="top">
         {/* ---------------- Hero ---------------- */}
@@ -343,45 +279,7 @@ export default function Home() {
         </section>
       </main>
 
-      {/* The page's one dark moment — the icon's own navy gradient, quoted
-          literally, closing a light page against the mark it opened with. */}
-      <footer className="site-footer">
-        <div className="shell footer-top">
-          <div>
-            <a href="#top" className="footer-brand">
-              <Mark size={26} />
-              <span>Octopus POS</span>
-            </a>
-            <p className="footer-tagline">{t.footer.tagline}</p>
-          </div>
-
-          <nav className="footer-nav" aria-label={t.footer.nav}>
-            <a href="#features">{t.nav.features}</a>
-            <a href="#platforms">{t.nav.platforms}</a>
-            <a href="#pricing">{t.nav.pricing}</a>
-            <a href="#contact">{t.nav.demo}</a>
-          </nav>
-        </div>
-
-        <div className="shell footer-base">
-          <span>© {new Date().getFullYear()} Octopus POS</span>
-          <label className="langpick">
-            <span className="sr-only">{t.footer.language}</span>
-            <select
-              value={lang}
-              onChange={(e) => pick(e.target.value as Lang)}
-              aria-label={t.footer.language}
-              /* Mobile autofill tags form controls with its own attribute
-                 before hydration — see the note in layout.tsx. */
-              suppressHydrationWarning
-            >
-              {LANGS.map((l) => (
-                <option key={l.code} value={l.code}>{l.name}</option>
-              ))}
-            </select>
-          </label>
-        </div>
-      </footer>
+      <SiteFooter t={t} lang={lang} onPick={pick} page="home" />
     </div>
   );
 }
@@ -405,18 +303,5 @@ function Check() {
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true" style={{ flexShrink: 0, marginTop: "0.3rem" }}>
       <path d="M3 8.5L6 11.5L13 4.5" stroke="var(--accent)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
-  );
-}
-
-function Mark({ size = 22 }: { size?: number }) {
-  return (
-    <Image
-      src="/logo-NO_Background.png"
-      width={size}
-      height={size}
-      className="brand-mark"
-      aria-hidden="true"
-      alt=""
-    />
   );
 }

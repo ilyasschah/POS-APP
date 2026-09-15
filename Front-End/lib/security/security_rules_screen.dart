@@ -405,9 +405,11 @@ class _CategorySection extends StatelessWidget {
   final int companyId;
 
   /// Narrowest a rule tile may get before a column is dropped. Sized off the
-  /// widest thing in one — a two-segment control plus a label long enough to
-  /// read ("view all open orders").
-  static const double _minTileWidth = 380;
+  /// widest thing in one — the role picker at its natural width in the longest
+  /// language ("Administrateur", ~220) plus a label long enough to read ("view
+  /// all open orders"). Inside the readable-width cap that works out to two
+  /// columns at most: the ceiling comes from the math, not a hardcoded `min`.
+  static const double _minTileWidth = 400;
   static const double _gap = 12;
 
   @override
@@ -456,13 +458,9 @@ class _CategorySection extends StatelessWidget {
           builder: (context, constraints) {
             // Math-based wrapping: the column count comes from the width this
             // section actually got, never from a device breakpoint.
-            final columns = math.min(
-              2,
-              math.max(
-                1,
-                ((constraints.maxWidth + _gap) / (_minTileWidth + _gap))
-                    .floor(),
-              ),
+            final columns = math.max(
+              1,
+              ((constraints.maxWidth + _gap) / (_minTileWidth + _gap)).floor(),
             );
             final tileWidth =
                 (constraints.maxWidth - _gap * (columns - 1)) / columns;
@@ -476,13 +474,7 @@ class _CategorySection extends StatelessWidget {
                     // tile and pin the column count to the width it was given.
                     key: ValueKey('security-rule-${rule.name}'),
                     width: tileWidth,
-                    child: _RuleTile(
-                      rule: rule,
-                      companyId: companyId,
-                      // Below this the two words stop fitting beside a label
-                      // long enough to be worth reading.
-                      dense: tileWidth < 340,
-                    ),
+                    child: _RuleTile(rule: rule, companyId: companyId),
                   ),
               ],
             );
@@ -496,21 +488,17 @@ class _CategorySection extends StatelessWidget {
 
 /// One rule: what it governs, and who may do it.
 ///
-/// The role is a compact dropdown: only the current role needs to be visible
-/// in every tile, while the menu keeps the two choices available when editing.
+/// The role is a dropdown: the current answer stays visible in every tile, in
+/// its own colour, and the long translated role words live in the menu instead
+/// of squeezing the rule label beside them.
 class _RuleTile extends ConsumerStatefulWidget {
   const _RuleTile({
     required this.rule,
     required this.companyId,
-    required this.dense,
   });
 
   final SecurityKeyModel rule;
   final int companyId;
-
-  /// Kept for the tile's responsive contract. The dropdown stays compact at
-  /// every tile width, so its role label cannot compete with the rule label.
-  final bool dense;
 
   @override
   ConsumerState<_RuleTile> createState() => _RuleTileState();
@@ -594,6 +582,61 @@ class _RuleTileState extends ConsumerState<_RuleTile> {
     final cs = theme.colorScheme;
     final l10n = AppLocalizations.of(context);
     final adminOnly = widget.rule.level == 1;
+    final pickerStyle = theme.textTheme.labelLarge?.copyWith(
+      color: adminOnly ? context.dangerColor : cs.primary,
+      fontWeight: FontWeight.w600,
+    );
+    final pickerWidth = _pickerWidth(
+      context,
+      pickerStyle,
+      [l10n.roleCashier, l10n.roleAdmin],
+    );
+
+    final label = Tooltip(
+      // The raw key, for anyone matching this screen against the docs.
+      message: widget.rule.name,
+      child: Text(
+        securityKeyLabel(context, widget.rule.name),
+        style: theme.textTheme.bodyMedium,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+      ),
+    );
+
+    final picker = Tooltip(
+      // What the current answer means, which the one word cannot say.
+      message: adminOnly
+          ? l10n.securityLevelAdminHint
+          : l10n.securityLevelCashierHint,
+      child: SizedBox(
+        width: pickerWidth,
+        child: IlyassDropdown<int>(
+          dense: true,
+          value: widget.rule.level,
+          items: [
+            IlyassDropdownItem(
+              value: 0,
+              label: l10n.roleCashier,
+              icon: Icons.groups_outlined,
+            ),
+            IlyassDropdownItem(
+              value: 1,
+              label: l10n.roleAdmin,
+              icon: Icons.lock_outline,
+            ),
+          ],
+          prefixIcon: adminOnly ? Icons.lock_outline : Icons.groups_outlined,
+          textStyle: pickerStyle,
+          onChanged: _isLoading
+              ? null
+              : (next) {
+                  if (next != null && next != widget.rule.level) {
+                    _updateLevel(next);
+                  }
+                },
+        ),
+      ),
+    );
 
     return Container(
       padding: const EdgeInsetsDirectional.fromSTEB(14, 8, 8, 8),
@@ -608,59 +651,69 @@ class _RuleTileState extends ConsumerState<_RuleTile> {
               : cs.outlineVariant,
         ),
       ),
-      // The label is the only flexible child. The role picker has a bounded
-      // width so a long translated rule name cannot squeeze its selection.
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Flexible(
-            child: Tooltip(
-              // The raw key, for anyone matching this screen against the docs.
-              message: widget.rule.name,
-              child: Text(
-                securityKeyLabel(context, widget.rule.name),
-                style: theme.textTheme.bodyMedium,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          SizedBox(
-            width: widget.dense ? 150 : 178,
-            child: IlyassDropdown<int>(
-              dense: true,
-              value: widget.rule.level,
-              items: [
-                IlyassDropdownItem(
-                  value: 0,
-                  label: l10n.roleCashier,
-                  icon: Icons.groups_outlined,
-                ),
-                IlyassDropdownItem(
-                  value: 1,
-                  label: l10n.roleAdmin,
-                  icon: Icons.lock_outline,
-                ),
+      // Math-based, like the grid around it: the picker sits beside the label
+      // only while the label keeps a readable width next to it, and drops under
+      // the label below that. Side by side on a phone-width tile squeezed the
+      // label to nothing and still pushed the picker out of the tile.
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          if (constraints.maxWidth - pickerWidth - 12 >= _minLabelWidth) {
+            // 🚨 The label is the ONLY flexible child: an operator may lose
+            // the end of a rule name, never the answer they came to change.
+            return Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Flexible(child: label),
+                const SizedBox(width: 12),
+                picker,
               ],
-              prefixIcon: adminOnly
-                  ? Icons.lock_outline
-                  : Icons.groups_outlined,
-              textStyle: theme.textTheme.labelLarge?.copyWith(
-                color: adminOnly ? context.dangerColor : cs.primary,
-                fontWeight: FontWeight.w600,
-              ),
-              onChanged: _isLoading
-                  ? null
-                  : (next) {
-                      if (next != null && next != widget.rule.level) {
-                        _updateLevel(next);
-                      }
-                    },
-            ),
-          ),
-        ],
+            );
+          }
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              label,
+              const SizedBox(height: 8),
+              Align(alignment: AlignmentDirectional.centerEnd, child: picker),
+            ],
+          );
+        },
       ),
     );
+  }
+
+  /// Narrowest the rule label may get beside the picker before the picker
+  /// moves underneath it.
+  static const double _minLabelWidth = 140;
+
+  /// The field around the words: leading role icon, trailing arrow, padding.
+  static const double _pickerChrome = 124;
+
+  /// The picker's width, from its longest option in the current language and
+  /// text size.
+  ///
+  /// 🚨 Never a fixed number, and never the dropdown's own natural width. A
+  /// fixed 150/178 fit "Admin" and scrolled "Administrateur" out of its own
+  /// field — a dropdown field does not ellipsize. Left to size itself, the
+  /// dropdown takes its MENU's generous width (~400px in French), wider than a
+  /// phone-width tile.
+  static double _pickerWidth(
+    BuildContext context,
+    TextStyle? style,
+    List<String> options,
+  ) {
+    final scaler = MediaQuery.textScalerOf(context);
+    var widest = 0.0;
+    for (final option in options) {
+      final painter = TextPainter(
+        text: TextSpan(text: option, style: style),
+        textDirection: Directionality.of(context),
+        textScaler: scaler,
+        maxLines: 1,
+      )..layout();
+      widest = math.max(widest, painter.width);
+      painter.dispose();
+    }
+    return widest.ceilToDouble() + _pickerChrome;
   }
 }

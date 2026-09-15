@@ -1,22 +1,44 @@
-// The Stock Moves matrix: which way each document type moves goods, and how an
-// inventory count's variance is read out of Quantity and ExpectedQuantity.
+// The Stock Moves matrix: which way each document type moves goods — read from
+// the type's stock_direction and category, never from a list of type ids — and
+// how an inventory count's variance is read out of Quantity and
+// ExpectedQuantity.
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pos_app/document/document_type_constants.dart';
 import 'package:pos_app/stock/stock_move_line.dart';
+
+/// The server's seeded types (GlobalDefaultsSeeder.cs): id → (category, direction).
+const seeded = {
+  DocumentTypes.purchase: (DocumentCategories.expenses, StockDirections.intoStock),
+  DocumentTypes.sales: (DocumentCategories.sales, StockDirections.outOfStock),
+  DocumentTypes.inventoryCount:
+      (DocumentCategories.inventory, StockDirections.intoStock),
+  DocumentTypes.refund: (DocumentCategories.sales, StockDirections.intoStock),
+  DocumentTypes.stockReturn:
+      (DocumentCategories.expenses, StockDirections.outOfStock),
+  DocumentTypes.lossAndDamage:
+      (DocumentCategories.loss, StockDirections.outOfStock),
+  DocumentTypes.proforma: (DocumentCategories.sales, StockDirections.none),
+};
 
 void main() {
   // Either side of the day counts started recording their expected quantity.
   final recorded = DateTime.utc(2026, 10, 1);
   final legacy = DateTime.utc(2026, 9, 10);
 
+  /// A line of [type], resolved with its seeded category and direction unless
+  /// the test overrides them.
   StockMoveRoute? route(
     int type,
     double quantity, {
     double? expected,
     DateTime? date,
+    int? direction,
+    int? category,
   }) =>
       StockMoveMatrix.resolve(
         documentTypeId: type,
+        stockDirection: direction ?? seeded[type]?.$2 ?? StockDirections.none,
+        documentCategoryId: category ?? seeded[type]?.$1,
         quantity: quantity,
         expectedQuantity: expected,
         date: date ?? recorded,
@@ -29,7 +51,8 @@ void main() {
   const stock = StockLocationKind.warehouse;
 
   group('the matrix', () {
-    test('each moving type crosses the warehouse wall its own way', () {
+    test('each seeded type crosses the warehouse wall the way its direction says',
+        () {
       expect(route(DocumentTypes.purchase, 5),
           (from: vendors, to: stock, quantity: 5.0));
       expect(route(DocumentTypes.sales, 5),
@@ -42,35 +65,51 @@ void main() {
           (from: stock, to: scrap, quantity: 5.0));
     });
 
-    test('a proforma, or a type nobody knows, moves nothing', () {
-      expect(route(DocumentTypes.proforma, 5), isNull);
-      expect(route(99, 5), isNull);
-      expect(StockMoveMatrix.movingDocumentTypes,
-          isNot(contains(DocumentTypes.proforma)));
-    });
-
-    test("agrees with the server's seeded StockDirection", () {
-      // GlobalDefaultsSeeder.cs: 1 = into stock, 2 = out of stock, 0 = none.
-      const seeded = {1: 1, 2: 2, 3: 1, 4: 1, 5: 2, 6: 2, 7: 0};
-      seeded.forEach((type, direction) {
+    test('every direction-1 type comes in, every direction-2 type goes out', () {
+      seeded.forEach((type, entry) {
         final r = route(type, 1, expected: 0);
-        switch (direction) {
-          case 0:
-            expect(r, isNull, reason: 'type $type moves no stock');
-          case 1:
+        switch (entry.$2) {
+          case StockDirections.intoStock:
             expect(r?.to, stock, reason: 'type $type puts goods into stock');
-          case 2:
+          case StockDirections.outOfStock:
             expect(r?.from, stock, reason: 'type $type takes goods out');
+          default:
+            expect(r, isNull, reason: 'type $type moves no stock');
         }
-        expect(StockMoveMatrix.movingDocumentTypes.contains(type),
-            direction != 0);
       });
     });
 
-    test('a negative line turns the route around instead of going negative',
-        () {
-      expect(route(DocumentTypes.sales, -2),
+    test('a type with no stock direction moves nothing', () {
+      expect(route(DocumentTypes.proforma, 5), isNull);
+      // A type this till has not pulled yet has no direction either.
+      expect(route(99, 5), isNull);
+    });
+
+    test('the direction is read, not assumed from the type id', () {
+      // Were Purchase re-pointed out of stock on the server, it would follow.
+      expect(route(DocumentTypes.purchase, 5,
+              direction: StockDirections.outOfStock),
+          (from: stock, to: vendors, quantity: 5.0));
+    });
+
+    test('a type the server added moves by its own direction and category', () {
+      expect(
+          route(42, 3,
+              direction: StockDirections.outOfStock,
+              category: DocumentCategories.loss),
+          (from: stock, to: scrap, quantity: 3.0));
+      // A category this app does not know is booked against adjustment.
+      expect(route(43, 3, direction: StockDirections.intoStock, category: 99),
+          (from: adjustment, to: stock, quantity: 3.0));
+    });
+
+    test("a line's sign is not a direction", () {
+      // This till records a refund's lines negative, like the money it gives
+      // back; the goods still came back in, green, from the customer.
+      expect(route(DocumentTypes.refund, -2),
           (from: customers, to: stock, quantity: 2.0));
+      expect(route(DocumentTypes.sales, -2),
+          (from: stock, to: customers, quantity: 2.0));
     });
 
     test('a zero line moves nothing', () {
